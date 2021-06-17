@@ -10,5 +10,5 @@ import java.util.Set;
 public record CommandRegistration(@NotNull MethodHandle methodHandle,
                                   @NotNull Set<CommandParameter> parameters,
                                   @Nullable String permission,
-                                  boolean runSync) {
+                                  boolean runAsync) {
 }

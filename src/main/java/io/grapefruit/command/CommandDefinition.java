@@ -13,5 +13,5 @@ public @interface CommandDefinition {
 
     String permission() default "";
 
-    boolean runSync() default false;
+    boolean runAsync() default false;
 }
