@@ -8,9 +8,4 @@ import java.lang.annotation.Target;
 @ParamModifier
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-public @interface Range {
-
-    double min();
-
-    double max();
-}
+public @interface OptParam {}

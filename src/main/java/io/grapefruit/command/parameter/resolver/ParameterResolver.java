@@ -1,11 +1,15 @@
 package io.grapefruit.command.parameter.resolver;
 
+import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-@FunctionalInterface
 public interface ParameterResolver<S, T> {
+
+    @NotNull String id();
+
+    @NotNull TypeToken<T> type();
 
     @NotNull T resolve(final @NotNull S source) throws ParameterResolutionException;
 
