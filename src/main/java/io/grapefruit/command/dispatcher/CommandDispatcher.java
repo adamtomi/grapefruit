@@ -5,6 +5,7 @@ import io.grapefruit.command.CommandDefinition;
 import io.grapefruit.command.CommandException;
 import io.grapefruit.command.dispatcher.exception.CommandAuthorizationException;
 import io.grapefruit.command.dispatcher.exception.NoSuchCommandException;
+import io.grapefruit.command.parameter.resolver.ResolverRegistry;
 import io.grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,6 +33,7 @@ public final class CommandDispatcher<S> {
     private static final System.Logger LOGGER = System.getLogger(CommandDispatcher.class.getName());
     private final MethodHandles.Lookup lookup = MethodHandles.lookup();
     private final CommandGraph commandGraph = new CommandGraph();
+    private final ResolverRegistry<S> resolverRegistry = new ResolverRegistry<>();
     private final CommandAuthorizer<S> commandAuthorizer;
     private final Executor asyncExecutor;
 
@@ -39,6 +41,10 @@ public final class CommandDispatcher<S> {
                               final @NotNull Executor asyncExecutor) {
         this.commandAuthorizer = requireNonNull(commandAuthorizer, "commandAuthorizer cannot be null");
         this.asyncExecutor = requireNonNull(asyncExecutor, "asyncExecutor cannot be null");
+    }
+
+    public @NotNull ResolverRegistry<S> resolvers() {
+        return this.resolverRegistry;
     }
 
     public void registerCommands(final @NotNull CommandContainer container) {
