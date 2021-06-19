@@ -13,4 +13,8 @@ import java.lang.annotation.Target;
 public @interface Regex {
 
     String value();
+
+    boolean allowUnicode() default false;
+
+    boolean caseInsensitive() default false;
 }

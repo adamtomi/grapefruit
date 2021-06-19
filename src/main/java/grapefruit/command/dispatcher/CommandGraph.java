@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-public final class CommandGraph {
+final class CommandGraph {
     private final CommandNode rootNode = new CommandNode("__ROOT__", Set.of(), null);
 
     public void registerCommand(final @NotNull CommandNode command) {

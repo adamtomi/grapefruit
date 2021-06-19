@@ -15,4 +15,8 @@ public class CommandException extends Exception {
     public CommandException(final @NotNull Throwable cause) {
         super(cause);
     }
+
+    public CommandException(final @NotNull String message) {
+        super(message);
+    }
 }

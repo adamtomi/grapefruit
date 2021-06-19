@@ -10,6 +10,8 @@ import grapefruit.command.parameter.modifier.string.Quoted;
 import grapefruit.command.parameter.resolver.ParameterResolver;
 import grapefruit.command.parameter.resolver.ResolverRegistry;
 import grapefruit.command.util.AnnotationList;
+import grapefruit.command.util.Miscellaneous;
+import io.leangen.geantyref.GenericTypeReflector;
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,6 +20,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -31,14 +34,26 @@ final class MethodParameterParser {
             throw new RuleViolationException(format("Both @Greedy and @Quoted annotation used on parameter %s", param));
         }
     };
+    private static final Rule GREEDY_QUOTED_INVALID_TYPE = (method, parameter, annotations) -> {
+        if (!String.class.isAssignableFrom(parameter.getType())
+                && (annotations.has(Greedy.class) || annotations.has(Quoted.class))) {
+            throw new RuleViolationException("@Greedy and @Quoted annotations are only allowed on strings");
+        }
+    };
+    private static final Rule GREEDY_MUST_BE_LAST = (method, parameter, annotations) -> {
+        if (annotations.has(Greedy.class) && !method.getParameters()[method.getParameters().length - 1].equals(parameter)) {
+            throw new RuleViolationException("Parameter annotated with @Greedy must be the last parameter");
+        }
+    };
     private static final Rule RANGE_INVALID_TYPE = (method, parameter, annotations) -> {
-        if (annotations.has(Range.class) && !Number.class.isAssignableFrom(parameter.getType())) {
+        if (annotations.has(Range.class)
+                && !Number.class.isAssignableFrom(GenericTypeReflector.erase(Miscellaneous.box(parameter.getType()).getType()))) {
             throw new RuleViolationException("@Range annotation is only allowed on numbers");
         }
     };
     private static final Rule SOURCE_HAS_MORE_ANNOTATIONS = (method, parameter, annotations) -> {
         if (annotations.has(Source.class) && annotations.elements().size() > 1) {
-            throw new RuleViolationException("Parameter annotated with @Source must not have annotations");
+            throw new RuleViolationException("Parameter annotated with @Source must not have more annotations");
         }
     };
     private static final Rule SOURCE_NTH_PARAMETER = (method, param, annotations) -> {
@@ -56,6 +71,7 @@ final class MethodParameterParser {
 
     private final Set<Rule> rules = Set.of(
             GREEDY_AND_QUOTED,
+            GREEDY_QUOTED_INVALID_TYPE,
             RANGE_INVALID_TYPE,
             SOURCE_HAS_MORE_ANNOTATIONS,
             SOURCE_NTH_PARAMETER,
@@ -76,10 +92,10 @@ final class MethodParameterParser {
                 rule.validate(method, parameter, annotations);
             }
 
-            CommandParameter cmdParam = new CommandParameter(TypeToken.get(parameter.getType()), annotations);
+            final CommandParameter cmdParam = new CommandParameter(TypeToken.get(parameter.getType()), annotations);
             final ParameterResolver<?, ?> resolver;
             final Optional<Resolver> resolverAnnot = annotations.find(Resolver.class);
-            if (resolverAnnot.isPresent()) {
+            if (resolverAnnot.isPresent() && !annotations.has(Source.class)) {
                 final String name = resolverAnnot.get().value();
                 resolver = this.resolverRegistry.findNamedResolver(name)
                         .orElseThrow(() -> new IllegalArgumentException(format("Could not find ParameterResolver with name %s", name)));

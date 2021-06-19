@@ -1,5 +1,6 @@
 package grapefruit.command.parameter.resolver;
 
+import grapefruit.command.parameter.resolver.builtin.StringResolver;
 import grapefruit.command.util.Miscellaneous;
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
@@ -18,6 +19,14 @@ public final class ResolverRegistry<S> {
     private final ReentrantLock lock = new ReentrantLock();
     private final Map<TypeToken<?>, ParameterResolver<S, ?>> defaultResolvers = new HashMap<>();
     private final Map<String, ParameterResolver<S, ?>> namedResolvers = new HashMap<>();
+
+    public ResolverRegistry() {
+        registerDefaults();
+    }
+
+    private void registerDefaults() {
+        this.defaultResolvers.put(TypeToken.get(String.class), new StringResolver<>());
+    }
 
     public void registerResolver(final @NotNull ParameterResolver<S, ?> resolver) {
         try {

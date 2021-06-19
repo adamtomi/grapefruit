@@ -24,4 +24,13 @@ public final class Miscellaneous {
         final Type boxedType = GenericTypeReflector.box(type.getType());
         return (TypeToken<T>) TypeToken.get(boxedType);
     }
+
+    @SuppressWarnings("unchecked")
+    public static <T> @NotNull TypeToken<T> box(final @NotNull Type type) {
+        return (TypeToken<T>) TypeToken.get(GenericTypeReflector.box(type));
+    }
+
+    public static boolean endsWith(final @NotNull String value, final char suffix) {
+        return value.charAt(value.length() - 1) == suffix;
+    }
 }
