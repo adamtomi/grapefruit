@@ -3,8 +3,7 @@ package grapefruit.command.dispatcher;
 import grapefruit.command.CommandContainer;
 import grapefruit.command.CommandDefinition;
 import grapefruit.command.CommandException;
-import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
-import grapefruit.command.dispatcher.exception.NoSuchCommandException;
+import grapefruit.command.parameter.modifier.Source;
 import grapefruit.command.parameter.resolver.ResolverRegistry;
 import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
@@ -13,10 +12,11 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
@@ -29,6 +29,7 @@ public final class CommandDispatcher<S> {
     private final MethodHandles.Lookup lookup = MethodHandles.lookup();
     private final CommandGraph commandGraph = new CommandGraph();
     private final ResolverRegistry<S> resolverRegistry = new ResolverRegistry<>();
+    private final MethodParameterParser parameterParser = new MethodParameterParser(this.resolverRegistry);
     private final CommandAuthorizer<S> commandAuthorizer;
     private final Executor asyncExecutor;
 
@@ -80,8 +81,16 @@ public final class CommandDispatcher<S> {
         final CommandNode rootNode = new CommandNode(root.primary(), root.aliases(), null);
 
         try {
+            final List<ParameterNode> parameters = this.parameterParser.collectParameters(method);
+            final boolean requiresCommandSource = !parameters.isEmpty()
+                    && parameters.get(0).parameter().modifiers().has(Source.class);
             final MethodHandle methodHandle = this.lookup.unreflect(method).bindTo(container);
-            final CommandRegistration reg = new CommandRegistration(methodHandle, Set.of(), permission, runAsync);
+            final CommandRegistration reg = new CommandRegistration(
+                    methodHandle,
+                    parameters,
+                    permission,
+                    requiresCommandSource,
+                    runAsync);
 
             for (final Iterator<RouteFragment> iter = route.iterator(); iter.hasNext();) {
                 final RouteFragment currentFragment = iter.next();
@@ -91,29 +100,20 @@ public final class CommandDispatcher<S> {
             }
 
             this.commandGraph.registerCommand(rootNode);
+        } catch (final MethodParameterParser.RuleViolationException ex) {
+            ex.printStackTrace();
         } catch (final Throwable ex) {
             throw new RuntimeException("Could not register command", ex);
         }
     }
 
-    public void dispatchCommand(final @NotNull S source,
-                                final @NotNull String[] args,
-                                final @NotNull Consumer<CommandException> errorHandler) throws CommandException {
-        if (args.length == 0) {
-            throw new IllegalArgumentException("Empty command arguments");
-        }
+    public void dispatchCommand() throws CommandException {
 
-        final Optional<CommandRegistration> registrationOpt = this.commandGraph.routeCommand(args);
-        if (registrationOpt.isEmpty()) {
-            throw new NoSuchCommandException(args[0], String.join(" ", args));
-        }
+    }
 
-        final CommandRegistration reg = registrationOpt.get();
-        final @Nullable String permission = reg.permission();
-        if (permission != null && !this.commandAuthorizer.isAuthorized(source, permission)) {
-            throw new CommandAuthorizationException(permission);
-        }
-
+    private void dispatchCommand(final @NotNull CommandRegistration registration,
+                                 final @NotNull S source,
+                                 final @NotNull String[] args) {
 
     }
 
@@ -163,5 +163,9 @@ public final class CommandDispatcher<S> {
 
             return new CommandDispatcher<>(authorizer, asyncExecutor);
         }
+    }
+
+    public enum Stage {
+        PRE, POST
     }
 }
