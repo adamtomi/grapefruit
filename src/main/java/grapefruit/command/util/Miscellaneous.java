@@ -16,7 +16,7 @@ public final class Miscellaneous {
     }
 
     public static @Nullable String emptyToNull(final @NotNull String value) {
-        return requireNonNull(value, "Value cannot be null").isEmpty() ? null : value;
+        return requireNonNull(value, "Value cannot be null").trim().isEmpty() ? null : value;
     }
 
     @SuppressWarnings("unchecked")
