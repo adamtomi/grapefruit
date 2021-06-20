@@ -64,11 +64,12 @@ public class CommandNode<S> {
 
     @Override
     public String toString() {
-        return "CommandNode{" +
+        return "CommandNode[" +
                 "primary='" + this.primary + '\'' +
                 ", aliases=" + this.aliases +
-                ", dispatchable=" + this.registration +
-                '}';
+                ", registration=" + this.registration +
+                ", children=" + this.children +
+                ']';
     }
 
     @Override

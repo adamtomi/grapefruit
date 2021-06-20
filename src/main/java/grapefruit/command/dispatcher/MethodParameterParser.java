@@ -93,19 +93,22 @@ final class MethodParameterParser<S> {
                 rule.validate(method, parameter, annotations);
             }
 
-            final CommandParameter cmdParam = new CommandParameter(TypeToken.get(parameter.getType()), annotations);
-            final ParameterResolver<S, ?> resolver;
-            final Optional<Resolver> resolverAnnot = annotations.find(Resolver.class);
-            if (resolverAnnot.isPresent() && !annotations.has(Source.class)) {
-                final String name = resolverAnnot.get().value();
-                resolver = (ParameterResolver<S, ?>) this.resolverRegistry.findNamedResolver(name)
-                        .orElseThrow(() -> new IllegalArgumentException(format("Could not find ParameterResolver with name %s", name)));
-            } else {
-                resolver = (ParameterResolver<S, ?>) this.resolverRegistry.findResolver(cmdParam.type())
-                        .orElseThrow(() -> new IllegalArgumentException(format("Could not find ParameterResolver for type %s", cmdParam.type().getType())));
-            }
+            if (!annotations.has(Source.class)) {
+                final CommandParameter cmdParam = new CommandParameter(TypeToken.get(parameter.getType()), annotations);
+                final ParameterResolver<S, ?> resolver;
+                final Optional<Resolver> resolverAnnot = annotations.find(Resolver.class);
 
-            parameters.add(new ParameterNode<>(resolver, cmdParam));
+                if (resolverAnnot.isPresent()) {
+                    final String name = resolverAnnot.get().value();
+                    resolver = (ParameterResolver<S, ?>) this.resolverRegistry.findNamedResolver(name)
+                            .orElseThrow(() -> new IllegalArgumentException(format("Could not find ParameterResolver with name %s", name)));
+                } else {
+                    resolver = (ParameterResolver<S, ?>) this.resolverRegistry.findResolver(cmdParam.type())
+                            .orElseThrow(() -> new IllegalArgumentException(format("Could not find ParameterResolver for type %s", cmdParam.type().getType())));
+                }
+
+                parameters.add(new ParameterNode<>(resolver, cmdParam));
+            }
         }
 
         return parameters;

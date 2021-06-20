@@ -4,6 +4,7 @@ import grapefruit.command.CommandContainer;
 import grapefruit.command.CommandDefinition;
 import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
+import grapefruit.command.dispatcher.exception.NoSuchCommandException;
 import grapefruit.command.parameter.modifier.Source;
 import grapefruit.command.parameter.resolver.ResolverRegistry;
 import grapefruit.command.util.Miscellaneous;
@@ -14,10 +15,12 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
@@ -29,7 +32,6 @@ import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Objects.requireNonNull;
 
 public final class CommandDispatcher<S> {
-    private static final String ALIAS_SEPARATOR = "\\|";
     private static final System.Logger LOGGER = System.getLogger(CommandDispatcher.class.getName());
     private final MethodHandles.Lookup lookup = MethodHandles.lookup();
     private final CommandGraph<S> commandGraph = new CommandGraph<>();
@@ -66,30 +68,14 @@ public final class CommandDispatcher<S> {
             throw new IllegalStateException(format("Missing @CommandDefinition annotation on %s", method.getName()));
         }
 
-        final List<RouteFragment> route = Arrays.stream(def.route().split(" "))
-                .map(String::trim)
-                .map(x -> x.split(ALIAS_SEPARATOR))
-                .map(x -> {
-                    final String primary = x[0];
-                    final String[] aliases = x.length > 1
-                            ? Arrays.copyOfRange(x, 1, x.length)
-                            : new String[0];
-                    return new RouteFragment(primary, aliases);
-                })
-                .collect(Collectors.toList());
-        if (route.isEmpty()) {
-            throw new IllegalStateException("Empty command tree detected");
-        }
-
+        final String route = def.route();
         final @Nullable String permission = Miscellaneous.emptyToNull(def.permission());
         final boolean runAsync = def.runAsync();
-        final RouteFragment root = route.remove(0);
-        final CommandNode<S> rootNode = new CommandNode<>(root.primary(), root.aliases(), null);
 
         try {
             final List<ParameterNode<S>> parameters = this.parameterParser.collectParameters(method);
             final boolean requiresCommandSource = !parameters.isEmpty()
-                    && parameters.get(0).parameter().modifiers().has(Source.class);
+                    && method.getParameters()[0].isAnnotationPresent(Source.class);
             final MethodHandle methodHandle = this.lookup.unreflect(method).bindTo(container);
             final CommandRegistration<S> reg = new CommandRegistration<>(
                     methodHandle,
@@ -98,14 +84,7 @@ public final class CommandDispatcher<S> {
                     requiresCommandSource,
                     runAsync);
 
-            for (final Iterator<RouteFragment> iter = route.iterator(); iter.hasNext();) {
-                final RouteFragment currentFragment = iter.next();
-                rootNode.addChild(
-                        new CommandNode<>(currentFragment.primary(), currentFragment.aliases(), iter.hasNext() ? null : reg)
-                );
-            }
-
-            this.commandGraph.registerCommand(rootNode);
+            this.commandGraph.registerCommand(route, reg);
         } catch (final MethodParameterParser.RuleViolationException ex) {
             ex.printStackTrace();
         } catch (final Throwable ex) {
@@ -146,6 +125,8 @@ public final class CommandDispatcher<S> {
                         result.completeExceptionally(ex);
                     }
                 });
+            } else {
+                throw new NoSuchCommandException(args.element(), commandLine);
             }
         } catch (final CommandException ex) {
             result.completeExceptionally(ex);
@@ -158,10 +139,9 @@ public final class CommandDispatcher<S> {
                                  final @NotNull S source,
                                  final @NotNull Queue<String> args) throws CommandException {
         try {
-            final Object[] objects = new Object[args.size()];
-            int idx = 0;
+            final Set<Object> objects = new LinkedHashSet<>();
             for (final ParameterNode<S> parameter : registration.parameters()) {
-                objects[idx++] = parameter.resolver().resolve(source, args, parameter.parameter());
+                objects.add(parameter.resolver().resolve(source, args, parameter.parameter()));
             }
 
             dispatchCommand0(registration, source, objects);
@@ -172,14 +152,18 @@ public final class CommandDispatcher<S> {
 
     private void dispatchCommand0(final @NotNull CommandRegistration<S> reg,
                                   final @NotNull S source,
-                                  final @NotNull Object... args) throws Throwable {
+                                  final @NotNull Collection<Object> args) throws Throwable {
         final Object[] finalArgs;
         if (reg.requiresCommandSource()) {
-            finalArgs = new Object[args.length + 1];
+            finalArgs = new Object[args.size()+ 1];
             finalArgs[0] = source;
-            System.arraycopy(args, 0, finalArgs, 1, args.length);
+            int idx = 1;
+            for (final Object arg : args) {
+                finalArgs[idx++] = arg;
+            }
+
         } else {
-            finalArgs = args;
+            finalArgs = args.toArray(Object[]::new);
         }
 
         reg.methodHandle().invokeWithArguments(finalArgs);
@@ -188,8 +172,6 @@ public final class CommandDispatcher<S> {
     public @NotNull List<String> listSuggestions(final @NotNull S source, final @NotNull String[] args) {
         return List.of();
     }
-
-    private static final record RouteFragment (@NotNull String primary, @NotNull String[] aliases) {}
 
     public static <S> @NotNull Builder<S> builder() {
         return new Builder<>();
