@@ -7,6 +7,7 @@ import grapefruit.command.parameter.modifier.Resolver;
 import grapefruit.command.parameter.modifier.Source;
 import grapefruit.command.parameter.modifier.string.Greedy;
 import grapefruit.command.parameter.modifier.string.Quoted;
+import grapefruit.command.parameter.modifier.string.Regex;
 import grapefruit.command.parameter.resolver.ParameterResolver;
 import grapefruit.command.parameter.resolver.ResolverRegistry;
 import grapefruit.command.util.AnnotationList;
@@ -33,10 +34,10 @@ final class MethodParameterParser<S> {
             throw new RuleViolationException(format("Both @Greedy and @Quoted annotation used on parameter %s", param));
         }
     };
-    private static final Rule GREEDY_QUOTED_INVALID_TYPE = (method, parameter, annotations) -> {
+    private static final Rule GREEDY_QUOTED_REGEX_INVALID_TYPE = (method, parameter, annotations) -> {
         if (!String.class.isAssignableFrom(parameter.getType())
-                && (annotations.has(Greedy.class) || annotations.has(Quoted.class))) {
-            throw new RuleViolationException("@Greedy and @Quoted annotations are only allowed on strings");
+                && (annotations.has(Greedy.class) || annotations.has(Quoted.class) || annotations.has(Regex.class))) {
+            throw new RuleViolationException("@Greedy, @Quoted and @Regex annotations are only allowed on strings");
         }
     };
     private static final Rule GREEDY_MUST_BE_LAST = (method, parameter, annotations) -> {
@@ -70,7 +71,7 @@ final class MethodParameterParser<S> {
 
     private final Set<Rule> rules = Set.of(
             GREEDY_AND_QUOTED,
-            GREEDY_QUOTED_INVALID_TYPE,
+            GREEDY_QUOTED_REGEX_INVALID_TYPE,
             GREEDY_MUST_BE_LAST,
             RANGE_INVALID_TYPE,
             SOURCE_HAS_MORE_ANNOTATIONS,
