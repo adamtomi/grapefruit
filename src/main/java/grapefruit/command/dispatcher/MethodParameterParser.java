@@ -20,7 +20,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -28,7 +27,7 @@ import java.util.Set;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
-final class MethodParameterParser {
+final class MethodParameterParser<S> {
     private static final Rule GREEDY_AND_QUOTED = (method, param, annotations) -> {
         if (annotations.has(Greedy.class) && annotations.has(Quoted.class)) {
             throw new RuleViolationException(format("Both @Greedy and @Quoted annotation used on parameter %s", param));
@@ -72,6 +71,7 @@ final class MethodParameterParser {
     private final Set<Rule> rules = Set.of(
             GREEDY_AND_QUOTED,
             GREEDY_QUOTED_INVALID_TYPE,
+            GREEDY_MUST_BE_LAST,
             RANGE_INVALID_TYPE,
             SOURCE_HAS_MORE_ANNOTATIONS,
             SOURCE_NTH_PARAMETER,
@@ -83,8 +83,9 @@ final class MethodParameterParser {
         this.resolverRegistry = requireNonNull(resolverRegistry, "resolverRegistry cannot be null");
     }
 
-    @NotNull List<ParameterNode> collectParameters(final @NotNull Method method) throws RuleViolationException {
-        final List<ParameterNode> parameters = new ArrayList<>();
+    @SuppressWarnings("unchecked")
+    @NotNull List<ParameterNode<S>> collectParameters(final @NotNull Method method) throws RuleViolationException {
+        final List<ParameterNode<S>> parameters = new ArrayList<>();
         for (final Parameter parameter : method.getParameters()) {
             final AnnotationList annotations = new AnnotationList(parameter.getAnnotations());
 
@@ -93,18 +94,18 @@ final class MethodParameterParser {
             }
 
             final CommandParameter cmdParam = new CommandParameter(TypeToken.get(parameter.getType()), annotations);
-            final ParameterResolver<?, ?> resolver;
+            final ParameterResolver<S, ?> resolver;
             final Optional<Resolver> resolverAnnot = annotations.find(Resolver.class);
             if (resolverAnnot.isPresent() && !annotations.has(Source.class)) {
                 final String name = resolverAnnot.get().value();
-                resolver = this.resolverRegistry.findNamedResolver(name)
+                resolver = (ParameterResolver<S, ?>) this.resolverRegistry.findNamedResolver(name)
                         .orElseThrow(() -> new IllegalArgumentException(format("Could not find ParameterResolver with name %s", name)));
             } else {
-                resolver = this.resolverRegistry.findResolver(cmdParam.type())
+                resolver = (ParameterResolver<S, ?>) this.resolverRegistry.findResolver(cmdParam.type())
                         .orElseThrow(() -> new IllegalArgumentException(format("Could not find ParameterResolver for type %s", cmdParam.type().getType())));
             }
 
-            parameters.add(new ParameterNode(resolver, cmdParam));
+            parameters.add(new ParameterNode<>(resolver, cmdParam));
         }
 
         return parameters;

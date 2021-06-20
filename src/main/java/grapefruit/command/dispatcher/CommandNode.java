@@ -8,15 +8,15 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-public class CommandNode {
+public class CommandNode<S> {
     private final String primary;
     private final Set<String> aliases;
-    private final Set<CommandNode> children = new HashSet<>();
-    private final @Nullable CommandRegistration registration;
+    private final Set<CommandNode<S>> children = new HashSet<>();
+    private final @Nullable CommandRegistration<S> registration;
 
     public CommandNode(final @NotNull String primary,
                        final @NotNull Set<String> aliases,
-                       final @Nullable CommandRegistration registration) {
+                       final @Nullable CommandRegistration<S> registration) {
         this.primary = primary;
         this.aliases = aliases;
         this.registration = registration;
@@ -24,7 +24,7 @@ public class CommandNode {
 
     public CommandNode(final @NotNull String primary,
                        final @NotNull String[] aliases,
-                       final @Nullable CommandRegistration registration) {
+                       final @Nullable CommandRegistration<S> registration) {
         this(primary, Set.of(aliases), registration);
     }
 
@@ -40,23 +40,23 @@ public class CommandNode {
         aliases.forEach(this.aliases::add);
     }
 
-    public @NotNull Optional<CommandRegistration> registration() {
+    public @NotNull Optional<CommandRegistration<S>> registration() {
         return Optional.ofNullable(this.registration);
     }
 
-    public void addChild(final @NotNull CommandNode child) {
+    public void addChild(final @NotNull CommandNode<S> child) {
         this.children.add(child);
     }
 
-    public void removeChild(final @NotNull CommandNode child) {
+    public void removeChild(final @NotNull CommandNode<S> child) {
         this.children.remove(child);
     }
 
-    public @NotNull Set<CommandNode> children() {
+    public @NotNull Set<CommandNode<S>> children() {
         return Set.copyOf(this.children);
     }
 
-    public @NotNull Optional<CommandNode> findChild(final @NotNull String name) {
+    public @NotNull Optional<CommandNode<S>> findChild(final @NotNull String name) {
         return this.children.stream()
                 .filter(x -> x.primary.equalsIgnoreCase(name))
                 .findFirst();
@@ -75,7 +75,7 @@ public class CommandNode {
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final CommandNode that = (CommandNode) o;
+        final CommandNode<?> that = (CommandNode<?>) o;
         return Objects.equals(this.primary, that.primary)
                 && Objects.equals(this.aliases, that.aliases)
                 && Objects.equals(this.registration, that.registration);

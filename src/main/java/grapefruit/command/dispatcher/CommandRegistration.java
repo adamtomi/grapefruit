@@ -6,9 +6,9 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.invoke.MethodHandle;
 import java.util.List;
 
-public record CommandRegistration(@NotNull MethodHandle methodHandle,
-                                  @NotNull List<ParameterNode> parameters,
-                                  @Nullable String permission,
-                                  boolean requiresCommandSource,
-                                  boolean runAsync) {
+public record CommandRegistration<S>(@NotNull MethodHandle methodHandle,
+                                     @NotNull List<ParameterNode<S>> parameters,
+                                     @Nullable String permission,
+                                     boolean requiresCommandSource,
+                                     boolean runAsync) {
 }

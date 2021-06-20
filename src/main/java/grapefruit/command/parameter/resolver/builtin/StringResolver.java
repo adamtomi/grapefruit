@@ -11,6 +11,7 @@ import grapefruit.command.util.Miscellaneous;
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.StringJoiner;
@@ -90,5 +91,12 @@ public class StringResolver<S> extends AbstractParamterResolver<S, String> {
         }
 
         return parsedValue;
+    }
+
+    @Override
+    public @NotNull List<String> listSuggestions(final @NotNull S source,
+                                                 final @NotNull String currentArg,
+                                                 final @NotNull CommandParameter param) {
+        return List.of(currentArg);
     }
 }

@@ -3,6 +3,7 @@ package grapefruit.command.dispatcher;
 import grapefruit.command.CommandContainer;
 import grapefruit.command.CommandDefinition;
 import grapefruit.command.CommandException;
+import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
 import grapefruit.command.parameter.modifier.Source;
 import grapefruit.command.parameter.resolver.ResolverRegistry;
 import grapefruit.command.util.Miscellaneous;
@@ -15,6 +16,10 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -27,10 +32,11 @@ public final class CommandDispatcher<S> {
     private static final String ALIAS_SEPARATOR = "\\|";
     private static final System.Logger LOGGER = System.getLogger(CommandDispatcher.class.getName());
     private final MethodHandles.Lookup lookup = MethodHandles.lookup();
-    private final CommandGraph commandGraph = new CommandGraph();
+    private final CommandGraph<S> commandGraph = new CommandGraph<>();
     private final ResolverRegistry<S> resolverRegistry = new ResolverRegistry<>();
-    private final MethodParameterParser parameterParser = new MethodParameterParser(this.resolverRegistry);
+    private final MethodParameterParser<S> parameterParser = new MethodParameterParser<>(this.resolverRegistry);
     private final CommandAuthorizer<S> commandAuthorizer;
+    private final Executor sameThreadExecutor = Runnable::run;
     private final Executor asyncExecutor;
 
     private CommandDispatcher(final @NotNull CommandAuthorizer<S> commandAuthorizer,
@@ -78,14 +84,14 @@ public final class CommandDispatcher<S> {
         final @Nullable String permission = Miscellaneous.emptyToNull(def.permission());
         final boolean runAsync = def.runAsync();
         final RouteFragment root = route.remove(0);
-        final CommandNode rootNode = new CommandNode(root.primary(), root.aliases(), null);
+        final CommandNode<S> rootNode = new CommandNode<>(root.primary(), root.aliases(), null);
 
         try {
-            final List<ParameterNode> parameters = this.parameterParser.collectParameters(method);
+            final List<ParameterNode<S>> parameters = this.parameterParser.collectParameters(method);
             final boolean requiresCommandSource = !parameters.isEmpty()
                     && parameters.get(0).parameter().modifiers().has(Source.class);
             final MethodHandle methodHandle = this.lookup.unreflect(method).bindTo(container);
-            final CommandRegistration reg = new CommandRegistration(
+            final CommandRegistration<S> reg = new CommandRegistration<>(
                     methodHandle,
                     parameters,
                     permission,
@@ -95,7 +101,7 @@ public final class CommandDispatcher<S> {
             for (final Iterator<RouteFragment> iter = route.iterator(); iter.hasNext();) {
                 final RouteFragment currentFragment = iter.next();
                 rootNode.addChild(
-                        new CommandNode(currentFragment.primary(), currentFragment.aliases(), iter.hasNext() ? null : reg)
+                        new CommandNode<>(currentFragment.primary(), currentFragment.aliases(), iter.hasNext() ? null : reg)
                 );
             }
 
@@ -107,17 +113,79 @@ public final class CommandDispatcher<S> {
         }
     }
 
-    public void dispatchCommand() throws CommandException {
+    public CompletableFuture<?> dispatchCommand(final @NotNull S source,
+                                                final @NotNull String commandLine) {
+        requireNonNull(source, "source cannot be null");
+        requireNonNull(commandLine, "commandLine cannot be null");
+        final CompletableFuture<?> result = new CompletableFuture<>();
+        try {
+            final Queue<String> args = Arrays.stream(commandLine.split(" "))
+                    .map(String::trim)
+                    .collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
+            final Optional<CommandRegistration<S>> registrationOpt = this.commandGraph.routeCommand(args);
+            if (registrationOpt.isPresent()) {
+                final CommandRegistration<S> reg = registrationOpt.get();
+                final @Nullable String permission = reg.permission();
 
+                if (permission != null && !this.commandAuthorizer.isAuthorized(source, permission)) {
+                    throw new CommandAuthorizationException(permission);
+                }
+
+                if (args.size() < reg.parameters().size()) {
+                    throw new CommandException("Too few arguments specified");
+                }
+
+                final Executor executor = reg.runAsync()
+                        ? this.asyncExecutor
+                        : this.sameThreadExecutor;
+                executor.execute(() -> {
+                    try {
+                        dispatchCommand(reg, source, args);
+                        result.complete(null);
+                    } catch (final CommandException ex) {
+                        result.completeExceptionally(ex);
+                    }
+                });
+            }
+        } catch (final CommandException ex) {
+            result.completeExceptionally(ex);
+        }
+
+        return result;
     }
 
-    private void dispatchCommand(final @NotNull CommandRegistration registration,
+    private void dispatchCommand(final @NotNull CommandRegistration<S> registration,
                                  final @NotNull S source,
-                                 final @NotNull String[] args) {
+                                 final @NotNull Queue<String> args) throws CommandException {
+        try {
+            final Object[] objects = new Object[args.size()];
+            int idx = 0;
+            for (final ParameterNode<S> parameter : registration.parameters()) {
+                objects[idx++] = parameter.resolver().resolve(source, args, parameter.parameter());
+            }
 
+            dispatchCommand0(registration, source, objects);
+        } catch (final Throwable ex) {
+            throw new CommandException(ex);
+        }
     }
 
-    public @NotNull List<String> listSuggestions(final @NotNull S sender, final @NotNull String[] args) {
+    private void dispatchCommand0(final @NotNull CommandRegistration<S> reg,
+                                  final @NotNull S source,
+                                  final @NotNull Object... args) throws Throwable {
+        final Object[] finalArgs;
+        if (reg.requiresCommandSource()) {
+            finalArgs = new Object[args.length + 1];
+            finalArgs[0] = source;
+            System.arraycopy(args, 0, finalArgs, 1, args.length);
+        } else {
+            finalArgs = args;
+        }
+
+        reg.methodHandle().invokeWithArguments(finalArgs);
+    }
+
+    public @NotNull List<String> listSuggestions(final @NotNull S source, final @NotNull String[] args) {
         return List.of();
     }
 

@@ -33,4 +33,11 @@ public final class Miscellaneous {
     public static boolean endsWith(final @NotNull String value, final char suffix) {
         return value.charAt(value.length() - 1) == suffix;
     }
+
+    public static boolean startsWithIgnoreCase(final @NotNull String arg, final @NotNull String prefix) {
+        if (arg.length() < prefix.length()) {
+            return false;
+        }
+        return arg.regionMatches(true, 0, prefix, 0, prefix.length());
+    }
 }

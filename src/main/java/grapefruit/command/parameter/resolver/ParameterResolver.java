@@ -17,7 +17,7 @@ public interface ParameterResolver<S, T> {
             throws NoInputProvidedException, ParameterResolutionException;
 
     default @NotNull List<String> listSuggestions(final @NotNull S source,
-                                                  final @NotNull List<String> args,
+                                                  final @NotNull String currentArg,
                                                   final @NotNull CommandParameter param) {
         return List.of();
     }
