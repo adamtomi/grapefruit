@@ -5,7 +5,9 @@ import grapefruit.command.CommandDefinition;
 import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
 import grapefruit.command.dispatcher.exception.NoSuchCommandException;
+import grapefruit.command.parameter.modifier.OptParam;
 import grapefruit.command.parameter.modifier.Source;
+import grapefruit.command.parameter.resolver.ParameterResolutionException;
 import grapefruit.command.parameter.resolver.ResolverRegistry;
 import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
@@ -18,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
@@ -110,10 +113,6 @@ public final class CommandDispatcher<S> {
                     throw new CommandAuthorizationException(permission);
                 }
 
-                if (args.size() < reg.parameters().size()) {
-                    throw new CommandException("Too few arguments specified");
-                }
-
                 final Executor executor = reg.runAsync()
                         ? this.asyncExecutor
                         : this.sameThreadExecutor;
@@ -141,7 +140,21 @@ public final class CommandDispatcher<S> {
         try {
             final Set<Object> objects = new LinkedHashSet<>();
             for (final ParameterNode<S> parameter : registration.parameters()) {
-                objects.add(parameter.resolver().resolve(source, args, parameter.parameter()));
+                System.out.println(parameter);
+                try {
+                    final Object parsedValue = parameter.resolver().resolve(source, args, parameter.parameter());
+                    System.out.println(parsedValue);
+                    objects.add(parsedValue);
+                    System.out.println(objects);
+                    args.remove();
+                    System.out.println("removed");
+                } catch (final NoSuchElementException | ParameterResolutionException ex) {
+                    if (!parameter.parameter().modifiers().has(OptParam.class)) {
+                        throw ex;
+                    } else {
+                        objects.add(null);
+                    }
+                }
             }
 
             dispatchCommand0(registration, source, objects);

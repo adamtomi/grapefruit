@@ -5,13 +5,13 @@ import grapefruit.command.parameter.modifier.string.Greedy;
 import grapefruit.command.parameter.modifier.string.Quoted;
 import grapefruit.command.parameter.modifier.string.Regex;
 import grapefruit.command.parameter.resolver.AbstractParamterResolver;
-import grapefruit.command.parameter.resolver.NoInputProvidedException;
 import grapefruit.command.parameter.resolver.ParameterResolutionException;
 import grapefruit.command.util.Miscellaneous;
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.StringJoiner;
@@ -30,13 +30,15 @@ public class StringResolver<S> extends AbstractParamterResolver<S, String> {
     @Override
     public @NotNull String resolve(final @NotNull S source,
                                    final @NotNull Queue<String> args,
-                                   final @NotNull CommandParameter param) throws NoInputProvidedException, ParameterResolutionException {
+                                   final @NotNull CommandParameter param) throws ParameterResolutionException {
+        System.out.println("resolve");
         if (args.isEmpty()) {
-            throw new NoInputProvidedException();
+            throw new NoSuchElementException();
         }
 
         final String parsedValue;
         if (param.modifiers().has(Greedy.class)) {
+            System.out.println("greedy");
             final StringJoiner joiner = new StringJoiner(" ");
             while (!args.isEmpty()) {
                 joiner.add(args.remove());
@@ -44,38 +46,43 @@ public class StringResolver<S> extends AbstractParamterResolver<S, String> {
 
             parsedValue = joiner.toString();
         } else if (param.modifiers().has(Quoted.class)) {
+            System.out.println("quoted");
             final String first = args.remove().trim();
+            System.out.println(first);
             if (first.charAt(0) != QUOTE_SIGN) {
-                throw new ParameterResolutionException("Parameter must start with \"");
-            }
-            if (first.length() < 2) {
-                throw new ParameterResolutionException("Parameter length must be at least 3");
-            }
+                System.out.println("isn't quoted, result is first ^");
+                parsedValue = first;
 
-            final StringJoiner joiner = new StringJoiner(" ");
-            joiner.add(first.substring(1));
-            String each;
-            while ((each = args.poll()) != null) {
-                joiner.add(each);
-                if (Miscellaneous.endsWith(each, QUOTE_SIGN)) {
-                    break;
+            } else {
+                System.out.println("quoted");
+                final StringJoiner joiner = new StringJoiner(" ");
+                joiner.add(first.substring(1));
+                String each;
+                while ((each = args.poll()) != null) {
+                    joiner.add(each);
+                    if (Miscellaneous.endsWith(each, QUOTE_SIGN)) {
+                        break;
+                    }
                 }
+
+                final String joined = joiner.toString();
+                System.out.println(joined);
+
+                /*
+                 * If we ran out of arguments in the above loop, this will
+                 * make sure to throw an exception, if the last character
+                 * isn't QUOTE_SIGN.
+                 */
+                if (!Miscellaneous.endsWith(joined, QUOTE_SIGN)) {
+                    throw new ParameterResolutionException("Parameter must end with \"");
+                }
+
+                parsedValue = joined.substring(0, joined.length() - 1);
+                System.out.println(parsedValue);
             }
 
-            final String joined = joiner.toString();
-
-            /*
-             * If we ran out of arguments in the above loop, this will
-             * make sure to throw an exception, if the last character
-             * isn't QUOTE_SIGN.
-             */
-            if (!Miscellaneous.endsWith(joined, QUOTE_SIGN)) {
-                throw new ParameterResolutionException("Parameter must end with \"");
-            }
-
-            parsedValue = joined.substring(0, joined.length() - 1);
         } else {
-            parsedValue = args.remove();
+            parsedValue = args.element();
         }
 
         final Optional<Regex> regexOpt = param.modifiers().find(Regex.class);

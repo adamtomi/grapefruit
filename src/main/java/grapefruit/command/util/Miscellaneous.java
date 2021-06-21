@@ -40,4 +40,13 @@ public final class Miscellaneous {
         }
         return arg.regionMatches(true, 0, prefix, 0, prefix.length());
     }
+
+    public static boolean isNumber(final @NotNull String input) {
+        try {
+            Integer.parseInt(input);
+            return true;
+        } catch (final NumberFormatException ex) {
+            return false;
+        }
+    }
 }

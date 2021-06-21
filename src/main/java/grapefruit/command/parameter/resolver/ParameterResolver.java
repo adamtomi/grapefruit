@@ -14,7 +14,7 @@ public interface ParameterResolver<S, T> {
     @NotNull T resolve(final @NotNull S source,
                        final @NotNull Queue<String> args,
                        final @NotNull CommandParameter param)
-            throws NoInputProvidedException, ParameterResolutionException;
+            throws ParameterResolutionException;
 
     default @NotNull List<String> listSuggestions(final @NotNull S source,
                                                   final @NotNull String currentArg,

@@ -1,5 +1,7 @@
 package grapefruit.command.parameter.resolver;
 
+import grapefruit.command.parameter.resolver.builtin.BooleanResolver;
+import grapefruit.command.parameter.resolver.builtin.NumberResolver;
 import grapefruit.command.parameter.resolver.builtin.StringResolver;
 import grapefruit.command.util.Miscellaneous;
 import io.leangen.geantyref.TypeToken;
@@ -25,7 +27,18 @@ public final class ResolverRegistry<S> {
     }
 
     private void registerDefaults() {
-        this.defaultResolvers.put(TypeToken.get(String.class), new StringResolver<>());
+        internalRegister(new StringResolver<>());
+        internalRegister(new BooleanResolver<>());
+        internalRegister(new NumberResolver<>(TypeToken.get(Byte.class), Byte::parseByte));
+        internalRegister(new NumberResolver<>(TypeToken.get(Short.class), Short::parseShort));
+        internalRegister(new NumberResolver<>(TypeToken.get(Integer.class), Integer::parseInt));
+        internalRegister(new NumberResolver<>(TypeToken.get(Double.class), Double::parseDouble));
+        internalRegister(new NumberResolver<>(TypeToken.get(Float.class), Float::parseFloat));
+        internalRegister(new NumberResolver<>(TypeToken.get(Long.class), Long::parseLong));
+    }
+
+    private void internalRegister(final @NotNull ParameterResolver<S, ?> resolver) {
+        this.defaultResolvers.put(resolver.type(), resolver);
     }
 
     public void registerResolver(final @NotNull ParameterResolver<S, ?> resolver) {
