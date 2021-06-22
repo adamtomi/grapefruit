@@ -53,14 +53,15 @@ final class CommandGraph<S> {
         }
     }
 
-    public @NotNull Optional<CommandRegistration<S>> routeCommand(final @NotNull Queue<String> args) {
+    public @NotNull Optional<CommandRegistration<S>> routeCommand(final @NotNull Queue<CommandInput> args) {
         CommandNode<S> commandNode = this.rootNode;
-        String arg;
+        CommandInput arg;
         while ((arg = args.poll()) != null) {
-            Optional<CommandNode<S>> possibleChild = commandNode.findChild(arg);
+            final String rawInput = arg.rawInput();
+            Optional<CommandNode<S>> possibleChild = commandNode.findChild(rawInput);
             if (possibleChild.isEmpty()) {
                 for (final CommandNode<S> each : commandNode.children()) {
-                    if (each.aliases().contains(arg)) {
+                    if (each.aliases().contains(rawInput)) {
                         possibleChild = Optional.of(each);
                     }
                 }

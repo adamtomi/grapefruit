@@ -101,8 +101,9 @@ public final class CommandDispatcher<S> {
         requireNonNull(commandLine, "commandLine cannot be null");
         final CompletableFuture<?> result = new CompletableFuture<>();
         try {
-            final Queue<String> args = Arrays.stream(commandLine.split(" "))
+            final Queue<CommandInput> args = Arrays.stream(commandLine.split(" "))
                     .map(String::trim)
+                    .map(CommandInput::new)
                     .collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
             final Optional<CommandRegistration<S>> registrationOpt = this.commandGraph.routeCommand(args);
             if (registrationOpt.isPresent()) {
@@ -125,7 +126,7 @@ public final class CommandDispatcher<S> {
                     }
                 });
             } else {
-                throw new NoSuchCommandException(args.element(), commandLine);
+                throw new NoSuchCommandException(args.element().rawInput(), commandLine);
             }
         } catch (final CommandException ex) {
             result.completeExceptionally(ex);
@@ -136,23 +137,25 @@ public final class CommandDispatcher<S> {
 
     private void dispatchCommand(final @NotNull CommandRegistration<S> registration,
                                  final @NotNull S source,
-                                 final @NotNull Queue<String> args) throws CommandException {
+                                 final @NotNull Queue<CommandInput> args) throws CommandException {
         try {
             final Set<Object> objects = new LinkedHashSet<>();
             for (final ParameterNode<S> parameter : registration.parameters()) {
-                System.out.println(parameter);
                 try {
                     final Object parsedValue = parameter.resolver().resolve(source, args, parameter.parameter());
-                    System.out.println(parsedValue);
                     objects.add(parsedValue);
-                    System.out.println(objects);
-                    args.remove();
-                    System.out.println("removed");
+                    if (!args.isEmpty()) {
+                        args.element().markConsumed();
+                    }
                 } catch (final NoSuchElementException | ParameterResolutionException ex) {
                     if (!parameter.parameter().modifiers().has(OptParam.class)) {
                         throw ex;
                     } else {
                         objects.add(null);
+                    }
+                } finally {
+                    if (!args.isEmpty() && args.element().isConsumed()) {
+                        args.remove();
                     }
                 }
             }

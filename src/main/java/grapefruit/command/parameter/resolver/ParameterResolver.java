@@ -1,5 +1,6 @@
 package grapefruit.command.parameter.resolver;
 
+import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.parameter.CommandParameter;
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
@@ -12,7 +13,7 @@ public interface ParameterResolver<S, T> {
     @NotNull TypeToken<T> type();
 
     @NotNull T resolve(final @NotNull S source,
-                       final @NotNull Queue<String> args,
+                       final @NotNull Queue<CommandInput> args,
                        final @NotNull CommandParameter param)
             throws ParameterResolutionException;
 

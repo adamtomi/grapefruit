@@ -1,5 +1,6 @@
 package grapefruit.command.parameter.resolver.builtin;
 
+import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.modifier.Range;
 import grapefruit.command.parameter.resolver.AbstractParamterResolver;
@@ -52,9 +53,9 @@ public class NumberResolver<S, N extends Number> extends AbstractParamterResolve
 
     @Override
     public @NotNull N resolve(final @NotNull S source,
-                              final @NotNull Queue<String> args,
+                              final @NotNull Queue<CommandInput> args,
                               final @NotNull CommandParameter param) throws ParameterResolutionException {
-        final String input = args.element();
+        final String input = args.element().rawInput();
         try {
             final N result = this.converter.apply(input);
             final Optional<Range> rangeOpt = param.modifiers().find(Range.class);
@@ -63,13 +64,14 @@ public class NumberResolver<S, N extends Number> extends AbstractParamterResolve
                 final double min = range.min();
                 final double max = range.max();
                 final double found = result.doubleValue();
+
                 if (found < min || found > max) {
                     throw new ParameterResolutionException(format("Value has to be between %s and %s", min, max));
                 }
             }
 
             return result;
-        } catch (final Exception ex) {
+        } catch (final NumberFormatException ex) {
             throw new ParameterResolutionException(format("Invalid number input: %s", input));
         }
     }
