@@ -6,7 +6,8 @@ import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
 import grapefruit.command.dispatcher.exception.NoSuchCommandException;
 import grapefruit.command.parameter.CommandParameter;
-import grapefruit.command.parameter.modifier.Flag;
+import grapefruit.command.parameter.ParameterNode;
+import grapefruit.command.parameter.StandardParameter;
 import grapefruit.command.parameter.modifier.OptParam;
 import grapefruit.command.parameter.modifier.Source;
 import grapefruit.command.parameter.resolver.ParameterResolutionException;
@@ -23,10 +24,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
@@ -145,14 +144,30 @@ public final class CommandDispatcher<S> {
         return result;
     }
 
+    // TODO cleanup
+    // TODO optional parameters cause weird behaviour
     private void dispatchCommand(final @NotNull CommandRegistration<S> registration,
                                  final @NotNull S source,
                                  final @NotNull Queue<CommandInput> args) throws CommandException {
         System.out.println("dispatchCommand");
         System.out.println(args);
+        final List<ParameterToParse> objects = new ArrayList<>();
+        for (final ParameterNode<S> parameter : registration.parameters()) {
+            final CommandParameter cmdParam = parameter.unwrap();
+            final ParameterToParse ptp = new ParameterToParse();
+            ptp.name = parameter.name();
+            if (cmdParam.isOptional()) {
+                ptp.value = Miscellaneous.nullToPrimitive(GenericTypeReflector.erase(cmdParam.type().getType()));
+            } else if (parameter instanceof StandardParameter.PresenceFlag) {
+                ptp.value = false;
+            }
+
+            objects.add(ptp);
+        }
+
         try {
             int parameterIndex = 0;
-            final List<Object> objects = new ArrayList<>();
+            //final List<Object> objects = new ArrayList<>();
             // Store all parsed flags so we can check for duplicates
             final Set<String> parsedFlags = new HashSet<>();
             CommandInput input;
@@ -175,9 +190,9 @@ public final class CommandDispatcher<S> {
 
                         final Optional<ParameterNode<S>> flagParameterOpt = registration.parameters()
                                 .stream()
-                                .filter(param -> param.parameter().modifiers()
-                                        .find(Flag.class)
-                                        .map(annot -> annot.value().equalsIgnoreCase(flagName)).orElse(false))
+                                .filter(param -> param instanceof StandardParameter.ValueFlag
+                                        || param instanceof StandardParameter.PresenceFlag)
+                                .filter(param -> param.name().equals(flagName))
                                 .findFirst();
                         System.out.println(flagParameterOpt);
 
@@ -194,9 +209,18 @@ public final class CommandDispatcher<S> {
                         System.out.println(args);
                         final ParameterNode<S> flagParameter = flagParameterOpt.get();
                         System.out.println(flagParameter);
-                        final Object parsedValue = flagParameter.resolver().resolve(source, args, flagParameter.parameter());
-                        System.out.println(parsedValue);
-                        objects.add(flagParameter.parameter().index(), parsedValue);
+                        if (flagParameter instanceof StandardParameter.PresenceFlag) {
+                            //objects.add(true);
+                            objects.stream().filter(ptp -> ptp.name.equalsIgnoreCase(flagName))
+                                    .findFirst()
+                                    .ifPresent(ptp -> ptp.value = true);
+                        } else {
+                            final Object parsedValue = flagParameter.resolver().resolve(source, args, flagParameter.unwrap());
+                            System.out.println(parsedValue);
+                            //objects.add(flagParameter.unwrap().index(), parsedValue);
+                            objects.get(flagParameter.unwrap().index()).value = parsedValue;
+                        }
+
                         parsedFlags.add(flagName);
 
                     } else {
@@ -209,9 +233,10 @@ public final class CommandDispatcher<S> {
 
                         final ParameterNode<S> parameter = parameters.get(parameterIndex);
                         System.out.println(parameter);
-                        final Object parsedValue = parameter.resolver().resolve(source, args, parameter.parameter());
+                        final Object parsedValue = parameter.resolver().resolve(source, args, parameter.unwrap());
                         System.out.println(parsedValue);
-                        objects.add(parsedValue);
+                        //objects.add(parsedValue);
+                        objects.get(parameterIndex).value = parsedValue;
                         parameterIndex++;
                     }
 
@@ -226,9 +251,12 @@ public final class CommandDispatcher<S> {
                         throw ex;
                     } else {
                         final Class<?> type = GenericTypeReflector.erase(parameter.type().getType());
-                        objects.add(
+                        /*objects.add(
                                 type.isPrimitive() ? Miscellaneous.nullToPrimitive(type) : null
-                        );
+                        );*/
+                        objects.get(parameterIndex)
+                                .value =
+                                type.isPrimitive() ? Miscellaneous.nullToPrimitive(type) : null;
                     }
                 } finally {
                     if (!args.isEmpty() && args.element().isConsumed()) {
@@ -237,41 +265,8 @@ public final class CommandDispatcher<S> {
                 }
             }
 
-            dispatchCommand0(registration, source, objects);
-        } catch (final Throwable ex) {
-            throw new CommandException(ex);
-        }
-    }
-
-    private void dispatchCommand_old(final @NotNull CommandRegistration<S> registration,
-                                 final @NotNull S source,
-                                 final @NotNull Queue<CommandInput> args) throws CommandException {
-        try {
-            final Set<Object> objects = new LinkedHashSet<>();
-            for (final ParameterNode<S> parameter : registration.parameters()) {
-                try {
-                    final Object parsedValue = parameter.resolver().resolve(source, args, parameter.parameter());
-                    objects.add(parsedValue);
-                    if (!args.isEmpty()) {
-                        args.element().markConsumed();
-                    }
-                } catch (final NoSuchElementException | ParameterResolutionException ex) {
-                    if (!parameter.parameter().modifiers().has(OptParam.class)) {
-                        throw ex;
-                    } else {
-                        final Class<?> type = GenericTypeReflector.erase(parameter.parameter().type().getType());
-                        objects.add(
-                                type.isPrimitive() ? Miscellaneous.nullToPrimitive(type) : null
-                        );
-                    }
-                } finally {
-                    if (!args.isEmpty() && args.element().isConsumed()) {
-                        args.remove();
-                    }
-                }
-            }
-
-            dispatchCommand0(registration, source, objects);
+            //dispatchCommand0(registration, source, objects);
+            dispatchCommand0(registration, source, objects.stream().map(ptp -> ptp.value).collect(Collectors.toList()));
         } catch (final Throwable ex) {
             throw new CommandException(ex);
         }
@@ -344,5 +339,11 @@ public final class CommandDispatcher<S> {
 
     public enum Stage {
         PRE, POST
+    }
+
+    // TODO cleanup
+    public static final class ParameterToParse {
+        private String name;
+        private Object value;
     }
 }

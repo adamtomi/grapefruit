@@ -1,7 +1,10 @@
 package grapefruit.command.dispatcher;
 
 import grapefruit.command.parameter.CommandParameter;
+import grapefruit.command.parameter.ParameterNode;
+import grapefruit.command.parameter.StandardParameter;
 import grapefruit.command.parameter.modifier.Flag;
+import grapefruit.command.parameter.modifier.OptParam;
 import grapefruit.command.parameter.modifier.ParamModifier;
 import grapefruit.command.parameter.modifier.Range;
 import grapefruit.command.parameter.modifier.Resolver;
@@ -100,7 +103,12 @@ final class MethodParameterParser<S> {
                 final String parameterName = annotations.find(Flag.class)
                         .map(Flag::value)
                         .orElse(parameter.getName());
-                final CommandParameter cmdParam = new CommandParameter(parameterName, i, TypeToken.get(parameter.getType()), annotations);
+                if (parameters.stream().anyMatch(x -> x.name().equalsIgnoreCase(parameterName))) {
+                    throw new IllegalArgumentException(format("Duplicate parameters with name %s", parameterName));
+                }
+
+                final CommandParameter cmdParam = new CommandParameter(i,
+                        TypeToken.get(parameter.getType()), annotations, annotations.has(OptParam.class));
                 final ParameterResolver<S, ?> resolver;
                 final Optional<Resolver> resolverAnnot = annotations.find(Resolver.class);
 
@@ -113,7 +121,12 @@ final class MethodParameterParser<S> {
                             .orElseThrow(() -> new IllegalArgumentException(format("Could not find ParameterResolver for type %s", cmdParam.type().getType())));
                 }
 
-                parameters.add(new ParameterNode<>(resolver, cmdParam, annotations.has(Flag.class)));
+                final ParameterNode<S> node = annotations.has(Flag.class)
+                        ? cmdParam.type().getType().equals(Boolean.TYPE)
+                        ? new StandardParameter.PresenceFlag<>(parameterName, cmdParam)
+                        : new StandardParameter.ValueFlag<>(parameterName, resolver, cmdParam)
+                        : new StandardParameter<>(parameterName, resolver, cmdParam);
+                parameters.add(node);
             }
         }
 

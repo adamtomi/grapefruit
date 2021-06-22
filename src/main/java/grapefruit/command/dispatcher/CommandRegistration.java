@@ -1,5 +1,6 @@
 package grapefruit.command.dispatcher;
 
+import grapefruit.command.parameter.ParameterNode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

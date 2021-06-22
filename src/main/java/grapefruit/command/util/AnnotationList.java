@@ -26,4 +26,9 @@ public record AnnotationList(@NotNull Collection<Annotation> elements) {
     public <A extends Annotation> boolean has(final @NotNull Class<A> clazz) {
         return find(clazz).isPresent();
     }
+
+    @Override
+    public final @NotNull Collection<Annotation> elements() {
+        return List.copyOf(this.elements);
+    }
 }

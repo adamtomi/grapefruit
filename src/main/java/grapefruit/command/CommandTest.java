@@ -2,6 +2,7 @@ package grapefruit.command;
 
 import grapefruit.command.dispatcher.CommandDispatcher;
 import grapefruit.command.parameter.modifier.Flag;
+import grapefruit.command.parameter.modifier.OptParam;
 import grapefruit.command.parameter.modifier.string.Quotable;
 
 public class CommandTest {
@@ -34,6 +35,12 @@ public class CommandTest {
                     ex.printStackTrace();
                     return null;
                 });
+        dispatcher.dispatchCommand(source, "test3")
+                .thenRun(() -> System.out.println("executed successfully"))
+                .exceptionally(ex -> {
+                    ex.printStackTrace();
+                    return null;
+                });
     }
 
     public static final class TestCommands implements CommandContainer {
@@ -53,6 +60,12 @@ public class CommandTest {
         @CommandDefinition(route = "test2")
         public void onCommand2(final @Flag("test") boolean test) {
             System.out.println(test);
+        }
+
+        @CommandDefinition(route = "test3")
+        public void onCommand3(final @OptParam int i, final String str) {
+            System.out.println(str);
+            System.out.println(i);
         }
     }
 }
