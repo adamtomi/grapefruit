@@ -56,6 +56,7 @@ public final class CommandDispatcher<S> {
     }
 
     public void registerCommands(final @NotNull CommandContainer container) {
+        requireNonNull(container, "container cannot be null");
         for (final Method method : container.getClass().getDeclaredMethods()) {
             if (!method.isAnnotationPresent(CommandDefinition.class)) {
                 continue;
