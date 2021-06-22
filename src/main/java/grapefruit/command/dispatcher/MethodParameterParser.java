@@ -1,6 +1,7 @@
 package grapefruit.command.dispatcher;
 
 import grapefruit.command.parameter.CommandParameter;
+import grapefruit.command.parameter.modifier.Flag;
 import grapefruit.command.parameter.modifier.ParamModifier;
 import grapefruit.command.parameter.modifier.Range;
 import grapefruit.command.parameter.modifier.Resolver;
@@ -87,7 +88,8 @@ final class MethodParameterParser<S> {
     @SuppressWarnings("unchecked")
     @NotNull List<ParameterNode<S>> collectParameters(final @NotNull Method method) throws RuleViolationException {
         final List<ParameterNode<S>> parameters = new ArrayList<>();
-        for (final Parameter parameter : method.getParameters()) {
+        for (int i = 0; i < method.getParameters().length; i++) {
+            final Parameter parameter = method.getParameters()[i];
             final AnnotationList annotations = new AnnotationList(parameter.getAnnotations());
 
             for (final Rule rule : this.rules) {
@@ -95,7 +97,10 @@ final class MethodParameterParser<S> {
             }
 
             if (!annotations.has(Source.class)) {
-                final CommandParameter cmdParam = new CommandParameter(TypeToken.get(parameter.getType()), annotations);
+                final String parameterName = annotations.find(Flag.class)
+                        .map(Flag::value)
+                        .orElse(parameter.getName());
+                final CommandParameter cmdParam = new CommandParameter(parameterName, i, TypeToken.get(parameter.getType()), annotations);
                 final ParameterResolver<S, ?> resolver;
                 final Optional<Resolver> resolverAnnot = annotations.find(Resolver.class);
 
@@ -108,7 +113,7 @@ final class MethodParameterParser<S> {
                             .orElseThrow(() -> new IllegalArgumentException(format("Could not find ParameterResolver for type %s", cmdParam.type().getType())));
                 }
 
-                parameters.add(new ParameterNode<>(resolver, cmdParam));
+                parameters.add(new ParameterNode<>(resolver, cmdParam, annotations.has(Flag.class)));
             }
         }
 

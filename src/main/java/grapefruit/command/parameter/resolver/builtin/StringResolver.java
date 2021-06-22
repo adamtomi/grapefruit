@@ -32,10 +32,6 @@ public class StringResolver<S> extends AbstractParamterResolver<S, String> {
     public @NotNull String resolve(final @NotNull S source,
                                    final @NotNull Queue<CommandInput> args,
                                    final @NotNull CommandParameter param) throws ParameterResolutionException {
-        if (args.isEmpty()) {
-            throw new NoSuchElementException();
-        }
-
         final String parsedValue;
         if (param.modifiers().has(Greedy.class)) {
             final StringJoiner joiner = new StringJoiner(" ");
@@ -74,7 +70,7 @@ public class StringResolver<S> extends AbstractParamterResolver<S, String> {
                  * isn't QUOTE_SIGN.
                  */
                 if (!Miscellaneous.endsWith(joined, QUOTE_SIGN)) {
-                    throw new ParameterResolutionException("Parameter must end with \"");
+                    throw new ParameterResolutionException("Parameter must end with \"", param);
                 }
 
                 parsedValue = joined.substring(0, joined.length() - 1);
@@ -93,7 +89,7 @@ public class StringResolver<S> extends AbstractParamterResolver<S, String> {
             final Matcher matcher = pattern.matcher(parsedValue);
 
             if (!matcher.matches()) {
-                throw new ParameterResolutionException(format("Parameter must match regex %s", pattern.pattern()));
+                throw new ParameterResolutionException(format("Parameter must match regex %s", pattern.pattern()), param);
             }
         }
 

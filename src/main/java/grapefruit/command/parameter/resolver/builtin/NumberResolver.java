@@ -66,13 +66,13 @@ public class NumberResolver<S, N extends Number> extends AbstractParamterResolve
                 final double found = result.doubleValue();
 
                 if (found < min || found > max) {
-                    throw new ParameterResolutionException(format("Value has to be between %s and %s", min, max));
+                    throw new ParameterResolutionException(format("Value has to be between %s and %s", min, max), param);
                 }
             }
 
             return result;
         } catch (final NumberFormatException ex) {
-            throw new ParameterResolutionException(format("Invalid number input: %s", input));
+            throw new ParameterResolutionException(format("Invalid number input: %s", input), param);
         }
     }
 

@@ -36,7 +36,7 @@ public class BooleanResolver<S> extends AbstractParamterResolver<S, Boolean> {
             return false;
         }
 
-        throw new ParameterResolutionException(format("Invalid boolean input: %s", input));
+        throw new ParameterResolutionException(format("Invalid boolean input: %s", input), param);
     }
 
     @Override

@@ -5,6 +5,8 @@ import grapefruit.command.CommandDefinition;
 import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
 import grapefruit.command.dispatcher.exception.NoSuchCommandException;
+import grapefruit.command.parameter.CommandParameter;
+import grapefruit.command.parameter.modifier.Flag;
 import grapefruit.command.parameter.modifier.OptParam;
 import grapefruit.command.parameter.modifier.Source;
 import grapefruit.command.parameter.resolver.ParameterResolutionException;
@@ -17,10 +19,13 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Queue;
@@ -29,6 +34,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
@@ -37,6 +44,7 @@ import static java.util.Objects.requireNonNull;
 
 public final class CommandDispatcher<S> {
     private static final System.Logger LOGGER = System.getLogger(CommandDispatcher.class.getName());
+    private static final Pattern FLAG_PATTERN = Pattern.compile("^--(.+)$");
     private final MethodHandles.Lookup lookup = MethodHandles.lookup();
     private final CommandGraph<S> commandGraph = new CommandGraph<>();
     private final ResolverRegistry<S> resolverRegistry = new ResolverRegistry<>();
@@ -138,6 +146,104 @@ public final class CommandDispatcher<S> {
     }
 
     private void dispatchCommand(final @NotNull CommandRegistration<S> registration,
+                                 final @NotNull S source,
+                                 final @NotNull Queue<CommandInput> args) throws CommandException {
+        System.out.println("dispatchCommand");
+        System.out.println(args);
+        try {
+            int parameterIndex = 0;
+            final List<Object> objects = new ArrayList<>();
+            // Store all parsed flags so we can check for duplicates
+            final Set<String> parsedFlags = new HashSet<>();
+            CommandInput input;
+            while ((input = args.peek()) != null) {
+                System.out.println("========================================");
+                System.out.println(input);
+                System.out.println(parameterIndex);
+                System.out.println(objects);
+                System.out.println(parsedFlags);
+                System.out.println("--------------------");
+                try {
+                    final String rawInput = input.rawInput();
+                    final Matcher matcher = FLAG_PATTERN.matcher(rawInput);
+                    if (matcher.matches()) {
+                        System.out.println("flag");
+                        final String flagName = matcher.group(1).toLowerCase(Locale.ROOT);
+                        if (parsedFlags.contains(flagName)) {
+                            throw new CommandException(format("Duplicate flag values for: %s", flagName));
+                        }
+
+                        final Optional<ParameterNode<S>> flagParameterOpt = registration.parameters()
+                                .stream()
+                                .filter(param -> param.parameter().modifiers()
+                                        .find(Flag.class)
+                                        .map(annot -> annot.value().equalsIgnoreCase(flagName)).orElse(false))
+                                .findFirst();
+                        System.out.println(flagParameterOpt);
+
+                        if (flagParameterOpt.isEmpty()) {
+                            throw new CommandException(format("Unrecognized flag: %s", flagName));
+                        }
+
+                        System.out.println("valid flag");
+                        input.markConsumed();
+                        System.out.println("marked as consumed");
+                        System.out.println("removing flag");
+                        args.remove();
+                        System.out.println("done");
+                        System.out.println(args);
+                        final ParameterNode<S> flagParameter = flagParameterOpt.get();
+                        System.out.println(flagParameter);
+                        final Object parsedValue = flagParameter.resolver().resolve(source, args, flagParameter.parameter());
+                        System.out.println(parsedValue);
+                        objects.add(flagParameter.parameter().index(), parsedValue);
+                        parsedFlags.add(flagName);
+
+                    } else {
+                        System.out.println("not a flag");
+                        final List<ParameterNode<S>> parameters = registration.parameters();
+                        System.out.println(parameters.size());
+                        if (parameterIndex >= parameters.size()) {
+                            throw new CommandException("Too many arguments!");
+                        }
+
+                        final ParameterNode<S> parameter = parameters.get(parameterIndex);
+                        System.out.println(parameter);
+                        final Object parsedValue = parameter.resolver().resolve(source, args, parameter.parameter());
+                        System.out.println(parsedValue);
+                        objects.add(parsedValue);
+                        parameterIndex++;
+                    }
+
+                    if (!args.isEmpty()) {
+                        System.out.println("markConsumed");
+                        args.element().markConsumed();
+                    }
+                    System.out.println("========================================");
+                } catch (final ParameterResolutionException ex) {
+                    final CommandParameter parameter = ex.parameter();
+                    if (!parameter.modifiers().has(OptParam.class)) {
+                        throw ex;
+                    } else {
+                        final Class<?> type = GenericTypeReflector.erase(parameter.type().getType());
+                        objects.add(
+                                type.isPrimitive() ? Miscellaneous.nullToPrimitive(type) : null
+                        );
+                    }
+                } finally {
+                    if (!args.isEmpty() && args.element().isConsumed()) {
+                        args.remove();
+                    }
+                }
+            }
+
+            dispatchCommand0(registration, source, objects);
+        } catch (final Throwable ex) {
+            throw new CommandException(ex);
+        }
+    }
+
+    private void dispatchCommand_old(final @NotNull CommandRegistration<S> registration,
                                  final @NotNull S source,
                                  final @NotNull Queue<CommandInput> args) throws CommandException {
         try {

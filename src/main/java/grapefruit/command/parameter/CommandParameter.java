@@ -4,5 +4,7 @@ import grapefruit.command.util.AnnotationList;
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
-public record CommandParameter(@NotNull TypeToken<?> type,
+public record CommandParameter(@NotNull String name,
+                               int index,
+                               @NotNull TypeToken<?> type,
                                @NotNull AnnotationList modifiers) {}
