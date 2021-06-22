@@ -10,6 +10,7 @@ import grapefruit.command.parameter.modifier.Source;
 import grapefruit.command.parameter.resolver.ParameterResolutionException;
 import grapefruit.command.parameter.resolver.ResolverRegistry;
 import grapefruit.command.util.Miscellaneous;
+import io.leangen.geantyref.GenericTypeReflector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -151,7 +152,10 @@ public final class CommandDispatcher<S> {
                     if (!parameter.parameter().modifiers().has(OptParam.class)) {
                         throw ex;
                     } else {
-                        objects.add(null);
+                        final Class<?> type = GenericTypeReflector.erase(parameter.parameter().type().getType());
+                        objects.add(
+                                type.isPrimitive() ? Miscellaneous.nullToPrimitive(type) : null
+                        );
                     }
                 } finally {
                     if (!args.isEmpty() && args.element().isConsumed()) {

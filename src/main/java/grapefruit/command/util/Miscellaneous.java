@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Type;
 
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 public final class Miscellaneous {
@@ -48,5 +49,27 @@ public final class Miscellaneous {
         } catch (final NumberFormatException ex) {
             return false;
         }
+    }
+
+    public static @NotNull Object nullToPrimitive(final @NotNull Class<?> clazz) {
+        if (clazz.equals(Boolean.TYPE)) {
+            return Boolean.FALSE;
+        } else if (clazz.equals(Byte.TYPE)) {
+            return (byte) 0;
+        } else if (clazz.equals(Short.TYPE)) {
+            return (short) 0;
+        } else if (clazz.equals(Integer.TYPE)) {
+            return 0;
+        } else if (clazz.equals(Float.TYPE)) {
+            return 0.0F;
+        } else if (clazz.equals(Double.TYPE)) {
+            return 0.0D;
+        } else if (clazz.equals(Long.TYPE)) {
+            return 0L;
+        } else if (clazz.equals(Character.TYPE)) {
+            return ' ';
+        }
+
+        throw new IllegalArgumentException(format("Class %s is not primitive", clazz));
     }
 }
