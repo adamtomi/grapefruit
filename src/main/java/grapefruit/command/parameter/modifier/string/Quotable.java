@@ -10,4 +10,4 @@ import java.lang.annotation.Target;
 @ParamModifier
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-public @interface Quoted {}
+public @interface Quotable {}

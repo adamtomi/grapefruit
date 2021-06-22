@@ -3,7 +3,7 @@ package grapefruit.command.parameter.resolver.builtin;
 import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.modifier.string.Greedy;
-import grapefruit.command.parameter.modifier.string.Quoted;
+import grapefruit.command.parameter.modifier.string.Quotable;
 import grapefruit.command.parameter.modifier.string.Regex;
 import grapefruit.command.parameter.resolver.AbstractParamterResolver;
 import grapefruit.command.parameter.resolver.ParameterResolutionException;
@@ -46,7 +46,7 @@ public class StringResolver<S> extends AbstractParamterResolver<S, String> {
             }
 
             parsedValue = joiner.toString();
-        } else if (param.modifiers().has(Quoted.class)) {
+        } else if (param.modifiers().has(Quotable.class)) {
             final String first = args.remove().rawInput().trim();
             if (first.charAt(0) != QUOTE_SIGN) {
                 parsedValue = first;
