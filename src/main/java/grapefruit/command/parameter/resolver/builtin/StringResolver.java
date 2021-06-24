@@ -1,6 +1,6 @@
 package grapefruit.command.parameter.resolver.builtin;
 
-import grapefruit.command.dispatcher.CommandArg;
+import grapefruit.command.dispatcher.CommandArgument;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.modifier.string.Greedy;
 import grapefruit.command.parameter.modifier.string.Quotable;
@@ -29,13 +29,13 @@ public class StringResolver<S> extends AbstractParamterResolver<S, String> {
 
     @Override
     public @NotNull String resolve(final @NotNull S source,
-                                   final @NotNull Queue<CommandArg> args,
+                                   final @NotNull Queue<CommandArgument> args,
                                    final @NotNull CommandParameter param) throws ParameterResolutionException {
         final String parsedValue;
         if (param.modifiers().has(Greedy.class)) {
             final StringJoiner joiner = new StringJoiner(" ");
             while (!args.isEmpty()) {
-                final CommandArg each = args.remove();
+                final CommandArgument each = args.remove();
                 joiner.add(each.rawArg());
                 each.markConsumed();
             }
@@ -52,7 +52,7 @@ public class StringResolver<S> extends AbstractParamterResolver<S, String> {
                 joiner.add(first.substring(1));
 
                 while (!args.isEmpty()) {
-                    final CommandArg each = args.remove();
+                    final CommandArgument each = args.remove();
                     final String rawInput = each.rawArg();
                     joiner.add(rawInput);
                     each.markConsumed();

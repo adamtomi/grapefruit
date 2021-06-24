@@ -1,6 +1,6 @@
 package grapefruit.command.parameter;
 
-import grapefruit.command.dispatcher.CommandArg;
+import grapefruit.command.dispatcher.CommandArgument;
 import grapefruit.command.parameter.resolver.ParameterResolver;
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
@@ -92,7 +92,7 @@ public class StandardParameter<S> implements ParameterNode<S> {
 
             @Override
             public @NotNull Void resolve(final @NotNull S source,
-                                         final @NotNull Queue<CommandArg> args,
+                                         final @NotNull Queue<CommandArgument> args,
                                          final @NotNull CommandParameter param) {
                 throw new UnsupportedOperationException();
             }
