@@ -7,11 +7,11 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
-public class CommandArg {
+public class CommandArgument {
     private final String rawArg;
     private boolean consumed = false;
 
-    CommandArg(final @NotNull String rawArg) {
+    CommandArgument(final @NotNull String rawArg) {
         this.rawArg = requireNonNull(rawArg, "rawInput cannot be null");
     }
 
@@ -39,7 +39,7 @@ public class CommandArg {
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final CommandArg that = (CommandArg) o;
+        final CommandArgument that = (CommandArgument) o;
         return this.consumed == that.consumed && Objects.equals(this.rawArg, that.rawArg);
     }
 
