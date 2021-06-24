@@ -1,6 +1,8 @@
 package grapefruit.command.dispatcher;
 
 import grapefruit.command.parameter.ParameterNode;
+import grapefruit.command.parameter.StandardParameter;
+import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -118,16 +120,32 @@ final class CommandGraph<S> {
         if (registrationOpt.isPresent()) {
             final int lastParameterIndex = args.size() - 1;
             final CommandRegistration<S> registration = registrationOpt.get();
-            if (registration.parameters().size() <= lastParameterIndex) {
+            final String lastArgument = args.pollLast();
+            if (registration.parameters().size() <= lastParameterIndex
+                    || lastArgument == null) {
                 return List.of();
             }
 
             final ParameterNode<S> lastParameter = registration.parameters().get(lastParameterIndex);
-            final String lastArgument = args.peekLast();
+            /*if (lastParameter instanceof StandardParameter.ValueFlag) {
+                System.out.println("valueFlag");
+                final String prevArgument = args.peekLast();
+                if (prevArgument == null) {
+                    System.out.println("null");
+                    return List.of();
+                }
 
-            return lastArgument == null
-                    ? List.of()
-                    : lastParameter.resolver().listSuggestions(source, lastArgument, lastParameter.unwrap());
+                if (prevArgument.equalsIgnoreCase(Miscellaneous.formatFlag(lastParameter.name()))) {
+                    System.out.println("last parameter is flag");
+                    return lastParameter.resolver().listSuggestions(source, args.getLast(), lastParameter.unwrap());
+                } else {
+                    System.out.println("last parameter is not flag");
+                    return List.of(Miscellaneous.formatFlag(lastParameter.name()));
+                }
+            }*/
+
+            return lastParameter.resolver().listSuggestions(source, lastArgument, lastParameter.unwrap());
+
         } else {
             return commandNode.children().stream()
                     .map(x -> {

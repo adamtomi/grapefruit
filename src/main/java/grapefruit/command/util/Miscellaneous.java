@@ -72,4 +72,8 @@ public final class Miscellaneous {
 
         throw new IllegalArgumentException(format("Class %s is not primitive", clazz));
     }
+
+    public static @NotNull String formatFlag(final @NotNull String flagName) {
+        return format("--%s", requireNonNull(flagName, "flagName cannot be null"));
+    }
 }

@@ -2,6 +2,7 @@ package grapefruit.command.parameter;
 
 import grapefruit.command.dispatcher.CommandArgument;
 import grapefruit.command.parameter.resolver.ParameterResolver;
+import grapefruit.command.util.Miscellaneous;
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 public class StandardParameter<S> implements ParameterNode<S> {
@@ -101,7 +103,7 @@ public class StandardParameter<S> implements ParameterNode<S> {
             public @NotNull List<String> listSuggestions(final @NotNull S source,
                                                          final @NotNull String currentArg,
                                                          final @NotNull CommandParameter param) {
-                return List.of(this.name);
+                return List.of(Miscellaneous.formatFlag(this.name));
             }
         }
     }
