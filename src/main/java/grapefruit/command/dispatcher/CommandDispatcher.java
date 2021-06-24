@@ -19,9 +19,11 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -102,14 +104,14 @@ public final class CommandDispatcher<S> {
     }
 
     public CompletableFuture<CommandResult> dispatchCommand(final @NotNull S source,
-                                                final @NotNull String commandLine) {
+                                                            final @NotNull String commandLine) {
         requireNonNull(source, "source cannot be null");
         requireNonNull(commandLine, "commandLine cannot be null");
         final CompletableFuture<CommandResult> resultFuture = new CompletableFuture<>();
         try {
-            final Queue<CommandArg> args = Arrays.stream(commandLine.split(" "))
+            final Queue<CommandArgument> args = Arrays.stream(commandLine.split(" "))
                     .map(String::trim)
-                    .map(CommandArg::new)
+                    .map(CommandArgument::new)
                     .collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
             final Optional<CommandRegistration<S>> registrationOpt = this.commandGraph.routeCommand(args);
             if (registrationOpt.isPresent()) {
@@ -144,11 +146,11 @@ public final class CommandDispatcher<S> {
     private @NotNull CommandResult dispatchCommand(final @NotNull CommandRegistration<S> registration,
                                                    final @NotNull String commandLine,
                                                    final @NotNull S source,
-                                                   final @NotNull Queue<CommandArg> args) throws CommandException {
+                                                   final @NotNull Queue<CommandArgument> args) throws CommandException {
         final CommandResult result = new CommandResult(commandLine, preprocessArguments(registration.parameters()));
         try {
             int parameterIndex = 0;
-            CommandArg input;
+            CommandArgument input;
             while ((input = args.peek()) != null) {
                 try {
                     final String rawInput = input.rawArg();
@@ -251,7 +253,7 @@ public final class CommandDispatcher<S> {
                                   final @NotNull Collection<Object> args) throws Throwable {
         final Object[] finalArgs;
         if (reg.requiresCommandSource()) {
-            finalArgs = new Object[args.size()+ 1];
+            finalArgs = new Object[args.size() + 1];
             finalArgs[0] = source;
             int idx = 1;
             for (final Object arg : args) {
@@ -265,8 +267,25 @@ public final class CommandDispatcher<S> {
         reg.methodHandle().invokeWithArguments(finalArgs);
     }
 
-    public @NotNull List<String> listSuggestions(final @NotNull S source, final @NotNull String[] args) {
-        return List.of();
+    public @NotNull List<String> listSuggestions(final @NotNull S source,
+                                                 final @NotNull String commandLine) {
+        requireNonNull(source, "source cannot be null");
+        final Deque<String> args = Arrays.stream(commandLine.split(" "))
+                .map(String::trim)
+                .collect(Collectors.toCollection(ArrayDeque::new));
+        if (args.size() == 0) {
+            return List.of();
+        }
+
+        if (commandLine.charAt(commandLine.length() - 1) == ' ') {
+            args.add(""); // This is a bit hacky
+        }
+
+        final String last = args.getLast();
+        return this.commandGraph.listSuggestions(source, args)
+                .stream()
+                .filter(x -> Miscellaneous.startsWithIgnoreCase(x, last))
+                .collect(Collectors.toList());
     }
 
     public static <S> @NotNull Builder<S> builder() {

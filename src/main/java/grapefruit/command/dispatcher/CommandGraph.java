@@ -1,8 +1,12 @@
 package grapefruit.command.dispatcher;
 
+import grapefruit.command.parameter.ParameterNode;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -35,7 +39,7 @@ final class CommandGraph<S> {
         for (final Iterator<RouteFragment> iter = parts.iterator(); iter.hasNext();) {
             final RouteFragment current = iter.next();
             final boolean last = !iter.hasNext();
-            final CommandNode<S> childNode = new CommandNode<S>(current.primary(), current.aliases(), !last ? null : reg);
+            final CommandNode<S> childNode = new CommandNode<>(current.primary(), current.aliases(), !last ? null : reg);
             final Optional<CommandNode<S>> possibleChild = node.findChild(childNode.primary());
 
             if (possibleChild.isPresent()) {
@@ -53,9 +57,9 @@ final class CommandGraph<S> {
         }
     }
 
-    public @NotNull Optional<CommandRegistration<S>> routeCommand(final @NotNull Queue<CommandArg> args) {
+    public @NotNull Optional<CommandRegistration<S>> routeCommand(final @NotNull Queue<CommandArgument> args) {
         CommandNode<S> commandNode = this.rootNode;
-        CommandArg arg;
+        CommandArgument arg;
         while ((arg = args.poll()) != null) {
             final String rawInput = arg.rawArg();
             Optional<CommandNode<S>> possibleChild = commandNode.findChild(rawInput);
@@ -82,8 +86,59 @@ final class CommandGraph<S> {
         return Optional.empty();
     }
 
-    public @NotNull List<String> listSuggestions(final @NotNull String[] args) {
-        return List.of();
+    public @NotNull List<String> listSuggestions(final @NotNull S source, final @NotNull Deque<String> args) {
+        CommandNode<S> commandNode = this.rootNode;
+        String part;
+        while ((part = args.peek()) != null) {
+            if (commandNode.registration().isPresent()) {
+                break;
+
+            } else {
+                Optional<CommandNode<S>> childNode = commandNode.findChild(part);
+                if (childNode.isPresent()) {
+                    commandNode = childNode.get();
+
+                } else {
+                    for (final CommandNode<S> each : commandNode.children()) {
+                        if (each.aliases().contains(part)) {
+                            childNode = Optional.of(each);
+                        }
+                    }
+                }
+
+                if (childNode.isEmpty()) {
+                    break;
+                }
+            }
+
+            args.remove();
+        }
+
+        final Optional<CommandRegistration<S>> registrationOpt = commandNode.registration();
+        if (registrationOpt.isPresent()) {
+            final int lastParameterIndex = args.size() - 1;
+            final CommandRegistration<S> registration = registrationOpt.get();
+            if (registration.parameters().size() <= lastParameterIndex) {
+                return List.of();
+            }
+
+            final ParameterNode<S> lastParameter = registration.parameters().get(lastParameterIndex);
+            final String lastArgument = args.peekLast();
+
+            return lastArgument == null
+                    ? List.of()
+                    : lastParameter.resolver().listSuggestions(source, lastArgument, lastParameter.unwrap());
+        } else {
+            return commandNode.children().stream()
+                    .map(x -> {
+                        final List<String> suggestions = new ArrayList<>();
+                        suggestions.add(x.primary());
+                        suggestions.addAll(x.aliases());
+                        return suggestions;
+                    })
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toList());
+        }
     }
 
     private static final record RouteFragment (@NotNull String primary, @NotNull String[] aliases) {}
