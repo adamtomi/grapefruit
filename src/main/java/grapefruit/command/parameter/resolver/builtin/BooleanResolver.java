@@ -1,6 +1,6 @@
 package grapefruit.command.parameter.resolver.builtin;
 
-import grapefruit.command.dispatcher.CommandInput;
+import grapefruit.command.dispatcher.CommandArg;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.resolver.AbstractParamterResolver;
 import grapefruit.command.parameter.resolver.ParameterResolutionException;
@@ -27,9 +27,9 @@ public class BooleanResolver<S> extends AbstractParamterResolver<S, Boolean> {
 
     @Override
     public @NotNull Boolean resolve(final @NotNull S source,
-                                    final @NotNull Queue<CommandInput> args,
+                                    final @NotNull Queue<CommandArg> args,
                                     final @NotNull CommandParameter param) throws ParameterResolutionException {
-        final String input = args.element().rawInput().toLowerCase(Locale.ROOT);
+        final String input = args.element().rawArg().toLowerCase(Locale.ROOT);
         if (TRUE_PHRASES.contains(input)) {
             return true;
         } else if (FALSE_PHRASES.contains(input)) {

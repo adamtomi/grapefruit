@@ -8,7 +8,6 @@ import grapefruit.command.dispatcher.exception.NoSuchCommandException;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.ParameterNode;
 import grapefruit.command.parameter.StandardParameter;
-import grapefruit.command.parameter.modifier.OptParam;
 import grapefruit.command.parameter.modifier.Source;
 import grapefruit.command.parameter.resolver.ParameterResolutionException;
 import grapefruit.command.parameter.resolver.ResolverRegistry;
@@ -23,12 +22,10 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
@@ -104,15 +101,15 @@ public final class CommandDispatcher<S> {
         }
     }
 
-    public CompletableFuture<?> dispatchCommand(final @NotNull S source,
+    public CompletableFuture<CommandResult> dispatchCommand(final @NotNull S source,
                                                 final @NotNull String commandLine) {
         requireNonNull(source, "source cannot be null");
         requireNonNull(commandLine, "commandLine cannot be null");
-        final CompletableFuture<?> result = new CompletableFuture<>();
+        final CompletableFuture<CommandResult> resultFuture = new CompletableFuture<>();
         try {
-            final Queue<CommandInput> args = Arrays.stream(commandLine.split(" "))
+            final Queue<CommandArg> args = Arrays.stream(commandLine.split(" "))
                     .map(String::trim)
-                    .map(CommandInput::new)
+                    .map(CommandArg::new)
                     .collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
             final Optional<CommandRegistration<S>> registrationOpt = this.commandGraph.routeCommand(args);
             if (registrationOpt.isPresent()) {
@@ -128,135 +125,79 @@ public final class CommandDispatcher<S> {
                         : this.sameThreadExecutor;
                 executor.execute(() -> {
                     try {
-                        dispatchCommand(reg, source, args);
-                        result.complete(null);
+                        final CommandResult commandResult = dispatchCommand(reg, commandLine, source, args);
+                        resultFuture.complete(commandResult);
                     } catch (final CommandException ex) {
-                        result.completeExceptionally(ex);
+                        resultFuture.completeExceptionally(ex);
                     }
                 });
             } else {
-                throw new NoSuchCommandException(args.element().rawInput(), commandLine);
+                throw new NoSuchCommandException(args.element().rawArg(), commandLine);
             }
         } catch (final CommandException ex) {
-            result.completeExceptionally(ex);
+            resultFuture.completeExceptionally(ex);
         }
 
-        return result;
+        return resultFuture;
     }
 
-    // TODO cleanup
-    // TODO optional parameters cause weird behaviour
-    private void dispatchCommand(final @NotNull CommandRegistration<S> registration,
-                                 final @NotNull S source,
-                                 final @NotNull Queue<CommandInput> args) throws CommandException {
-        System.out.println("dispatchCommand");
-        System.out.println(args);
-        final List<ParameterToParse> objects = new ArrayList<>();
-        for (final ParameterNode<S> parameter : registration.parameters()) {
-            final CommandParameter cmdParam = parameter.unwrap();
-            final ParameterToParse ptp = new ParameterToParse();
-            ptp.name = parameter.name();
-            if (cmdParam.isOptional()) {
-                ptp.value = Miscellaneous.nullToPrimitive(GenericTypeReflector.erase(cmdParam.type().getType()));
-            } else if (parameter instanceof StandardParameter.PresenceFlag) {
-                ptp.value = false;
-            }
-
-            objects.add(ptp);
-        }
-
+    private @NotNull CommandResult dispatchCommand(final @NotNull CommandRegistration<S> registration,
+                                                   final @NotNull String commandLine,
+                                                   final @NotNull S source,
+                                                   final @NotNull Queue<CommandArg> args) throws CommandException {
+        final CommandResult result = new CommandResult(commandLine, preprocessArguments(registration.parameters()));
         try {
             int parameterIndex = 0;
-            //final List<Object> objects = new ArrayList<>();
-            // Store all parsed flags so we can check for duplicates
-            final Set<String> parsedFlags = new HashSet<>();
-            CommandInput input;
+            CommandArg input;
             while ((input = args.peek()) != null) {
-                System.out.println("========================================");
-                System.out.println(input);
-                System.out.println(parameterIndex);
-                System.out.println(objects);
-                System.out.println(parsedFlags);
-                System.out.println("--------------------");
                 try {
-                    final String rawInput = input.rawInput();
+                    final String rawInput = input.rawArg();
                     final Matcher matcher = FLAG_PATTERN.matcher(rawInput);
                     if (matcher.matches()) {
-                        System.out.println("flag");
                         final String flagName = matcher.group(1).toLowerCase(Locale.ROOT);
-                        if (parsedFlags.contains(flagName)) {
-                            throw new CommandException(format("Duplicate flag values for: %s", flagName));
-                        }
-
                         final Optional<ParameterNode<S>> flagParameterOpt = registration.parameters()
                                 .stream()
                                 .filter(param -> param instanceof StandardParameter.ValueFlag
                                         || param instanceof StandardParameter.PresenceFlag)
                                 .filter(param -> param.name().equals(flagName))
                                 .findFirst();
-                        System.out.println(flagParameterOpt);
 
                         if (flagParameterOpt.isEmpty()) {
                             throw new CommandException(format("Unrecognized flag: %s", flagName));
                         }
 
-                        System.out.println("valid flag");
                         input.markConsumed();
-                        System.out.println("marked as consumed");
-                        System.out.println("removing flag");
                         args.remove();
-                        System.out.println("done");
-                        System.out.println(args);
                         final ParameterNode<S> flagParameter = flagParameterOpt.get();
-                        System.out.println(flagParameter);
+                        final ParsedCommandArgument parsedArg = result.findArgumentUnchecked(flagName);
                         if (flagParameter instanceof StandardParameter.PresenceFlag) {
-                            //objects.add(true);
-                            objects.stream().filter(ptp -> ptp.name.equalsIgnoreCase(flagName))
-                                    .findFirst()
-                                    .ifPresent(ptp -> ptp.value = true);
+                            parsedArg.parsedValue(true);
+
                         } else {
                             final Object parsedValue = flagParameter.resolver().resolve(source, args, flagParameter.unwrap());
-                            System.out.println(parsedValue);
-                            //objects.add(flagParameter.unwrap().index(), parsedValue);
-                            objects.get(flagParameter.unwrap().index()).value = parsedValue;
+                            parsedArg.parsedValue(parsedValue);
                         }
 
-                        parsedFlags.add(flagName);
-
                     } else {
-                        System.out.println("not a flag");
                         final List<ParameterNode<S>> parameters = registration.parameters();
-                        System.out.println(parameters.size());
                         if (parameterIndex >= parameters.size()) {
                             throw new CommandException("Too many arguments!");
                         }
 
                         final ParameterNode<S> parameter = parameters.get(parameterIndex);
-                        System.out.println(parameter);
                         final Object parsedValue = parameter.resolver().resolve(source, args, parameter.unwrap());
-                        System.out.println(parsedValue);
-                        //objects.add(parsedValue);
-                        objects.get(parameterIndex).value = parsedValue;
+                        final ParsedCommandArgument parsedArg = result.findArgumentAt(parameterIndex);
+                        parsedArg.parsedValue(parsedValue);
                         parameterIndex++;
                     }
 
                     if (!args.isEmpty()) {
-                        System.out.println("markConsumed");
                         args.element().markConsumed();
                     }
-                    System.out.println("========================================");
                 } catch (final ParameterResolutionException ex) {
                     final CommandParameter parameter = ex.parameter();
-                    if (!parameter.modifiers().has(OptParam.class)) {
+                    if (!parameter.isOptional()) {
                         throw ex;
-                    } else {
-                        final Class<?> type = GenericTypeReflector.erase(parameter.type().getType());
-                        /*objects.add(
-                                type.isPrimitive() ? Miscellaneous.nullToPrimitive(type) : null
-                        );*/
-                        objects.get(parameterIndex)
-                                .value =
-                                type.isPrimitive() ? Miscellaneous.nullToPrimitive(type) : null;
                     }
                 } finally {
                     if (!args.isEmpty() && args.element().isConsumed()) {
@@ -265,11 +206,44 @@ public final class CommandDispatcher<S> {
                 }
             }
 
-            //dispatchCommand0(registration, source, objects);
-            dispatchCommand0(registration, source, objects.stream().map(ptp -> ptp.value).collect(Collectors.toList()));
+            dispatchCommand0(registration, source, postprocessArguments(result, registration.parameters()));
+            return result;
         } catch (final Throwable ex) {
             throw new CommandException(ex);
         }
+    }
+
+    private @NotNull List<ParsedCommandArgument> preprocessArguments(final @NotNull Collection<ParameterNode<S>> parameters) {
+        return parameters.stream()
+                .map(parameter -> {
+                    final CommandParameter cmdParam = parameter.unwrap();
+                    final String name = parameter.name();
+                    final ParsedCommandArgument parsedArg = new ParsedCommandArgument(name);
+
+                    if (cmdParam.isOptional()) {
+                        parsedArg.parsedValue(Miscellaneous.nullToPrimitive(GenericTypeReflector.erase(cmdParam.type().getType())));
+                    } else if (parameter instanceof StandardParameter.PresenceFlag) {
+                        parsedArg.parsedValue(false);
+                    }
+
+                    return parsedArg;
+                })
+                .collect(Collectors.toList());
+    }
+
+    private @NotNull List<Object> postprocessArguments(final @NotNull CommandResult result,
+                                                       final @NotNull List<ParameterNode<S>> params) throws CommandException {
+        final List<Object> objects = new ArrayList<>();
+        for (final ParameterNode<S> param : params) {
+            final ParsedCommandArgument parsedArg = result.findArgumentUnchecked(param.name());
+            if (!param.unwrap().isOptional() && parsedArg.parsedValue().isEmpty()) {
+                throw new CommandException(format("No value found for paremeter %s", param.name()));
+            }
+
+            objects.add(parsedArg.parsedValue().orElse(null));
+        }
+
+        return objects;
     }
 
     private void dispatchCommand0(final @NotNull CommandRegistration<S> reg,
@@ -335,15 +309,5 @@ public final class CommandDispatcher<S> {
 
             return new CommandDispatcher<>(authorizer, asyncExecutor);
         }
-    }
-
-    public enum Stage {
-        PRE, POST
-    }
-
-    // TODO cleanup
-    public static final class ParameterToParse {
-        private String name;
-        private Object value;
     }
 }

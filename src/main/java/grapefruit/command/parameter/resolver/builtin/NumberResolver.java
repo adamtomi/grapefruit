@@ -1,6 +1,6 @@
 package grapefruit.command.parameter.resolver.builtin;
 
-import grapefruit.command.dispatcher.CommandInput;
+import grapefruit.command.dispatcher.CommandArg;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.modifier.Range;
 import grapefruit.command.parameter.resolver.AbstractParamterResolver;
@@ -53,9 +53,9 @@ public class NumberResolver<S, N extends Number> extends AbstractParamterResolve
 
     @Override
     public @NotNull N resolve(final @NotNull S source,
-                              final @NotNull Queue<CommandInput> args,
+                              final @NotNull Queue<CommandArg> args,
                               final @NotNull CommandParameter param) throws ParameterResolutionException {
-        final String input = args.element().rawInput();
+        final String input = args.element().rawArg();
         try {
             final N result = this.converter.apply(input);
             final Optional<Range> rangeOpt = param.modifiers().find(Range.class);

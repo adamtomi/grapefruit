@@ -7,16 +7,16 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
-public class CommandInput {
-    private final String rawInput;
+public class CommandArg {
+    private final String rawArg;
     private boolean consumed = false;
 
-    CommandInput(final @NotNull String rawInput) {
-        this.rawInput = requireNonNull(rawInput, "rawInput cannot be null");
+    CommandArg(final @NotNull String rawArg) {
+        this.rawArg = requireNonNull(rawArg, "rawInput cannot be null");
     }
 
-    public @NotNull String rawInput() {
-        return this.rawInput;
+    public @NotNull String rawArg() {
+        return this.rawArg;
     }
 
     public boolean isConsumed() {
@@ -30,7 +30,7 @@ public class CommandInput {
     @Override
     public String toString() {
         return "CommandInput[" +
-                "rawInput='" + this.rawInput + '\'' +
+                "rawArg='" + this.rawArg + '\'' +
                 ", consumed=" + this.consumed +
                 ']';
     }
@@ -39,12 +39,12 @@ public class CommandInput {
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final CommandInput that = (CommandInput) o;
-        return this.consumed == that.consumed && Objects.equals(this.rawInput, that.rawInput);
+        final CommandArg that = (CommandArg) o;
+        return this.consumed == that.consumed && Objects.equals(this.rawArg, that.rawArg);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.rawInput, this.consumed);
+        return Objects.hash(this.rawArg, this.consumed);
     }
 }
