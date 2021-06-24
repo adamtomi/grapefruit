@@ -127,23 +127,6 @@ final class CommandGraph<S> {
             }
 
             final ParameterNode<S> lastParameter = registration.parameters().get(lastParameterIndex);
-            /*if (lastParameter instanceof StandardParameter.ValueFlag) {
-                System.out.println("valueFlag");
-                final String prevArgument = args.peekLast();
-                if (prevArgument == null) {
-                    System.out.println("null");
-                    return List.of();
-                }
-
-                if (prevArgument.equalsIgnoreCase(Miscellaneous.formatFlag(lastParameter.name()))) {
-                    System.out.println("last parameter is flag");
-                    return lastParameter.resolver().listSuggestions(source, args.getLast(), lastParameter.unwrap());
-                } else {
-                    System.out.println("last parameter is not flag");
-                    return List.of(Miscellaneous.formatFlag(lastParameter.name()));
-                }
-            }*/
-
             return lastParameter.resolver().listSuggestions(source, lastArgument, lastParameter.unwrap());
 
         } else {
