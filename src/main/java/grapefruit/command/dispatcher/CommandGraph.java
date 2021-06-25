@@ -118,15 +118,43 @@ final class CommandGraph<S> {
 
         final Optional<CommandRegistration<S>> registrationOpt = commandNode.registration();
         if (registrationOpt.isPresent()) {
-            final int lastParameterIndex = args.size() - 1;
+            /*final int lastParameterIndex = args.size() - 1;
             final CommandRegistration<S> registration = registrationOpt.get();
             final String lastArgument = args.pollLast();
             if (registration.parameters().size() <= lastParameterIndex
                     || lastArgument == null) {
                 return List.of();
+            }*/
+            final CommandRegistration<S> registration = registrationOpt.orElseThrow();
+            final int argCount = args.size();
+            final int paramIndex = argCount >= registration.parameters().size()
+                    ? registration.parameters().size() - 1
+                    : argCount - 1;
+            final String lastArgument = args.pollLast();
+            if (lastArgument == null) {
+                System.out.println("empty list");
+                return List.of();
             }
 
-            final ParameterNode<S> lastParameter = registration.parameters().get(lastParameterIndex);
+            System.out.println(paramIndex);
+            System.out.println(argCount);
+            System.out.println(lastArgument);
+            final ParameterNode<S> lastParameter = registration.parameters().get(paramIndex);
+            System.out.println(lastParameter);
+            if (lastParameter instanceof StandardParameter.ValueFlag) {
+                final String flagName = Miscellaneous.formatFlag(lastParameter.name());
+                System.out.println("valueflag");
+                System.out.println(flagName);
+                if (args.contains(flagName)) {
+                    System.out.println("contains");
+                    System.out.println(args);
+                    return lastParameter.resolver().listSuggestions(source, lastArgument, lastParameter.unwrap());
+                }
+
+                System.out.println("doesnt contain");
+                return List.of(flagName);
+            }
+
             return lastParameter.resolver().listSuggestions(source, lastArgument, lastParameter.unwrap());
 
         } else {

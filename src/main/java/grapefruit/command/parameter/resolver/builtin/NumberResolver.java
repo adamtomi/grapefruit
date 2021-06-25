@@ -26,7 +26,7 @@ public class NumberResolver<S, N extends Number> extends AbstractParamterResolve
 
     static {
         final List<Integer> prefixes = new ArrayList<>();
-        for (int i = -9; i < 9; i++) {
+        for (int i = -9; i <= 9; i++) {
             // Don't wan't to start a number with '0'
             if (i != 0) {
                 prefixes.add(i);
