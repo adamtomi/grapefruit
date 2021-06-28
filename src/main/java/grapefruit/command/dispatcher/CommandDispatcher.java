@@ -36,13 +36,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static grapefruit.command.parameter.ParameterNode.FLAG_PATTERN;
 import static java.lang.String.format;
 import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Objects.requireNonNull;
 
 public final class CommandDispatcher<S> {
     private static final System.Logger LOGGER = System.getLogger(CommandDispatcher.class.getName());
-    private static final Pattern FLAG_PATTERN = Pattern.compile("^--(.+)$");
     private final MethodHandles.Lookup lookup = MethodHandles.lookup();
     private final ResolverRegistry<S> resolverRegistry = new ResolverRegistry<>();
     private final MethodParameterParser<S> parameterParser = new MethodParameterParser<>(this.resolverRegistry);
@@ -271,22 +271,24 @@ public final class CommandDispatcher<S> {
     public @NotNull List<String> listSuggestions(final @NotNull S source,
                                                  final @NotNull String commandLine) {
         requireNonNull(source, "source cannot be null");
-        final Deque<String> args = Arrays.stream(commandLine.split(" "))
+        final Deque<CommandArgument> args = Arrays.stream(commandLine.split(" "))
                 .map(String::trim)
+                .map(CommandArgument::new)
                 .collect(Collectors.toCollection(ArrayDeque::new));
         if (args.size() == 0) {
             return List.of();
         }
 
         if (commandLine.charAt(commandLine.length() - 1) == ' ') {
-            args.add(""); // This is a bit hacky
+            args.add(new CommandArgument("")); // This is a bit hacky
         }
 
-        final String last = args.getLast();
-        return this.commandGraph.listSuggestions(source, args)
+        final String last = args.getLast().rawArg();
+        /*return this.commandGraph.listSuggestions(source, args)
                 .stream()
                 .filter(x -> Miscellaneous.startsWithIgnoreCase(x, last))
-                .collect(Collectors.toList());
+                .collect(Collectors.toList());*/
+        return this.commandGraph.listSuggestions(source, args);
     }
 
     public static <S> @NotNull Builder<S> builder() {

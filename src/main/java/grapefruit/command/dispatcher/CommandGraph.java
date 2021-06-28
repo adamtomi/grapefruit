@@ -2,8 +2,10 @@ package grapefruit.command.dispatcher;
 
 import grapefruit.command.parameter.ParameterNode;
 import grapefruit.command.parameter.StandardParameter;
+import grapefruit.command.parameter.resolver.ParameterResolutionException;
 import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,8 +16,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
+import static grapefruit.command.parameter.ParameterNode.FLAG_PATTERN;
 import static java.util.Objects.requireNonNull;
 
 final class CommandGraph<S> {
@@ -95,21 +101,22 @@ final class CommandGraph<S> {
         return Optional.empty();
     }
 
-    public @NotNull List<String> listSuggestions(final @NotNull S source, final @NotNull Deque<String> args) {
+    public @NotNull List<String> listSuggestions(final @NotNull S source, final @NotNull Deque<CommandArgument> args) {
         CommandNode<S> commandNode = this.rootNode;
-        String part;
-        while ((part = args.peek()) != null) {
+        CommandArgument arg;
+        while ((arg = args.peek()) != null) {
             if (commandNode.registration().isPresent()) {
                 break;
 
             } else {
-                Optional<CommandNode<S>> childNode = commandNode.findChild(part);
+                final String rawArg = arg.rawArg();
+                Optional<CommandNode<S>> childNode = commandNode.findChild(rawArg);
                 if (childNode.isPresent()) {
                     commandNode = childNode.get();
 
                 } else {
                     for (final CommandNode<S> each : commandNode.children()) {
-                        if (each.aliases().contains(part)) {
+                        if (each.aliases().contains(rawArg)) {
                             childNode = Optional.of(each);
                         }
                     }
@@ -124,49 +131,71 @@ final class CommandGraph<S> {
         }
 
         final Optional<CommandRegistration<S>> registrationOpt = commandNode.registration();
+        final Deque<CommandArgument> argsCopy = new ConcurrentLinkedDeque<>(args);
         if (registrationOpt.isPresent()) {
-            /*final int lastParameterIndex = args.size() - 1;
-            final CommandRegistration<S> registration = registrationOpt.get();
-            final String lastArgument = args.pollLast();
-            if (registration.parameters().size() <= lastParameterIndex
-                    || lastArgument == null) {
-                return List.of();
-            }*/
+            System.out.println("registration is present");
             final CommandRegistration<S> registration = registrationOpt.orElseThrow();
+            System.out.println(registration);
             if (!Miscellaneous.checkAuthorized(source, registration.permission(), this.authorizer)) {
+                System.out.println("not authorized");
                 return List.of();
             }
 
-            final int argCount = args.size();
-            final int paramIndex = argCount >= registration.parameters().size()
-                    ? registration.parameters().size() - 1
-                    : argCount - 1;
-            final String lastArgument = args.pollLast();
-            if (lastArgument == null) {
-                System.out.println("empty list");
-                return List.of();
-            }
-
-            System.out.println(paramIndex);
-            System.out.println(argCount);
-            System.out.println(lastArgument);
-            final ParameterNode<S> lastParameter = registration.parameters().get(paramIndex);
-            System.out.println(lastParameter);
-            if (lastParameter instanceof StandardParameter.ValueFlag) {
-                final String flagName = Miscellaneous.formatFlag(lastParameter.name());
-                System.out.println("valueflag");
-                System.out.println(flagName);
-                if (args.contains(flagName)) {
-                    System.out.println("contains");
-                    System.out.println(args);
-                    return lastParameter.resolver().listSuggestions(source, lastArgument, lastParameter.unwrap());
+            System.out.println(args);
+            System.out.println("--------- LOOP ---------------");
+            for (final ParameterNode<S> param : registration.parameters()) {
+                System.out.println(param);
+                if (args.size() < 2) {
+                    System.out.println("suggesting first");
+                    final CommandArgument lastArgument = args.pollLast();
+                    //return param.resolver().listSuggestions(source, lastArgument == null ? "" : lastArgument.rawArg(), param.unwrap());
+                    return suggestFor(source, param, argsCopy, lastArgument == null ? "" : lastArgument.rawArg());
                 }
 
-                System.out.println("doesnt contain");
-                return List.of(flagName);
+                final @Nullable CommandArgument currentArg = args.peek();
+                if (currentArg == null) {
+                    return List.of();
+                }
+
+                final Matcher matcher = FLAG_PATTERN.matcher(currentArg.rawArg());
+                if (matcher.matches()) {
+                    //argsCopy.offerLast(args.remove());
+                    System.out.println("is flag, removing");
+                    args.remove();
+                }
+
+                System.out.println("Current raw: " + args.element().rawArg());
+                if (args.element().rawArg().equalsIgnoreCase("")) {
+                    return suggestFor(source, param, argsCopy, "");
+                }
+
+                try {
+                    System.out.println("resolving");
+                    param.resolver().resolve(source, args, param.unwrap());
+                    System.out.println("resolved");
+                    System.out.println("Size is: " + args.size());
+                    System.out.println(args);
+                    if (args.size() < 2) {
+                        System.out.println("suggesting");
+                        final CommandArgument lastArgument = args.pollLast();
+                        //return param.resolver().listSuggestions(source, lastArgument == null ? "" : lastArgument.rawArg(), param.unwrap());
+                        return suggestFor(source, param, argsCopy, lastArgument == null ? "" : lastArgument.rawArg());
+                    }
+
+                    //argsCopy.offerLast(args.remove());
+                    System.out.println("args.size > 2");
+                    args.remove();
+                } catch (final ParameterResolutionException ex) {
+                    System.out.println("error");
+                    return List.of();
+                }
+
+                System.out.println("===========================");
+                System.out.println(argsCopy.stream().map(CommandArgument::rawArg).collect(Collectors.joining(" ")));
+                System.out.println("===========================");
             }
 
-            return lastParameter.resolver().listSuggestions(source, lastArgument, lastParameter.unwrap());
+            return List.of();
 
         } else {
             return commandNode.children().stream()
@@ -179,6 +208,21 @@ final class CommandGraph<S> {
                     .flatMap(Collection::stream)
                     .collect(Collectors.toList());
         }
+    }
+
+    private @NotNull List<String> suggestFor(final @NotNull S source,
+                                             final @NotNull ParameterNode<S> parameter,
+                                             final @NotNull Deque<CommandArgument> previousArgs,
+                                             final @NotNull String currentArg) {
+        if (parameter instanceof StandardParameter.ValueFlag) {
+            if (previousArgs.stream().anyMatch(arg -> arg.rawArg().equalsIgnoreCase(Miscellaneous.formatFlag(parameter.name())))) {
+                return parameter.resolver().listSuggestions(source, currentArg, parameter.unwrap());
+            }
+
+            return List.of(Miscellaneous.formatFlag(parameter.name()));
+        }
+
+        return parameter.resolver().listSuggestions(source, currentArg, parameter.unwrap());
     }
 
     private static final record RouteFragment (@NotNull String primary, @NotNull String[] aliases) {}

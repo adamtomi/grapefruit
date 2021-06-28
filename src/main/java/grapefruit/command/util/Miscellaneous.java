@@ -78,6 +78,7 @@ public final class Miscellaneous {
         return format("--%s", requireNonNull(flagName, "flagName cannot be null"));
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public static <S> boolean checkAuthorized(final @NotNull S source,
                                               final @Nullable String permission,
                                               final @NotNull CommandAuthorizer<S> authorizer) {

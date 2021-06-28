@@ -9,9 +9,9 @@ public class CommandTest {
         final Object source = new Object();
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.builder().build();
         dispatcher.registerCommands(new TestCommands());
-        System.out.println(dispatcher.listSuggestions(source, "test0 --message av 19"));
-        System.out.println(dispatcher.listSuggestions(source, "test1 --tes"));
-        System.out.println(dispatcher.listSuggestions(source, "test2 --test asd "));
+        //System.out.println(dispatcher.listSuggestions(source, "test0 --message avdddd "));
+        //System.out.println(dispatcher.listSuggestions(source, "test1 --tes"));
+        System.out.println(dispatcher.listSuggestions(source, "test2 --test asd --test2 1 --test3 4"));
     }
 
     public static final class TestCommands implements CommandContainer {
