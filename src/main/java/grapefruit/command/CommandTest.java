@@ -10,8 +10,8 @@ public class CommandTest {
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.builder().build();
         dispatcher.registerCommands(new TestCommands());
         System.out.println(dispatcher.listSuggestions(source, "test0 --message av 19"));
-        System.out.println(dispatcher.listSuggestions(source, "test1 -"));
-        System.out.println(dispatcher.listSuggestions(source, "test2 --test param --te"));
+        System.out.println(dispatcher.listSuggestions(source, "test1 --tes"));
+        System.out.println(dispatcher.listSuggestions(source, "test2 --test asd "));
     }
 
     public static final class TestCommands implements CommandContainer {
@@ -28,7 +28,7 @@ public class CommandTest {
         }
 
         @CommandDefinition(route = "test2")
-        public void onCommand2(final @Flag("test") String param, @Flag("test2") String param2, boolean param3) {
+        public void onCommand2(final @Flag("test") String param, @Flag("test2") int param2/*, boolean param3*/, @Flag("test3") double param3) {
             System.out.println(param);
             System.out.println(param2);
             System.out.println(param3);

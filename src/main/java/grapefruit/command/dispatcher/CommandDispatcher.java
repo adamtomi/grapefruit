@@ -44,10 +44,10 @@ public final class CommandDispatcher<S> {
     private static final System.Logger LOGGER = System.getLogger(CommandDispatcher.class.getName());
     private static final Pattern FLAG_PATTERN = Pattern.compile("^--(.+)$");
     private final MethodHandles.Lookup lookup = MethodHandles.lookup();
-    private final CommandGraph<S> commandGraph = new CommandGraph<>();
     private final ResolverRegistry<S> resolverRegistry = new ResolverRegistry<>();
     private final MethodParameterParser<S> parameterParser = new MethodParameterParser<>(this.resolverRegistry);
     private final CommandAuthorizer<S> commandAuthorizer;
+    private final CommandGraph<S> commandGraph;
     private final Executor sameThreadExecutor = Runnable::run;
     private final Executor asyncExecutor;
 
@@ -55,6 +55,7 @@ public final class CommandDispatcher<S> {
                               final @NotNull Executor asyncExecutor) {
         this.commandAuthorizer = requireNonNull(commandAuthorizer, "commandAuthorizer cannot be null");
         this.asyncExecutor = requireNonNull(asyncExecutor, "asyncExecutor cannot be null");
+        this.commandGraph = new CommandGraph<>(this.commandAuthorizer);
     }
 
     public @NotNull ResolverRegistry<S> resolvers() {
@@ -118,7 +119,7 @@ public final class CommandDispatcher<S> {
                 final CommandRegistration<S> reg = registrationOpt.get();
                 final @Nullable String permission = reg.permission();
 
-                if (permission != null && !this.commandAuthorizer.isAuthorized(source, permission)) {
+                if (!Miscellaneous.checkAuthorized(source, permission, this.commandAuthorizer)) {
                     throw new CommandAuthorizationException(permission);
                 }
 

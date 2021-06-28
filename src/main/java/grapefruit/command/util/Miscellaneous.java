@@ -1,5 +1,6 @@
 package grapefruit.command.util;
 
+import grapefruit.command.dispatcher.CommandAuthorizer;
 import io.leangen.geantyref.GenericTypeReflector;
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
@@ -75,5 +76,17 @@ public final class Miscellaneous {
 
     public static @NotNull String formatFlag(final @NotNull String flagName) {
         return format("--%s", requireNonNull(flagName, "flagName cannot be null"));
+    }
+
+    public static <S> boolean checkAuthorized(final @NotNull S source,
+                                              final @Nullable String permission,
+                                              final @NotNull CommandAuthorizer<S> authorizer) {
+        if (permission == null) {
+            return true;
+        }
+
+        requireNonNull(source, "source cannot be null");
+        requireNonNull(authorizer, "authorizer cannot be null");
+        return authorizer.isAuthorized(source, permission);
     }
 }

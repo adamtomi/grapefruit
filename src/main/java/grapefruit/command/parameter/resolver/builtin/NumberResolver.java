@@ -37,7 +37,7 @@ public class NumberResolver<S, N extends Number> extends AbstractParamterResolve
                 .map(String::valueOf)
                 .collect(Collectors.toList());
         final List<Integer> numberOptions = new ArrayList<>();
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i <= 9; i++) {
             numberOptions.add(i);
         }
 

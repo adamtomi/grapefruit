@@ -16,9 +16,16 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.requireNonNull;
+
 final class CommandGraph<S> {
     private static final String ALIAS_SEPARATOR = "\\|";
     private final CommandNode<S> rootNode = new CommandNode<>("__ROOT__", Set.of(), null);
+    private final CommandAuthorizer<S> authorizer;
+
+    CommandGraph(final @NotNull CommandAuthorizer<S> authorizer) {
+        this.authorizer = requireNonNull(authorizer, "authorizer cannot be null");
+    }
 
     public void registerCommand(final @NotNull String route, final @NotNull CommandRegistration<S> reg) {
         final List<RouteFragment> parts = Arrays.stream(route.split(" "))
@@ -126,6 +133,10 @@ final class CommandGraph<S> {
                 return List.of();
             }*/
             final CommandRegistration<S> registration = registrationOpt.orElseThrow();
+            if (!Miscellaneous.checkAuthorized(source, registration.permission(), this.authorizer)) {
+                return List.of();
+            }
+
             final int argCount = args.size();
             final int paramIndex = argCount >= registration.parameters().size()
                     ? registration.parameters().size() - 1
