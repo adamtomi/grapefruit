@@ -5,7 +5,7 @@ import grapefruit.command.parameter.ParameterNode;
 import grapefruit.command.parameter.StandardParameter;
 import grapefruit.command.parameter.modifier.Flag;
 import grapefruit.command.parameter.modifier.OptParam;
-import grapefruit.command.parameter.modifier.ParamModifier;
+import grapefruit.command.parameter.modifier.Modifier;
 import grapefruit.command.parameter.modifier.Range;
 import grapefruit.command.parameter.modifier.Resolver;
 import grapefruit.command.parameter.modifier.Source;
@@ -67,7 +67,7 @@ final class MethodParameterParser<S> {
     };
     private static final Rule UNRECOGNIZED_ANNOTATION = (method, parameter, annotations) -> {
         for (final Annotation each : annotations.elements()) {
-            if (!each.annotationType().isAnnotationPresent(ParamModifier.class)) {
+            if (!each.annotationType().isAnnotationPresent(Modifier.class)) {
                 throw new RuleViolationException(format("Invalid annotation (%s) on parameter %s", each, parameter));
             }
         }
