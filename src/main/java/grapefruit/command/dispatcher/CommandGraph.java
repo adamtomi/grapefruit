@@ -5,7 +5,6 @@ import grapefruit.command.parameter.StandardParameter;
 import grapefruit.command.parameter.resolver.ParameterResolutionException;
 import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,7 +16,6 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
@@ -103,13 +101,13 @@ final class CommandGraph<S> {
 
     public @NotNull List<String> listSuggestions(final @NotNull S source, final @NotNull Deque<CommandArgument> args) {
         CommandNode<S> commandNode = this.rootNode;
-        CommandArgument arg;
-        while ((arg = args.peek()) != null) {
+        CommandArgument part;
+        while ((part = args.peek()) != null) {
             if (commandNode.registration().isPresent()) {
                 break;
 
             } else {
-                final String rawArg = arg.rawArg();
+                final String rawArg = part.rawArg();
                 Optional<CommandNode<S>> childNode = commandNode.findChild(rawArg);
                 if (childNode.isPresent()) {
                     commandNode = childNode.get();
@@ -133,66 +131,37 @@ final class CommandGraph<S> {
         final Optional<CommandRegistration<S>> registrationOpt = commandNode.registration();
         final Deque<CommandArgument> argsCopy = new ConcurrentLinkedDeque<>(args);
         if (registrationOpt.isPresent()) {
-            System.out.println("registration is present");
             final CommandRegistration<S> registration = registrationOpt.orElseThrow();
-            System.out.println(registration);
             if (!Miscellaneous.checkAuthorized(source, registration.permission(), this.authorizer)) {
-                System.out.println("not authorized");
                 return List.of();
             }
 
-            System.out.println(args);
-            System.out.println("--------- LOOP ---------------");
             for (final ParameterNode<S> param : registration.parameters()) {
-                System.out.println(param);
-                if (args.size() < 2) {
-                    System.out.println("suggesting first");
-                    final CommandArgument lastArgument = args.pollLast();
-                    //return param.resolver().listSuggestions(source, lastArgument == null ? "" : lastArgument.rawArg(), param.unwrap());
-                    return suggestFor(source, param, argsCopy, lastArgument == null ? "" : lastArgument.rawArg());
-                }
-
-                final @Nullable CommandArgument currentArg = args.peek();
-                if (currentArg == null) {
+                if (args.isEmpty()) {
                     return List.of();
                 }
 
-                final Matcher matcher = FLAG_PATTERN.matcher(currentArg.rawArg());
-                if (matcher.matches()) {
-                    //argsCopy.offerLast(args.remove());
-                    System.out.println("is flag, removing");
+                CommandArgument currentArg = args.element();
+                final Matcher flagPatternMatcher = FLAG_PATTERN.matcher(currentArg.rawArg());
+                if (flagPatternMatcher.matches()) {
                     args.remove();
+                    if (args.isEmpty()) {
+                        return suggestFor(source, param, args, currentArg.rawArg());
+                    }
+
+                    currentArg = args.element();
                 }
 
-                System.out.println("Current raw: " + args.element().rawArg());
-                if (args.element().rawArg().equalsIgnoreCase("")) {
-                    return suggestFor(source, param, argsCopy, "");
+                if (currentArg.rawArg().equals("") || args.size() < 2) {
+                    return suggestFor(source, param, argsCopy, currentArg.rawArg());
                 }
 
                 try {
-                    System.out.println("resolving");
                     param.resolver().resolve(source, args, param.unwrap());
-                    System.out.println("resolved");
-                    System.out.println("Size is: " + args.size());
-                    System.out.println(args);
-                    if (args.size() < 2) {
-                        System.out.println("suggesting");
-                        final CommandArgument lastArgument = args.pollLast();
-                        //return param.resolver().listSuggestions(source, lastArgument == null ? "" : lastArgument.rawArg(), param.unwrap());
-                        return suggestFor(source, param, argsCopy, lastArgument == null ? "" : lastArgument.rawArg());
-                    }
-
-                    //argsCopy.offerLast(args.remove());
-                    System.out.println("args.size > 2");
                     args.remove();
                 } catch (final ParameterResolutionException ex) {
-                    System.out.println("error");
                     return List.of();
                 }
-
-                System.out.println("===========================");
-                System.out.println(argsCopy.stream().map(CommandArgument::rawArg).collect(Collectors.joining(" ")));
-                System.out.println("===========================");
             }
 
             return List.of();

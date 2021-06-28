@@ -284,11 +284,10 @@ public final class CommandDispatcher<S> {
         }
 
         final String last = args.getLast().rawArg();
-        /*return this.commandGraph.listSuggestions(source, args)
+        return this.commandGraph.listSuggestions(source, args)
                 .stream()
                 .filter(x -> Miscellaneous.startsWithIgnoreCase(x, last))
-                .collect(Collectors.toList());*/
-        return this.commandGraph.listSuggestions(source, args);
+                .collect(Collectors.toList());
     }
 
     public static <S> @NotNull Builder<S> builder() {
