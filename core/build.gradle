@@ -2,7 +2,7 @@ plugins {
     id 'java'
 }
 
-group 'io.grapefruit.command'
+group 'grapefruit.command'
 version '1.0.0'
 
 repositories {
