@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 
-import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 public class StandardParameter<S> implements ParameterNode<S> {

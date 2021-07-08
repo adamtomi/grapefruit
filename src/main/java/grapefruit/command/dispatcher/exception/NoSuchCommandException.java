@@ -2,7 +2,6 @@ package grapefruit.command.dispatcher.exception;
 
 import grapefruit.command.CommandException;
 import grapefruit.command.message.Message;
-import grapefruit.command.message.MessageKey;
 import grapefruit.command.message.MessageKeys;
 import grapefruit.command.message.Template;
 import org.jetbrains.annotations.NotNull;
