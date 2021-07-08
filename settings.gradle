@@ -3,5 +3,5 @@ include 'core'
 include 'platform:minecraft:paper'
 findProject(':platform:minecraft:paper')?.name = 'paper'
 include 'platform:minecraft:bungeecord'
-findProject(':platform:minecraft:bungeecord')?.name = 'bungeecore'
+findProject(':platform:minecraft:bungeecord')?.name = 'bungeecord'
 

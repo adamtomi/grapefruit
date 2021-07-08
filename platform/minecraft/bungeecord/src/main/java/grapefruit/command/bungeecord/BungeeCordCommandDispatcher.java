@@ -4,6 +4,7 @@ import grapefruit.command.bungeecord.parameter.PlayerParameterResolver;
 import grapefruit.command.dispatcher.AbstractCommandDispatcher;
 import grapefruit.command.dispatcher.CommandAuthorizer;
 import grapefruit.command.dispatcher.CommandDispatcherBuilder;
+import grapefruit.command.message.DefaultMessageProvider;
 import grapefruit.command.message.MessageProvider;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
@@ -31,6 +32,13 @@ public final class BungeeCordCommandDispatcher<S> extends AbstractCommandDispatc
         this.plugin = requireNonNull(plugin, "plugin cannot be null");
         this.sourceConverter = requireNonNull(sourceConverter, "sourceConverter cannot be null");
         resolvers().registerResolver(new PlayerParameterResolver<>());
+        if (messageProvider instanceof DefaultMessageProvider defaultMessageProvider) {
+            registerMessages(defaultMessageProvider);
+        }
+    }
+
+    private void registerMessages(final @NotNull DefaultMessageProvider messageProvider) {
+        messageProvider.register(BungeeMessageKeys.INVALID_PLAYER_VALUE, "Player with name '{name}' could not be found");
     }
 
     @Override
