@@ -31,6 +31,5 @@ final class SuggestionListener<S> implements Listener {
             return;
         }
 
-        
     }
 }
