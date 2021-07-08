@@ -1,6 +1,10 @@
 package grapefruit.command.dispatcher.exception;
 
 import grapefruit.command.CommandException;
+import grapefruit.command.message.Message;
+import grapefruit.command.message.MessageKey;
+import grapefruit.command.message.MessageKeys;
+import grapefruit.command.message.Template;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serial;
@@ -15,8 +19,11 @@ public class NoSuchCommandException extends CommandException {
 
     public NoSuchCommandException(final @NotNull String rootCommand,
                                   final @NotNull String commandLine) {
-        super();
-        this.rootCommand = requireNonNull(rootCommand, "rootCommand cannot be null");
+        super(Message.of(
+                MessageKeys.NO_SUCH_COMMAND,
+                Template.of("{name}", requireNonNull(rootCommand, "rootCommand cannot be null"))
+        ));
+        this.rootCommand = rootCommand;
         this.commandLine = requireNonNull(commandLine, "commandLine cannot be null");
     }
 

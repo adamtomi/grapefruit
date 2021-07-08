@@ -1,6 +1,9 @@
 package grapefruit.command.dispatcher.exception;
 
 import grapefruit.command.CommandException;
+import grapefruit.command.message.Message;
+import grapefruit.command.message.MessageKeys;
+import grapefruit.command.message.Template;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serial;
@@ -13,8 +16,11 @@ public class CommandAuthorizationException extends CommandException {
     private final String requiredPermission;
 
     public CommandAuthorizationException(final @NotNull String requiredPermission) {
-        super();
-        this.requiredPermission = requireNonNull(requiredPermission, "requiredPermission cannot be null");
+        super(Message.of(
+                MessageKeys.AUTHORIZATION_ERROR,
+                Template.of("{permission}", requireNonNull(requiredPermission, "requiredPermission cannot be null"))
+        ));
+        this.requiredPermission = requiredPermission;
     }
 
     public @NotNull String requiredPermission() {

@@ -1,6 +1,9 @@
 package grapefruit.command.parameter.resolver.builtin;
 
 import grapefruit.command.dispatcher.CommandArgument;
+import grapefruit.command.message.Message;
+import grapefruit.command.message.MessageKeys;
+import grapefruit.command.message.Template;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.modifier.Range;
 import grapefruit.command.parameter.resolver.AbstractParamterResolver;
@@ -16,7 +19,6 @@ import java.util.Queue;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 public class NumberResolver<S, N extends Number> extends AbstractParamterResolver<S, N> {
@@ -66,13 +68,21 @@ public class NumberResolver<S, N extends Number> extends AbstractParamterResolve
                 final double found = result.doubleValue();
 
                 if (found < min || found > max) {
-                    throw new ParameterResolutionException(format("Value has to be between %s and %s", min, max), param);
+                    throw new ParameterResolutionException(Message.of(
+                            MessageKeys.NUMBER_OUT_OF_RANGE,
+                            Template.of("input", input),
+                            Template.of("min", min),
+                            Template.of("max", max)
+                    ), param);
                 }
             }
 
             return result;
         } catch (final NumberFormatException ex) {
-            throw new ParameterResolutionException(format("Invalid number input: %s", input), param);
+            throw new ParameterResolutionException(Message.of(
+                    MessageKeys.INVALID_NUMBER_VALUE,
+                    Template.of("input", input)
+            ), param);
         }
     }
 

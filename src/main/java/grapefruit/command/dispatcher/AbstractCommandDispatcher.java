@@ -4,10 +4,15 @@ import grapefruit.command.CommandContainer;
 import grapefruit.command.CommandDefinition;
 import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
+import grapefruit.command.dispatcher.exception.CommandInvocationException;
 import grapefruit.command.dispatcher.exception.NoSuchCommandException;
 import grapefruit.command.dispatcher.listener.PostDispatchListener;
 import grapefruit.command.dispatcher.listener.PreDispatchListener;
 import grapefruit.command.dispatcher.listener.PreProcessLitener;
+import grapefruit.command.message.Message;
+import grapefruit.command.message.MessageKeys;
+import grapefruit.command.message.MessageProvider;
+import grapefruit.command.message.Template;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.ParameterNode;
 import grapefruit.command.parameter.StandardParameter;
@@ -54,17 +59,25 @@ public abstract class AbstractCommandDispatcher<S> implements CommandDispatcher<
     private final CommandGraph<S> commandGraph;
     private final Executor sameThreadExecutor = Runnable::run;
     private final Executor asyncExecutor;
+    private final MessageProvider messageProvider;
 
     protected AbstractCommandDispatcher(final @NotNull CommandAuthorizer<S> commandAuthorizer,
-                                        final @NotNull Executor asyncExecutor) {
+                                        final @NotNull Executor asyncExecutor,
+                                        final @NotNull MessageProvider messageProvider) {
         this.commandAuthorizer = requireNonNull(commandAuthorizer, "commandAuthorizer cannot be null");
         this.asyncExecutor = requireNonNull(asyncExecutor, "asyncExecutor cannot be null");
         this.commandGraph = new CommandGraph<>(this.commandAuthorizer);
+        this.messageProvider = requireNonNull(messageProvider, "messageProvider cannot be null");
     }
 
     @Override
     public @NotNull ResolverRegistry<S> resolvers() {
         return this.resolverRegistry;
+    }
+
+    @Override
+    public @NotNull MessageProvider messageProvider() {
+        return this.messageProvider;
     }
 
     @Override
@@ -216,7 +229,10 @@ public abstract class AbstractCommandDispatcher<S> implements CommandDispatcher<
                                 .findFirst();
 
                         if (flagParameterOpt.isEmpty()) {
-                            throw new CommandException(format("Unrecognized flag: %s", flagName));
+                            throw new CommandException(Message.of(
+                                    MessageKeys.UNRECOGNIZED_COMMAND_FLAG,
+                                    Template.of("{value}", rawInput)
+                            ));
                         }
 
                         input.markConsumed();
@@ -234,7 +250,7 @@ public abstract class AbstractCommandDispatcher<S> implements CommandDispatcher<
                     } else {
                         final List<ParameterNode<S>> parameters = registration.parameters();
                         if (parameterIndex >= parameters.size()) {
-                            throw new CommandException("Too many arguments!");
+                            throw new CommandException(Message.of(MessageKeys.TOO_MANY_ARGUMENTS));
                         }
 
                         final ParameterNode<S> parameter = parameters.get(parameterIndex);
@@ -262,7 +278,7 @@ public abstract class AbstractCommandDispatcher<S> implements CommandDispatcher<
             dispatchCommand0(registration, source, postprocessArguments(result, registration.parameters()));
             return result;
         } catch (final Throwable ex) {
-            throw new CommandException(ex);
+            throw new CommandInvocationException(ex, commandLine);
         }
     }
 
@@ -290,7 +306,7 @@ public abstract class AbstractCommandDispatcher<S> implements CommandDispatcher<
         for (final ParameterNode<S> param : params) {
             final ParsedCommandArgument parsedArg = result.findArgumentUnchecked(param.name());
             if (!param.unwrap().isOptional() && parsedArg.parsedValue().isEmpty()) {
-                throw new CommandException(format("No value found for paremeter %s", param.name()));
+                throw new CommandException(Message.of(MessageKeys.TOO_FEW_ARGUMENTS));
             }
 
             objects.add(parsedArg.parsedValue().orElse(null));

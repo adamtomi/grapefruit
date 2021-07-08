@@ -1,6 +1,9 @@
 package grapefruit.command.parameter.resolver.builtin;
 
 import grapefruit.command.dispatcher.CommandArgument;
+import grapefruit.command.message.Message;
+import grapefruit.command.message.MessageKeys;
+import grapefruit.command.message.Template;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.modifier.string.Greedy;
 import grapefruit.command.parameter.modifier.string.Quotable;
@@ -17,8 +20,6 @@ import java.util.Queue;
 import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static java.lang.String.format;
 
 public class StringResolver<S> extends AbstractParamterResolver<S, String> {
     private static final char QUOTE_SIGN = '"';
@@ -69,7 +70,7 @@ public class StringResolver<S> extends AbstractParamterResolver<S, String> {
                  * isn't QUOTE_SIGN.
                  */
                 if (!Miscellaneous.endsWith(joined, QUOTE_SIGN)) {
-                    throw new ParameterResolutionException("Parameter must end with \"", param);
+                    throw new ParameterResolutionException(Message.of(MessageKeys.QUOTED_STRING_INVALID_TRAILING_CHARATER), param);
                 }
 
                 parsedValue = joined.substring(0, joined.length() - 1);
@@ -88,7 +89,11 @@ public class StringResolver<S> extends AbstractParamterResolver<S, String> {
             final Matcher matcher = pattern.matcher(parsedValue);
 
             if (!matcher.matches()) {
-                throw new ParameterResolutionException(format("Parameter must match regex %s", pattern.pattern()), param);
+                throw new ParameterResolutionException(Message.of(
+                        MessageKeys.STRING_REGEX_ERROR,
+                        Template.of("{input}", parsedValue),
+                        Template.of("{regex}", pattern.pattern())
+                ), param);
             }
         }
 

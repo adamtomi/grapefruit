@@ -1,6 +1,7 @@
 package grapefruit.command.parameter.resolver;
 
 import grapefruit.command.CommandException;
+import grapefruit.command.message.Message;
 import grapefruit.command.parameter.CommandParameter;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,7 +14,7 @@ public class ParameterResolutionException extends CommandException {
     private static final long serialVersionUID = -1767767263253587926L;
     private final CommandParameter parameter;
 
-    public ParameterResolutionException(final @NotNull String message, final @NotNull CommandParameter parameter) {
+    public ParameterResolutionException(final @NotNull Message message, final @NotNull CommandParameter parameter) {
         super(requireNonNull(message, "message cannot be null"));
         this.parameter = requireNonNull(parameter, "parameter cannot be null");
     }
