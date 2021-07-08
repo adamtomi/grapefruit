@@ -118,7 +118,7 @@ final class MethodParameterParser<S> {
                             .orElseThrow(() -> new IllegalArgumentException(format("Could not find ParameterResolver with name %s", name)));
                 } else {
                     resolver = (ParameterResolver<S, ?>) this.resolverRegistry.findResolver(cmdParam.type())
-                            .orElseThrow(() -> new IllegalArgumentException(format("Could not find ParameterResolver for type %s", cmdParam.type().getType())));
+                            .orElseThrow(() -> new IllegalArgumentException(String.format("Could not find ParameterResolver for type %s", cmdParam.type().getType())));
                 }
 
                 final ParameterNode<S> node = annotations.has(Flag.class)

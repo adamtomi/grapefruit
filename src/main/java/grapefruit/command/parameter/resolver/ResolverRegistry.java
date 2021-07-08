@@ -63,7 +63,7 @@ public final class ResolverRegistry<S> {
         requireNonNull(resolver, "resolver cannot be null");
         final TypeToken<?> type = Miscellaneous.box(resolver.type());
         if (this.defaultResolvers.containsKey(type)) {
-            throw new IllegalStateException(format("Default arameterResolver with type %s is already registered", type.getType()));
+            throw new IllegalStateException(String.format("Default arameterResolver with type %s is already registered", type.getType()));
         }
 
         this.defaultResolvers.put(type, resolver);
