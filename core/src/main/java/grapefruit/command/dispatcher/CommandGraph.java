@@ -23,7 +23,7 @@ import static grapefruit.command.parameter.ParameterNode.FLAG_PATTERN;
 import static java.util.Objects.requireNonNull;
 
 final class CommandGraph<S> {
-    private static final String ALIAS_SEPARATOR = "\\|";
+    protected static final String ALIAS_SEPARATOR = "\\|";
     private final CommandNode<S> rootNode = new CommandNode<>("__ROOT__", Set.of(), null);
     private final CommandAuthorizer<S> authorizer;
 

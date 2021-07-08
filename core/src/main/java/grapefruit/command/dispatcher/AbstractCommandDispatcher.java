@@ -45,6 +45,7 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
+import static grapefruit.command.dispatcher.CommandGraph.ALIAS_SEPARATOR;
 import static grapefruit.command.parameter.ParameterNode.FLAG_PATTERN;
 import static java.lang.String.format;
 import static java.lang.System.Logger.Level.WARNING;
@@ -140,7 +141,7 @@ public abstract class AbstractCommandDispatcher<S> implements CommandDispatcher<
                     runAsync);
 
             this.commandGraph.registerCommand(route, reg);
-            registerTopLevelCommand(route.split(" ")[0].trim());
+            registerTopLevelCommand(route.split(" ")[0].trim().split(ALIAS_SEPARATOR));
         } catch (final MethodParameterParser.RuleViolationException ex) {
             throw new RuntimeException(ex);
         } catch (final Throwable ex) {
@@ -148,7 +149,7 @@ public abstract class AbstractCommandDispatcher<S> implements CommandDispatcher<
         }
     }
 
-    protected abstract void registerTopLevelCommand(final @NotNull String aliases);
+    protected abstract void registerTopLevelCommand(final @NotNull String[] aliases);
 
     @Override
     public void dispatchCommand(final @NotNull S source, final @NotNull String commandLine) {
