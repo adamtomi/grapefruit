@@ -9,6 +9,7 @@ import grapefruit.command.parameter.resolver.ResolverRegistry;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public interface CommandDispatcher<S> {
 
@@ -21,6 +22,8 @@ public interface CommandDispatcher<S> {
     void registerListener(final @NotNull PreDispatchListener<S> listener);
 
     void registerListener(final @NotNull PostDispatchListener<S> listener);
+
+    <X extends Throwable> void handle(final @NotNull Class<X> clazz, final @NotNull Consumer<X> handler);
 
     void registerCommands(final @NotNull CommandContainer container);
 

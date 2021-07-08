@@ -31,14 +31,17 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Queue;
-import java.util.concurrent.CompletableFuture;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
@@ -55,6 +58,7 @@ public abstract class AbstractCommandDispatcher<S> implements CommandDispatcher<
     private final Queue<PreProcessLitener<S>> preProcessLiteners = new ConcurrentLinkedQueue<>();
     private final Queue<PreDispatchListener<S>> preDispatchListeners = new ConcurrentLinkedQueue<>();
     private final Queue<PostDispatchListener<S>> postDispatchListeners = new ConcurrentLinkedQueue<>();
+    private final Set<ExceptionHandlerWrapper<? extends Throwable>> exceptionHandlers = Collections.synchronizedSet(new HashSet<>());
     private final CommandAuthorizer<S> commandAuthorizer;
     private final CommandGraph<S> commandGraph;
     private final Executor sameThreadExecutor = Runnable::run;
@@ -96,6 +100,11 @@ public abstract class AbstractCommandDispatcher<S> implements CommandDispatcher<
     }
 
     @Override
+    public <X extends Throwable> void handle(final @NotNull Class<X> clazz, final @NotNull Consumer<X> handler) {
+        this.exceptionHandlers.add(new ExceptionHandlerWrapper<>(clazz, handler));
+    }
+
+    @Override
     public void registerCommands(final @NotNull CommandContainer container) {
         requireNonNull(container, "container cannot be null");
         for (final Method method : container.getClass().getDeclaredMethods()) {
@@ -133,7 +142,7 @@ public abstract class AbstractCommandDispatcher<S> implements CommandDispatcher<
             this.commandGraph.registerCommand(route, reg);
             registerTopLevelCommand(route.split(" ")[0].trim());
         } catch (final MethodParameterParser.RuleViolationException ex) {
-            ex.printStackTrace();
+            throw new RuntimeException(ex);
         } catch (final Throwable ex) {
             throw new RuntimeException("Could not register command", ex);
         }
@@ -155,7 +164,6 @@ public abstract class AbstractCommandDispatcher<S> implements CommandDispatcher<
             }
         }
 
-        final CompletableFuture<CommandResult> resultFuture = new CompletableFuture<>();
         try {
             final Queue<CommandArgument> args = Arrays.stream(commandLine.split(" "))
                     .map(String::trim)
@@ -194,16 +202,15 @@ public abstract class AbstractCommandDispatcher<S> implements CommandDispatcher<
                             }
                         });
 
-                        resultFuture.complete(commandResult);
                     } catch (final CommandException ex) {
-                        resultFuture.completeExceptionally(ex);
+                        handle(ex);
                     }
                 });
             } else {
                 throw new NoSuchCommandException(args.element().rawArg(), commandLine);
             }
         } catch (final CommandException ex) {
-            resultFuture.completeExceptionally(ex);
+            handle(ex);
         }
     }
 
@@ -356,4 +363,23 @@ public abstract class AbstractCommandDispatcher<S> implements CommandDispatcher<
                 .filter(x -> Miscellaneous.startsWithIgnoreCase(x, last))
                 .collect(Collectors.toList());
     }
+
+    @SuppressWarnings("unchecked")
+    private <X extends Throwable> void handle(final @NotNull X ex) {
+        final Class<X> clazz = (Class<X>) ex.getClass();
+        boolean found = false;
+        for (final ExceptionHandlerWrapper<? extends Throwable> wrapper : this.exceptionHandlers) {
+            if (wrapper.exceptionType().isAssignableFrom(clazz)) {
+                final Consumer<X> handler = (Consumer<X>) wrapper.handler();
+                handler.accept(ex);
+                found = true;
+            }
+        }
+
+        if (!found) {
+            ex.printStackTrace();
+        }
+    }
+
+    private static final record ExceptionHandlerWrapper<X extends Throwable> (@NotNull Class<X> exceptionType, @NotNull Consumer<X> handler) {}
 }
