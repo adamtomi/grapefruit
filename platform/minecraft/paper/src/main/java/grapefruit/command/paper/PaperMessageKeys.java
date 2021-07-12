@@ -1,4 +1,4 @@
-package grapefruit.command.bungeecord;
+package grapefruit.command.paper;
 
 import grapefruit.command.message.MessageKey;
 import org.jetbrains.annotations.NotNull;
@@ -6,11 +6,11 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashSet;
 import java.util.Set;
 
-public final class BungeeMessageKeys {
+public final class PaperMessageKeys {
     private static final Set<MessageKey> values = new HashSet<>();
 
     public static final MessageKey INVALID_PLAYER_VALUE = register(MessageKey.of("parameter.invalid-player-value"));
-    public static final MessageKey INVALID_SERVER_VALUE = register(MessageKey.of("parameter.invalid-server-value"));
+    public static final MessageKey INVALID_WORLD_VALUE = register(MessageKey.of("parameter.invalid-world-value"));
 
     private static @NotNull MessageKey register(final @NotNull MessageKey key) {
         values.add(key);
@@ -21,7 +21,7 @@ public final class BungeeMessageKeys {
         return Set.copyOf(values);
     }
 
-    private BungeeMessageKeys() {
+    private PaperMessageKeys() {
         throw new UnsupportedOperationException("No instances for you :(");
     }
 }

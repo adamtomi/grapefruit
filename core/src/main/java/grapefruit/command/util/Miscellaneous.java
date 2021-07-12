@@ -7,11 +7,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Type;
+import java.util.regex.Pattern;
 
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 public final class Miscellaneous {
+    public static final Pattern UUID_PATTERN =
+            Pattern.compile("([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})");
 
     private Miscellaneous() {
         throw new UnsupportedOperationException("No instances for you :(");
