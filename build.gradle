@@ -4,6 +4,8 @@ apply plugin: 'maven-publish'
 group 'grapefruit'
 version '1.0.0-BETA'
 
+sourceCompatibility = JavaVersion.VERSION_16
+
 repositories {
     mavenCentral()
 }
