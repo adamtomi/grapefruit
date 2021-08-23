@@ -30,4 +30,8 @@ public interface CommandDispatcher<S> {
     void dispatchCommand(final @NotNull S source, final @NotNull String commandLine);
 
     @NotNull List<String> listSuggestions(final @NotNull S source, final @NotNull String commandLine);
+
+    static <S> @NotNull CommandDispatcherBuilder<S> builder() {
+        return new CommandDispatcherBuilder<>();
+    }
 }

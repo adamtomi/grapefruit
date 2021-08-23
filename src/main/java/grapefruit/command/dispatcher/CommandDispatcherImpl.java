@@ -45,14 +45,13 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
-import static grapefruit.command.dispatcher.CommandGraph.ALIAS_SEPARATOR;
 import static grapefruit.command.parameter.ParameterNode.FLAG_PATTERN;
 import static java.lang.String.format;
 import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Objects.requireNonNull;
 
-public abstract class AbstractCommandDispatcher<S> implements CommandDispatcher<S> {
-    private static final System.Logger LOGGER = System.getLogger(AbstractCommandDispatcher.class.getName());
+public final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
+    private static final System.Logger LOGGER = System.getLogger(CommandDispatcherImpl.class.getName());
     private final MethodHandles.Lookup lookup = MethodHandles.lookup();
     private final ResolverRegistry<S> resolverRegistry = new ResolverRegistry<>();
     private final MethodParameterParser<S> parameterParser = new MethodParameterParser<>(this.resolverRegistry);
@@ -66,9 +65,9 @@ public abstract class AbstractCommandDispatcher<S> implements CommandDispatcher<
     private final Executor asyncExecutor;
     private final MessageProvider messageProvider;
 
-    protected AbstractCommandDispatcher(final @NotNull CommandAuthorizer<S> commandAuthorizer,
-                                        final @NotNull Executor asyncExecutor,
-                                        final @NotNull MessageProvider messageProvider) {
+    protected CommandDispatcherImpl(final @NotNull CommandAuthorizer<S> commandAuthorizer,
+                                    final @NotNull Executor asyncExecutor,
+                                    final @NotNull MessageProvider messageProvider) {
         this.commandAuthorizer = requireNonNull(commandAuthorizer, "commandAuthorizer cannot be null");
         this.asyncExecutor = requireNonNull(asyncExecutor, "asyncExecutor cannot be null");
         this.commandGraph = new CommandGraph<>(this.commandAuthorizer);
@@ -141,15 +140,12 @@ public abstract class AbstractCommandDispatcher<S> implements CommandDispatcher<
                     runAsync);
 
             this.commandGraph.registerCommand(route, reg);
-            registerTopLevelCommand(route.split(" ")[0].trim().split(ALIAS_SEPARATOR));
         } catch (final MethodParameterParser.RuleViolationException ex) {
             throw new RuntimeException(ex);
         } catch (final Throwable ex) {
             throw new RuntimeException("Could not register command", ex);
         }
     }
-
-    protected abstract void registerTopLevelCommand(final @NotNull String[] aliases);
 
     @Override
     public void dispatchCommand(final @NotNull S source, final @NotNull String commandLine) {

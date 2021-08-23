@@ -10,35 +10,31 @@ import java.util.concurrent.Executors;
 import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Objects.requireNonNull;
 
-public abstract class CommandDispatcherBuilder<S, D extends CommandDispatcher<S>, B extends CommandDispatcherBuilder<S, D, B>> {
+public class CommandDispatcherBuilder<S> {
     private static final System.Logger LOGGER = System.getLogger(CommandDispatcherBuilder.class.getName());
     private CommandAuthorizer<S> authorizer;
     private Executor asyncExecutor;
     private MessageProvider messageProvider;
 
-    protected abstract @NotNull B self();
+    protected CommandDispatcherBuilder() {}
 
-    protected abstract D build(final @NotNull CommandAuthorizer<S> authorizer,
-                               final @NotNull Executor asyncExecutor,
-                               final @NotNull MessageProvider messageProvider);
-
-    public @NotNull B withAuthorizer(final @NotNull CommandAuthorizer<S> authorizer) {
+    public @NotNull CommandDispatcherBuilder<S> withAuthorizer(final @NotNull CommandAuthorizer<S> authorizer) {
         this.authorizer = requireNonNull(authorizer, "authorizer cannot be null");
-        return self();
+        return this;
     }
 
-    public @NotNull B withAsyncExecutor(final @NotNull Executor asyncExecutor) {
+    public @NotNull CommandDispatcherBuilder<S> withAsyncExecutor(final @NotNull Executor asyncExecutor) {
         this.asyncExecutor = requireNonNull(asyncExecutor, "asyncExecutor cannot be null");
-        return self();
+        return this;
     }
 
-    public @NotNull B withMessageProvider(final @NotNull MessageProvider messageProvider) {
+    public @NotNull CommandDispatcherBuilder<S> withMessageProvider(final @NotNull MessageProvider messageProvider) {
         this.messageProvider = requireNonNull(messageProvider, "messageProvider cannot be null");
-        return self();
+        return this;
     }
 
     @SuppressWarnings("unchecked")
-    public @NotNull D validateAndBuild() {
+    public @NotNull CommandDispatcher<S> validateAndBuild() {
         final CommandAuthorizer<S> authorizer;
         if (this.authorizer == null) {
             LOGGER.log(WARNING, "No CommandAuthorizer specified, defaulting to no-op implementation");
@@ -63,6 +59,6 @@ public abstract class CommandDispatcherBuilder<S, D extends CommandDispatcher<S>
             messageProvider = this.messageProvider;
         }
 
-        return build(authorizer, asyncExecutor, messageProvider);
+        return new CommandDispatcherImpl<>(authorizer, asyncExecutor, messageProvider);
     }
 }
