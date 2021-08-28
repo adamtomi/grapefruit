@@ -6,9 +6,13 @@ import grapefruit.command.message.MessageKeys;
 import grapefruit.command.message.Template;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serial;
+
 import static java.util.Objects.requireNonNull;
 
 public class IllegalCommandSourceException extends CommandException {
+    @Serial
+    private static final long serialVersionUID = 5820427891800098353L;
     private final Class<?> requiredCommandSourceType;
     private final Class<?> commandSourceType;
 
