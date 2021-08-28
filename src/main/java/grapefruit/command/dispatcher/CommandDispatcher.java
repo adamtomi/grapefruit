@@ -34,7 +34,7 @@ public interface CommandDispatcher<S> {
 
     @NotNull List<String> listSuggestions(final @NotNull S source, final @NotNull String commandLine);
 
-    static <S> @NotNull CommandDispatcherBuilder<S> builder(final @NotNull TypeToken<S> senderType) {
-        return new CommandDispatcherBuilder<>(senderType);
+    static <S> @NotNull CommandDispatcherBuilder<S> builder(final @NotNull TypeToken<S> commandSourceType) {
+        return new CommandDispatcherBuilder<>(commandSourceType);
     }
 }
