@@ -1,5 +1,6 @@
 package grapefruit.command.dispatcher;
 
+import grapefruit.command.dispatcher.registration.CommandRegistration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

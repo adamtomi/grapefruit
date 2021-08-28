@@ -1,5 +1,6 @@
 package grapefruit.command.dispatcher;
 
+import grapefruit.command.dispatcher.registration.CommandRegistrationHandler;
 import grapefruit.command.message.DefaultMessageProvider;
 import grapefruit.command.message.MessageProvider;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +16,7 @@ public class CommandDispatcherBuilder<S> {
     private CommandAuthorizer<S> authorizer;
     private Executor asyncExecutor;
     private MessageProvider messageProvider;
+    private CommandRegistrationHandler<S> registrationHandler;
 
     protected CommandDispatcherBuilder() {}
 
@@ -30,6 +32,11 @@ public class CommandDispatcherBuilder<S> {
 
     public @NotNull CommandDispatcherBuilder<S> withMessageProvider(final @NotNull MessageProvider messageProvider) {
         this.messageProvider = requireNonNull(messageProvider, "messageProvider cannot be null");
+        return this;
+    }
+
+    public @NotNull CommandDispatcherBuilder<S> withRegistrationHandler(final @NotNull CommandRegistrationHandler<S> registrationHandler) {
+        this.registrationHandler = requireNonNull(registrationHandler, "registrationHandler cannot be null");
         return this;
     }
 
@@ -59,6 +66,14 @@ public class CommandDispatcherBuilder<S> {
             messageProvider = this.messageProvider;
         }
 
-        return new CommandDispatcherImpl<>(authorizer, asyncExecutor, messageProvider);
+        final CommandRegistrationHandler<S> registrationHandler;
+        if (this.registrationHandler == null) {
+            LOGGER.log(WARNING, "No CommandRegistrationHandler specified, defaulting to no-op implementation");
+            registrationHandler = (CommandRegistrationHandler<S>) CommandRegistrationHandler.NO_OP;
+        } else {
+            registrationHandler = this.registrationHandler;
+        }
+
+        return new CommandDispatcherImpl<>(authorizer, asyncExecutor, messageProvider, registrationHandler);
     }
 }

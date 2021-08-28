@@ -1,6 +1,6 @@
 package grapefruit.command.dispatcher.listener;
 
-import grapefruit.command.dispatcher.CommandRegistration;
+import grapefruit.command.dispatcher.registration.CommandRegistration;
 import org.jetbrains.annotations.NotNull;
 
 @FunctionalInterface

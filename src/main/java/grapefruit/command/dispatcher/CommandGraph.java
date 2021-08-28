@@ -1,5 +1,6 @@
 package grapefruit.command.dispatcher;
 
+import grapefruit.command.dispatcher.registration.CommandRegistration;
 import grapefruit.command.parameter.ParameterNode;
 import grapefruit.command.parameter.StandardParameter;
 import grapefruit.command.parameter.resolver.ParameterResolutionException;

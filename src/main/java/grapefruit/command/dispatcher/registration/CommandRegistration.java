@@ -1,4 +1,4 @@
-package grapefruit.command.dispatcher;
+package grapefruit.command.dispatcher.registration;
 
 import grapefruit.command.parameter.ParameterNode;
 import org.jetbrains.annotations.NotNull;

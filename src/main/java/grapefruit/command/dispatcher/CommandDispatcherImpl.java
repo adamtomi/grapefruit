@@ -9,6 +9,9 @@ import grapefruit.command.dispatcher.exception.NoSuchCommandException;
 import grapefruit.command.dispatcher.listener.PostDispatchListener;
 import grapefruit.command.dispatcher.listener.PreDispatchListener;
 import grapefruit.command.dispatcher.listener.PreProcessLitener;
+import grapefruit.command.dispatcher.registration.CommandRegistration;
+import grapefruit.command.dispatcher.registration.CommandRegistrationContext;
+import grapefruit.command.dispatcher.registration.CommandRegistrationHandler;
 import grapefruit.command.message.Message;
 import grapefruit.command.message.MessageKeys;
 import grapefruit.command.message.MessageProvider;
@@ -50,7 +53,7 @@ import static java.lang.String.format;
 import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Objects.requireNonNull;
 
-public final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
+final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private static final System.Logger LOGGER = System.getLogger(CommandDispatcherImpl.class.getName());
     private final MethodHandles.Lookup lookup = MethodHandles.lookup();
     private final ResolverRegistry<S> resolverRegistry = new ResolverRegistry<>();
@@ -64,14 +67,17 @@ public final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final Executor sameThreadExecutor = Runnable::run;
     private final Executor asyncExecutor;
     private final MessageProvider messageProvider;
+    private final CommandRegistrationHandler<S> registrationHandler;
 
     protected CommandDispatcherImpl(final @NotNull CommandAuthorizer<S> commandAuthorizer,
                                     final @NotNull Executor asyncExecutor,
-                                    final @NotNull MessageProvider messageProvider) {
+                                    final @NotNull MessageProvider messageProvider,
+                                    final @NotNull CommandRegistrationHandler<S> registrationHandler) {
         this.commandAuthorizer = requireNonNull(commandAuthorizer, "commandAuthorizer cannot be null");
         this.asyncExecutor = requireNonNull(asyncExecutor, "asyncExecutor cannot be null");
         this.commandGraph = new CommandGraph<>(this.commandAuthorizer);
         this.messageProvider = requireNonNull(messageProvider, "messageProvider cannot be null");
+        this.registrationHandler = requireNonNull(registrationHandler, "registrationHandler cannot be null");
     }
 
     @Override
@@ -140,6 +146,8 @@ public final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     runAsync);
 
             this.commandGraph.registerCommand(route, reg);
+            final CommandRegistrationContext<S> regContext = new CommandRegistrationContext<>(Arrays.asList(route.split(" ")), reg);
+            this.registrationHandler.accept(regContext);
         } catch (final MethodParameterParser.RuleViolationException ex) {
             throw new RuntimeException(ex);
         } catch (final Throwable ex) {
