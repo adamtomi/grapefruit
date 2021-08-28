@@ -4,6 +4,8 @@ import grapefruit.command.CommandContainer;
 import grapefruit.command.CommandDefinition;
 import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
+import grapefruit.command.dispatcher.exception.CommandExceptionEvent;
+import grapefruit.command.dispatcher.exception.CommandExceptionHandler;
 import grapefruit.command.dispatcher.exception.CommandInvocationException;
 import grapefruit.command.dispatcher.exception.IllegalCommandSourceException;
 import grapefruit.command.dispatcher.exception.NoSuchCommandException;
@@ -46,7 +48,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
@@ -63,7 +64,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final Queue<PreProcessLitener<S>> preProcessLiteners = new ConcurrentLinkedQueue<>();
     private final Queue<PreDispatchListener<S>> preDispatchListeners = new ConcurrentLinkedQueue<>();
     private final Queue<PostDispatchListener<S>> postDispatchListeners = new ConcurrentLinkedQueue<>();
-    private final Set<ExceptionHandlerWrapper<? extends Throwable>> exceptionHandlers = Collections.synchronizedSet(new HashSet<>());
+    private final Set<ExceptionHandlerWrapper<? extends Throwable, S>> exceptionHandlers = Collections.synchronizedSet(new HashSet<>());
     private final TypeToken<S> commandSourceType;
     private final CommandAuthorizer<S> commandAuthorizer;
     private final CommandGraph<S> commandGraph;
@@ -116,7 +117,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     @Override
-    public <X extends Throwable> void handle(final @NotNull Class<X> clazz, final @NotNull Consumer<X> handler) {
+    public <X extends Throwable> void handle(final @NotNull Class<X> clazz,
+                                             final @NotNull CommandExceptionHandler<X, S> handler) {
         this.exceptionHandlers.add(new ExceptionHandlerWrapper<>(clazz, handler));
     }
 
@@ -232,14 +234,14 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         });
 
                     } catch (final CommandException ex) {
-                        handle(ex);
+                        handle(new CommandExceptionEvent<>(source, commandLine, ex));
                     }
                 });
             } else {
                 throw new NoSuchCommandException(args.element().rawArg(), commandLine);
             }
         } catch (final CommandException ex) {
-            handle(ex);
+            handle(new CommandExceptionEvent<>(source, commandLine, ex));
         }
     }
 
@@ -405,13 +407,14 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     @SuppressWarnings("unchecked")
-    private <X extends Throwable> void handle(final @NotNull X ex) {
+    private <X extends Throwable> void handle(final @NotNull CommandExceptionEvent<X, S> event) {
+        final Throwable ex = event.exception();
         final Class<X> clazz = (Class<X>) ex.getClass();
         boolean found = false;
-        for (final ExceptionHandlerWrapper<? extends Throwable> wrapper : this.exceptionHandlers) {
+        for (final ExceptionHandlerWrapper<? extends Throwable, S> wrapper : this.exceptionHandlers) {
             if (wrapper.exceptionType().isAssignableFrom(clazz)) {
-                final Consumer<X> handler = (Consumer<X>) wrapper.handler();
-                handler.accept(ex);
+                final CommandExceptionHandler<X, S> handler = (CommandExceptionHandler<X, S>) wrapper.handler();
+                handler.accept(event);
                 found = true;
             }
         }
@@ -421,5 +424,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
-    private static final record ExceptionHandlerWrapper<X extends Throwable> (@NotNull Class<X> exceptionType, @NotNull Consumer<X> handler) {}
+    private static final record ExceptionHandlerWrapper<X extends Throwable, S> (@NotNull Class<X> exceptionType,
+                                                                                 @NotNull CommandExceptionHandler<X, S> handler) {}
 }

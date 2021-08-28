@@ -1,6 +1,7 @@
 package grapefruit.command.dispatcher;
 
 import grapefruit.command.CommandContainer;
+import grapefruit.command.dispatcher.exception.CommandExceptionHandler;
 import grapefruit.command.dispatcher.listener.PostDispatchListener;
 import grapefruit.command.dispatcher.listener.PreDispatchListener;
 import grapefruit.command.dispatcher.listener.PreProcessLitener;
@@ -10,7 +11,6 @@ import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.function.Consumer;
 
 public interface CommandDispatcher<S> {
 
@@ -26,7 +26,8 @@ public interface CommandDispatcher<S> {
 
     void registerListener(final @NotNull PostDispatchListener<S> listener);
 
-    <X extends Throwable> void handle(final @NotNull Class<X> clazz, final @NotNull Consumer<X> handler);
+    <X extends Throwable> void handle(final @NotNull Class<X> clazz,
+                                      final @NotNull CommandExceptionHandler<X, S> handler);
 
     void registerCommands(final @NotNull CommandContainer container);
 
