@@ -14,6 +14,7 @@ public final class MessageKeys {
     public static final MessageKey TOO_FEW_ARGUMENTS = register(MessageKey.of("dispatcher.too-few-arguments"));
     public static final MessageKey TOO_MANY_ARGUMENTS = register(MessageKey.of("dispatcher.too-many-arguments"));
     public static final MessageKey UNRECOGNIZED_COMMAND_FLAG = register(MessageKey.of("dispatcher.unrecognized-command-flag"));
+    public static final MessageKey ILLEGAL_COMMAND_SOURCE = register(MessageKey.of("dispatcher.illegal-command-source"));
 
     public static final MessageKey INVALID_BOOLEAN_VALUE = register(MessageKey.of("parameter.invalid-boolean-value"));
     public static final MessageKey INVALID_NUMBER_VALUE = register(MessageKey.of("parameter.invalid-number-value"));

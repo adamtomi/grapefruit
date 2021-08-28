@@ -5,6 +5,7 @@ import grapefruit.command.CommandDefinition;
 import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
 import grapefruit.command.dispatcher.exception.CommandInvocationException;
+import grapefruit.command.dispatcher.exception.IllegalCommandSourceException;
 import grapefruit.command.dispatcher.exception.NoSuchCommandException;
 import grapefruit.command.dispatcher.listener.PostDispatchListener;
 import grapefruit.command.dispatcher.listener.PreDispatchListener;
@@ -363,9 +364,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final Class<?> foundCommandSourceType = source.getClass();
             final Class<?> requiredCommandSourceType = GenericTypeReflector.erase(reg.commandSourceType().getType());
             if (!requiredCommandSourceType.isAssignableFrom(foundCommandSourceType)) {
-                throw new IllegalArgumentException(format("Command source type %s is invalid, must be a sub type of %s",
-                        foundCommandSourceType.getName(),
-                        requiredCommandSourceType.getName()));
+                throw new IllegalCommandSourceException(requiredCommandSourceType, foundCommandSourceType);
             }
 
             finalArgs = new Object[args.size() + 1];
