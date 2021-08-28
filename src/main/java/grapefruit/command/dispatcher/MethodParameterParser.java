@@ -57,7 +57,7 @@ final class MethodParameterParser<S> {
     };
     private static final Rule SOURCE_HAS_MORE_ANNOTATIONS = (method, parameter, annotations) -> {
         if (annotations.has(Source.class) && annotations.elements().size() > 1) {
-            throw new RuleViolationException("Parameter annotated with @Source must not have more annotations");
+            throw new RuleViolationException("Parameter annotated with @Source must not have any more annotations");
         }
     };
     private static final Rule SOURCE_NTH_PARAMETER = (method, param, annotations) -> {

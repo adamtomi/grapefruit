@@ -6,12 +6,15 @@ import grapefruit.command.dispatcher.listener.PreDispatchListener;
 import grapefruit.command.dispatcher.listener.PreProcessLitener;
 import grapefruit.command.message.MessageProvider;
 import grapefruit.command.parameter.resolver.ResolverRegistry;
+import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.function.Consumer;
 
 public interface CommandDispatcher<S> {
+
+    @NotNull TypeToken<S> commandSourceType();
 
     @NotNull ResolverRegistry<S> resolvers();
 
@@ -31,7 +34,7 @@ public interface CommandDispatcher<S> {
 
     @NotNull List<String> listSuggestions(final @NotNull S source, final @NotNull String commandLine);
 
-    static <S> @NotNull CommandDispatcherBuilder<S> builder() {
-        return new CommandDispatcherBuilder<>();
+    static <S> @NotNull CommandDispatcherBuilder<S> builder(final @NotNull TypeToken<S> senderType) {
+        return new CommandDispatcherBuilder<>(senderType);
     }
 }

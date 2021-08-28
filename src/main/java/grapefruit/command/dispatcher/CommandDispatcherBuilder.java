@@ -3,6 +3,7 @@ package grapefruit.command.dispatcher;
 import grapefruit.command.dispatcher.registration.CommandRegistrationHandler;
 import grapefruit.command.message.DefaultMessageProvider;
 import grapefruit.command.message.MessageProvider;
+import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.Executor;
@@ -13,12 +14,15 @@ import static java.util.Objects.requireNonNull;
 
 public class CommandDispatcherBuilder<S> {
     private static final System.Logger LOGGER = System.getLogger(CommandDispatcherBuilder.class.getName());
+    private final TypeToken<S> commandSourceType;
     private CommandAuthorizer<S> authorizer;
     private Executor asyncExecutor;
     private MessageProvider messageProvider;
     private CommandRegistrationHandler<S> registrationHandler;
 
-    protected CommandDispatcherBuilder() {}
+    protected CommandDispatcherBuilder(final @NotNull TypeToken<S> commandSourceType) {
+        this.commandSourceType = requireNonNull(commandSourceType, "commandSourceType cannot be null");
+    }
 
     public @NotNull CommandDispatcherBuilder<S> withAuthorizer(final @NotNull CommandAuthorizer<S> authorizer) {
         this.authorizer = requireNonNull(authorizer, "authorizer cannot be null");
@@ -74,6 +78,6 @@ public class CommandDispatcherBuilder<S> {
             registrationHandler = this.registrationHandler;
         }
 
-        return new CommandDispatcherImpl<>(authorizer, asyncExecutor, messageProvider, registrationHandler);
+        return new CommandDispatcherImpl<>(this.commandSourceType, authorizer, asyncExecutor, messageProvider, registrationHandler);
     }
 }

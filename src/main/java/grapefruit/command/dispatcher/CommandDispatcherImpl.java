@@ -24,6 +24,7 @@ import grapefruit.command.parameter.resolver.ParameterResolutionException;
 import grapefruit.command.parameter.resolver.ResolverRegistry;
 import grapefruit.command.util.Miscellaneous;
 import io.leangen.geantyref.GenericTypeReflector;
+import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -62,6 +63,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final Queue<PreDispatchListener<S>> preDispatchListeners = new ConcurrentLinkedQueue<>();
     private final Queue<PostDispatchListener<S>> postDispatchListeners = new ConcurrentLinkedQueue<>();
     private final Set<ExceptionHandlerWrapper<? extends Throwable>> exceptionHandlers = Collections.synchronizedSet(new HashSet<>());
+    private final TypeToken<S> commandSourceType;
     private final CommandAuthorizer<S> commandAuthorizer;
     private final CommandGraph<S> commandGraph;
     private final Executor sameThreadExecutor = Runnable::run;
@@ -69,15 +71,22 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final MessageProvider messageProvider;
     private final CommandRegistrationHandler<S> registrationHandler;
 
-    protected CommandDispatcherImpl(final @NotNull CommandAuthorizer<S> commandAuthorizer,
+    protected CommandDispatcherImpl(final @NotNull TypeToken<S> commandSourceType,
+                                    final @NotNull CommandAuthorizer<S> commandAuthorizer,
                                     final @NotNull Executor asyncExecutor,
                                     final @NotNull MessageProvider messageProvider,
                                     final @NotNull CommandRegistrationHandler<S> registrationHandler) {
+        this.commandSourceType = requireNonNull(commandSourceType, "commandSourceType cannot be null");
         this.commandAuthorizer = requireNonNull(commandAuthorizer, "commandAuthorizer cannot be null");
         this.asyncExecutor = requireNonNull(asyncExecutor, "asyncExecutor cannot be null");
         this.commandGraph = new CommandGraph<>(this.commandAuthorizer);
         this.messageProvider = requireNonNull(messageProvider, "messageProvider cannot be null");
         this.registrationHandler = requireNonNull(registrationHandler, "registrationHandler cannot be null");
+    }
+
+    @Override
+    public @NotNull TypeToken<S> commandSourceType() {
+        return this.commandSourceType;
     }
 
     @Override
@@ -137,11 +146,25 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final List<ParameterNode<S>> parameters = this.parameterParser.collectParameters(method);
             final boolean requiresCommandSource = !parameters.isEmpty()
                     && method.getParameters()[0].isAnnotationPresent(Source.class);
+            final @Nullable TypeToken<?> commandSourceType = requiresCommandSource
+                    ? TypeToken.get(method.getParameters()[0].getType())
+                    : null;
+
+            if (commandSourceType != null) {
+                final Class<?> baseCommandSourceType = GenericTypeReflector.erase(this.commandSourceType.getType());
+                final Class<?> foundCommandSourceType = GenericTypeReflector.erase(commandSourceType.getType());
+                if (!baseCommandSourceType.isAssignableFrom(foundCommandSourceType)) {
+                    throw new IllegalArgumentException(format("Invalid command source type detected (%s)! Must implement %s",
+                            foundCommandSourceType.getName(), baseCommandSourceType.getName()));
+                }
+            }
+
             final MethodHandle methodHandle = this.lookup.unreflect(method).bindTo(container);
             final CommandRegistration<S> reg = new CommandRegistration<>(
                     methodHandle,
                     parameters,
                     permission,
+                    commandSourceType,
                     requiresCommandSource,
                     runAsync);
 
@@ -332,6 +355,19 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                   final @NotNull Collection<Object> args) throws Throwable {
         final Object[] finalArgs;
         if (reg.requiresCommandSource()) {
+            if (reg.commandSourceType() == null) {
+                throw new AssertionError("Well, this is kind of unexpected");
+            }
+
+            // Validate the type of the command source
+            final Class<?> foundCommandSourceType = source.getClass();
+            final Class<?> requiredCommandSourceType = GenericTypeReflector.erase(reg.commandSourceType().getType());
+            if (!requiredCommandSourceType.isAssignableFrom(foundCommandSourceType)) {
+                throw new IllegalArgumentException(format("Command source type %s is invalid, must be a sub type of %s",
+                        foundCommandSourceType.getName(),
+                        requiredCommandSourceType.getName()));
+            }
+
             finalArgs = new Object[args.size() + 1];
             finalArgs[0] = source;
             int idx = 1;
