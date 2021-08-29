@@ -1,5 +1,7 @@
 package grapefruit.command.dispatcher;
 
+import grapefruit.command.CommandException;
+import grapefruit.command.dispatcher.exception.NoSuchCommandException;
 import grapefruit.command.dispatcher.registration.CommandRegistration;
 import grapefruit.command.parameter.ParameterNode;
 import grapefruit.command.parameter.StandardParameter;
@@ -71,11 +73,22 @@ final class CommandGraph<S> {
         }
     }
 
-    public @NotNull Optional<CommandRegistration<S>> routeCommand(final @NotNull Queue<CommandArgument> args) {
+    public @NotNull Optional<CommandRegistration<S>> routeCommand(final @NotNull Queue<CommandArgument> args)
+            throws CommandException {
         CommandNode<S> commandNode = this.rootNode;
         CommandArgument arg;
+        boolean firstRun = true;
         while ((arg = args.poll()) != null) {
             final String rawInput = arg.rawArg();
+            // If we don't have a child with this name, throw NoSuchCommand
+            if (firstRun) {
+                if (this.rootNode.findChild(rawInput).isEmpty()) {
+                    throw new NoSuchCommandException(rawInput);
+                }
+
+                firstRun = false;
+            }
+
             Optional<CommandNode<S>> possibleChild = commandNode.findChild(rawInput);
             if (possibleChild.isEmpty()) {
                 for (final CommandNode<S> each : commandNode.children()) {

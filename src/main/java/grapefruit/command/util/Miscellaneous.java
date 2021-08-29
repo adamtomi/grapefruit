@@ -7,14 +7,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Type;
-import java.util.regex.Pattern;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.function.Supplier;
 
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 public final class Miscellaneous {
-    public static final Pattern UUID_PATTERN =
-            Pattern.compile("([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})");
 
     private Miscellaneous() {
         throw new UnsupportedOperationException("No instances for you :(");
@@ -92,5 +92,13 @@ public final class Miscellaneous {
         requireNonNull(source, "source cannot be null");
         requireNonNull(authorizer, "authorizer cannot be null");
         return authorizer.isAuthorized(source, permission);
+    }
+
+    public static <T, C extends Collection<T>> @NotNull C mutableCollectionOf(final @NotNull T[] elements,
+                                                                              final @NotNull Supplier<C> generator) {
+        final C collection = generator.get();
+        collection.addAll(Arrays.asList(elements));
+
+        return collection;
     }
 }

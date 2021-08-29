@@ -5,8 +5,8 @@ import grapefruit.command.CommandDefinition;
 import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
 import grapefruit.command.dispatcher.exception.CommandInvocationException;
+import grapefruit.command.dispatcher.exception.CommandSyntaxException;
 import grapefruit.command.dispatcher.exception.IllegalCommandSourceException;
-import grapefruit.command.dispatcher.exception.NoSuchCommandException;
 import grapefruit.command.dispatcher.listener.PostDispatchListener;
 import grapefruit.command.dispatcher.listener.PreDispatchListener;
 import grapefruit.command.dispatcher.listener.PreProcessLitener;
@@ -88,7 +88,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     public @NotNull ResolverRegistry<S> resolvers() {
         return this.resolverRegistry;
     }
-
 
     @Override
     public void registerListener(final @NotNull PreProcessLitener<S> listener) {
@@ -221,7 +220,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     }
                 });
             } else {
-                throw new NoSuchCommandException(args.element().rawArg(), commandLine);
+                throw new CommandSyntaxException(Message.of(
+                        MessageKeys.TOO_FEW_ARGUMENTS,
+                        Template.of("{syntax}", "unknown")
+                ));
             }
         } catch (final CommandException ex) {
             onCommandException(source, ex);
@@ -271,7 +273,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     } else {
                         final List<ParameterNode<S>> parameters = registration.parameters();
                         if (parameterIndex >= parameters.size()) {
-                            throw new CommandException(Message.of(MessageKeys.TOO_MANY_ARGUMENTS));
+                            throw new CommandSyntaxException(Message.of(
+                                    MessageKeys.TOO_MANY_ARGUMENTS,
+                                    Template.of("{syntax}", "unknown")
+                            ));
                         }
 
                         final ParameterNode<S> parameter = parameters.get(parameterIndex);
@@ -289,6 +294,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     if (!parameter.isOptional()) {
                         throw ex;
                     }
+
                 } finally {
                     if (!args.isEmpty() && args.element().isConsumed()) {
                         args.remove();
@@ -299,6 +305,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             dispatchCommand0(registration, source, postprocessArguments(result, registration.parameters()));
             return result;
         } catch (final Throwable ex) {
+            if (ex instanceof CommandException) {
+                throw (CommandException) ex;
+            }
+
             throw new CommandInvocationException(ex, commandLine);
         }
     }
@@ -327,7 +337,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         for (final ParameterNode<S> param : params) {
             final ParsedCommandArgument parsedArg = result.findArgumentUnchecked(param.name());
             if (!param.unwrap().isOptional() && parsedArg.parsedValue().isEmpty()) {
-                throw new CommandException(Message.of(MessageKeys.TOO_FEW_ARGUMENTS));
+                throw new CommandSyntaxException(Message.of(
+                        MessageKeys.TOO_FEW_ARGUMENTS,
+                        Template.of("{syntax}", "unknown")
+                ));
             }
 
             objects.add(parsedArg.parsedValue().orElse(null));

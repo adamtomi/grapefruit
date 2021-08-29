@@ -13,24 +13,17 @@ import static java.util.Objects.requireNonNull;
 public class NoSuchCommandException extends CommandException {
     @Serial
     private static final long serialVersionUID = 514631540629935937L;
-    private final String rootCommand;
-    private final String commandLine;
+    private final String command;
 
-    public NoSuchCommandException(final @NotNull String rootCommand,
-                                  final @NotNull String commandLine) {
+    public NoSuchCommandException(final @NotNull String command) {
         super(Message.of(
                 MessageKeys.NO_SUCH_COMMAND,
-                Template.of("{name}", requireNonNull(rootCommand, "rootCommand cannot be null"))
+                Template.of("{name}", requireNonNull(command, "command cannot be null"))
         ));
-        this.rootCommand = rootCommand;
-        this.commandLine = requireNonNull(commandLine, "commandLine cannot be null");
+        this.command = command;
     }
 
-    public @NotNull String rootCommand() {
-        return this.rootCommand;
-    }
-
-    public @NotNull String commandLine() {
-        return this.commandLine;
+    public @NotNull String command() {
+        return this.command;
     }
 }

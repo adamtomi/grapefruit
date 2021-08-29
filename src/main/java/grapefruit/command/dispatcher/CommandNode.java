@@ -1,6 +1,7 @@
 package grapefruit.command.dispatcher;
 
 import grapefruit.command.dispatcher.registration.CommandRegistration;
+import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,7 +27,7 @@ public class CommandNode<S> {
     public CommandNode(final @NotNull String primary,
                        final @NotNull String[] aliases,
                        final @Nullable CommandRegistration<S> registration) {
-        this(primary, Set.of(aliases), registration);
+        this(primary, Miscellaneous.mutableCollectionOf(aliases, HashSet::new), registration);
     }
 
     public @NotNull String primary() {
