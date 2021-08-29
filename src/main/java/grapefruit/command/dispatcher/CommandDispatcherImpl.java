@@ -7,6 +7,7 @@ import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
 import grapefruit.command.dispatcher.exception.CommandInvocationException;
 import grapefruit.command.dispatcher.exception.CommandSyntaxException;
 import grapefruit.command.dispatcher.exception.IllegalCommandSourceException;
+import grapefruit.command.dispatcher.exception.NoSuchCommandException;
 import grapefruit.command.dispatcher.listener.PostDispatchListener;
 import grapefruit.command.dispatcher.listener.PreDispatchListener;
 import grapefruit.command.dispatcher.listener.PreProcessLitener;
@@ -47,6 +48,7 @@ import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
+import static grapefruit.command.dispatcher.CommandGraph.ALIAS_SEPARATOR;
 import static grapefruit.command.parameter.ParameterNode.FLAG_PATTERN;
 import static java.lang.String.format;
 import static java.lang.System.Logger.Level.WARNING;
@@ -182,9 +184,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     .map(String::trim)
                     .map(CommandArgument::new)
                     .collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
-            final Optional<CommandRegistration<S>> registrationOpt = this.commandGraph.routeCommand(args);
-            if (registrationOpt.isPresent()) {
-                final CommandRegistration<S> reg = registrationOpt.get();
+
+            final CommandGraph.RouteResult<S> routeResult = this.commandGraph.routeCommand(args);
+            if (routeResult instanceof CommandGraph.RouteResult.Success<S> success) {
+                final CommandRegistration<S> reg = success.registration();
                 final @Nullable String permission = reg.permission();
 
                 if (!Miscellaneous.checkAuthorized(source, permission, this.commandAuthorizer)) {
@@ -220,9 +223,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     }
                 });
             } else {
-                throw new CommandSyntaxException(Message.of(
-                        MessageKeys.TOO_FEW_ARGUMENTS,
-                        Template.of("{syntax}", "unknown")
+                throw ((CommandGraph.RouteResult.Failure<S>) routeResult).reason().equals(
+                        CommandGraph.RouteResult.Failure.Reason.NO_SUCH_COMMAND)
+                            ? new NoSuchCommandException(commandLine.split(ALIAS_SEPARATOR)[0])
+                            : new CommandSyntaxException(Message.of(
+                            MessageKeys.TOO_FEW_ARGUMENTS,
+                            Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))
                 ));
             }
         } catch (final CommandException ex) {
@@ -275,7 +281,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         if (parameterIndex >= parameters.size()) {
                             throw new CommandSyntaxException(Message.of(
                                     MessageKeys.TOO_MANY_ARGUMENTS,
-                                    Template.of("{syntax}", "unknown")
+                                    Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))
                             ));
                         }
 
@@ -302,7 +308,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 }
             }
 
-            dispatchCommand0(registration, source, postprocessArguments(result, registration.parameters()));
+            dispatchCommand0(registration, source, postprocessArguments(result, registration.parameters(), commandLine));
             return result;
         } catch (final Throwable ex) {
             if (ex instanceof CommandException) {
@@ -332,14 +338,15 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     private @NotNull List<Object> postprocessArguments(final @NotNull CommandResult result,
-                                                       final @NotNull List<ParameterNode<S>> params) throws CommandException {
+                                                       final @NotNull List<ParameterNode<S>> params,
+                                                       final @NotNull String commandLine) throws CommandException {
         final List<Object> objects = new ArrayList<>();
         for (final ParameterNode<S> param : params) {
             final ParsedCommandArgument parsedArg = result.findArgumentUnchecked(param.name());
             if (!param.unwrap().isOptional() && parsedArg.parsedValue().isEmpty()) {
                 throw new CommandSyntaxException(Message.of(
                         MessageKeys.TOO_FEW_ARGUMENTS,
-                        Template.of("{syntax}", "unknown")
+                        Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))
                 ));
             }
 

@@ -1,7 +1,5 @@
 package grapefruit.command.dispatcher;
 
-import grapefruit.command.CommandException;
-import grapefruit.command.dispatcher.exception.NoSuchCommandException;
 import grapefruit.command.dispatcher.registration.CommandRegistration;
 import grapefruit.command.parameter.ParameterNode;
 import grapefruit.command.parameter.StandardParameter;
@@ -73,8 +71,7 @@ final class CommandGraph<S> {
         }
     }
 
-    public @NotNull Optional<CommandRegistration<S>> routeCommand(final @NotNull Queue<CommandArgument> args)
-            throws CommandException {
+    public @NotNull RouteResult<S> routeCommand(final @NotNull Queue<CommandArgument> args) {
         CommandNode<S> commandNode = this.rootNode;
         CommandArgument arg;
         boolean firstRun = true;
@@ -83,7 +80,7 @@ final class CommandGraph<S> {
             // If we don't have a child with this name, throw NoSuchCommand
             if (firstRun) {
                 if (this.rootNode.findChild(rawInput).isEmpty()) {
-                    throw new NoSuchCommandException(rawInput);
+                    return RouteResult.failure(RouteResult.Failure.Reason.NO_SUCH_COMMAND);
                 }
 
                 firstRun = false;
@@ -98,19 +95,21 @@ final class CommandGraph<S> {
                 }
 
                 if (possibleChild.isEmpty()) {
-                    return Optional.empty();
+                    return RouteResult.failure(RouteResult.Failure.Reason.INVALID_SYNTAX);
                 }
             }
 
             final CommandNode<S> child = possibleChild.get();
             if (child.children().isEmpty()) {
-                return child.registration();
+                final Optional<CommandRegistration<S>> registration = child.registration();
+                return registration.map(RouteResult::success).orElseGet(() ->
+                        RouteResult.failure(RouteResult.Failure.Reason.INVALID_SYNTAX));
             } else {
                 commandNode = child;
             }
         }
 
-        return Optional.empty();
+        return RouteResult.failure(RouteResult.Failure.Reason.INVALID_SYNTAX);
     }
 
     public @NotNull List<String> listSuggestions(final @NotNull S source, final @NotNull Deque<CommandArgument> args) {
@@ -208,5 +207,29 @@ final class CommandGraph<S> {
         return parameter.resolver().listSuggestions(source, currentArg, parameter.unwrap());
     }
 
+    public @NotNull String generateSyntaxFor(final @NotNull String commandLine) {
+        throw new RuntimeException(); // TODO
+    }
+
     private static final record RouteFragment (@NotNull String primary, @NotNull String[] aliases) {}
+
+    interface RouteResult<S> {
+
+        static <S> @NotNull RouteResult<S> success(final @NotNull CommandRegistration<S> registration) {
+            return new Success<>(registration);
+        }
+
+        static <S> @NotNull RouteResult<S> failure(final @NotNull Failure.Reason reason) {
+            return new Failure<>(reason);
+        }
+
+        record Success<S>(@NotNull CommandRegistration<S> registration) implements RouteResult<S> {}
+
+        record Failure<S>(@NotNull RouteResult.Failure.Reason reason) implements RouteResult<S> {
+
+            enum Reason {
+                NO_SUCH_COMMAND, INVALID_SYNTAX
+            }
+        }
+    }
 }
