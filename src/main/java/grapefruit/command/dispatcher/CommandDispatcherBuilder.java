@@ -3,6 +3,7 @@ package grapefruit.command.dispatcher;
 import grapefruit.command.dispatcher.registration.CommandRegistrationHandler;
 import grapefruit.command.message.DefaultMessageProvider;
 import grapefruit.command.message.MessageProvider;
+import grapefruit.command.message.Messenger;
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,6 +20,7 @@ public class CommandDispatcherBuilder<S> {
     private Executor asyncExecutor;
     private MessageProvider messageProvider;
     private CommandRegistrationHandler<S> registrationHandler;
+    private Messenger<S> messenger;
 
     protected CommandDispatcherBuilder(final @NotNull TypeToken<S> commandSourceType) {
         this.commandSourceType = requireNonNull(commandSourceType, "commandSourceType cannot be null");
@@ -44,6 +46,11 @@ public class CommandDispatcherBuilder<S> {
         return this;
     }
 
+    public @NotNull CommandDispatcherBuilder<S> withMessenger(final @NotNull Messenger<S> messenger) {
+        this.messenger = requireNonNull(messenger, "messenger cannot be null");
+        return this;
+    }
+
     @SuppressWarnings("unchecked")
     public @NotNull CommandDispatcher<S> validateAndBuild() {
         final CommandAuthorizer<S> authorizer;
@@ -64,7 +71,7 @@ public class CommandDispatcherBuilder<S> {
 
         final MessageProvider messageProvider;
         if (this.messageProvider == null) {
-            LOGGER.log(WARNING, "No MessageProvider specified, defaulting to %s", DefaultMessageProvider.class);
+            LOGGER.log(WARNING, "No MessageProvider specified, defaulting to %s", DefaultMessageProvider.class.getName());
             messageProvider = new DefaultMessageProvider();
         } else {
             messageProvider = this.messageProvider;
@@ -78,6 +85,21 @@ public class CommandDispatcherBuilder<S> {
             registrationHandler = this.registrationHandler;
         }
 
-        return new CommandDispatcherImpl<>(this.commandSourceType, authorizer, asyncExecutor, messageProvider, registrationHandler);
+        final Messenger<S> messenger;
+        if (this.messenger == null) {
+            messenger = Messenger.builtin();
+            LOGGER.log(WARNING, "No Messenger specified, defaulting to %s", messenger.getClass().getName());
+        } else {
+            messenger = this.messenger;
+        }
+
+        return new CommandDispatcherImpl<>(
+                this.commandSourceType,
+                authorizer,
+                asyncExecutor,
+                messageProvider,
+                registrationHandler,
+                messenger
+        );
     }
 }

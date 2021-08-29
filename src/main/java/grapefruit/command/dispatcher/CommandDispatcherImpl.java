@@ -4,8 +4,6 @@ import grapefruit.command.CommandContainer;
 import grapefruit.command.CommandDefinition;
 import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
-import grapefruit.command.dispatcher.exception.CommandExceptionEvent;
-import grapefruit.command.dispatcher.exception.CommandExceptionHandler;
 import grapefruit.command.dispatcher.exception.CommandInvocationException;
 import grapefruit.command.dispatcher.exception.IllegalCommandSourceException;
 import grapefruit.command.dispatcher.exception.NoSuchCommandException;
@@ -18,6 +16,7 @@ import grapefruit.command.dispatcher.registration.CommandRegistrationHandler;
 import grapefruit.command.message.Message;
 import grapefruit.command.message.MessageKeys;
 import grapefruit.command.message.MessageProvider;
+import grapefruit.command.message.Messenger;
 import grapefruit.command.message.Template;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.ParameterNode;
@@ -38,14 +37,11 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Deque;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
@@ -64,7 +60,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final Queue<PreProcessLitener<S>> preProcessLiteners = new ConcurrentLinkedQueue<>();
     private final Queue<PreDispatchListener<S>> preDispatchListeners = new ConcurrentLinkedQueue<>();
     private final Queue<PostDispatchListener<S>> postDispatchListeners = new ConcurrentLinkedQueue<>();
-    private final Set<ExceptionHandlerWrapper<? extends Throwable, S>> exceptionHandlers = Collections.synchronizedSet(new HashSet<>());
     private final TypeToken<S> commandSourceType;
     private final CommandAuthorizer<S> commandAuthorizer;
     private final CommandGraph<S> commandGraph;
@@ -72,23 +67,21 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final Executor asyncExecutor;
     private final MessageProvider messageProvider;
     private final CommandRegistrationHandler<S> registrationHandler;
+    private final Messenger<S> messenger;
 
     protected CommandDispatcherImpl(final @NotNull TypeToken<S> commandSourceType,
                                     final @NotNull CommandAuthorizer<S> commandAuthorizer,
                                     final @NotNull Executor asyncExecutor,
                                     final @NotNull MessageProvider messageProvider,
-                                    final @NotNull CommandRegistrationHandler<S> registrationHandler) {
+                                    final @NotNull CommandRegistrationHandler<S> registrationHandler,
+                                    final @NotNull Messenger<S> messenger) {
         this.commandSourceType = requireNonNull(commandSourceType, "commandSourceType cannot be null");
         this.commandAuthorizer = requireNonNull(commandAuthorizer, "commandAuthorizer cannot be null");
         this.asyncExecutor = requireNonNull(asyncExecutor, "asyncExecutor cannot be null");
         this.commandGraph = new CommandGraph<>(this.commandAuthorizer);
         this.messageProvider = requireNonNull(messageProvider, "messageProvider cannot be null");
         this.registrationHandler = requireNonNull(registrationHandler, "registrationHandler cannot be null");
-    }
-
-    @Override
-    public @NotNull TypeToken<S> commandSourceType() {
-        return this.commandSourceType;
+        this.messenger = requireNonNull(messenger, "messenger cannot be null");
     }
 
     @Override
@@ -96,10 +89,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         return this.resolverRegistry;
     }
 
-    @Override
-    public @NotNull MessageProvider messageProvider() {
-        return this.messageProvider;
-    }
 
     @Override
     public void registerListener(final @NotNull PreProcessLitener<S> listener) {
@@ -114,12 +103,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     @Override
     public void registerListener(final @NotNull PostDispatchListener<S> listener) {
         this.postDispatchListeners.offer(requireNonNull(listener, "listener cannot be null"));
-    }
-
-    @Override
-    public <X extends Throwable> void handle(final @NotNull Class<X> clazz,
-                                             final @NotNull CommandExceptionHandler<X, S> handler) {
-        this.exceptionHandlers.add(new ExceptionHandlerWrapper<>(clazz, handler));
     }
 
     @Override
@@ -234,14 +217,14 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         });
 
                     } catch (final CommandException ex) {
-                        handle(new CommandExceptionEvent<>(source, commandLine, ex));
+                        onCommandException(source, ex);
                     }
                 });
             } else {
                 throw new NoSuchCommandException(args.element().rawArg(), commandLine);
             }
         } catch (final CommandException ex) {
-            handle(new CommandExceptionEvent<>(source, commandLine, ex));
+            onCommandException(source, ex);
         }
     }
 
@@ -406,24 +389,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 .collect(Collectors.toList());
     }
 
-    @SuppressWarnings("unchecked")
-    private <X extends Throwable> void handle(final @NotNull CommandExceptionEvent<X, S> event) {
-        final Throwable ex = event.exception();
-        final Class<X> clazz = (Class<X>) ex.getClass();
-        boolean found = false;
-        for (final ExceptionHandlerWrapper<? extends Throwable, S> wrapper : this.exceptionHandlers) {
-            if (wrapper.exceptionType().isAssignableFrom(clazz)) {
-                final CommandExceptionHandler<X, S> handler = (CommandExceptionHandler<X, S>) wrapper.handler();
-                handler.accept(event);
-                found = true;
-            }
-        }
-
-        if (!found) {
-            ex.printStackTrace();
-        }
+    private void onCommandException(final @NotNull S source, final @NotNull CommandException ex) {
+        final Message message = ex.message();
+        this.messenger.sendMessage(source, message.get(this.messageProvider));
     }
-
-    private static final record ExceptionHandlerWrapper<X extends Throwable, S> (@NotNull Class<X> exceptionType,
-                                                                                 @NotNull CommandExceptionHandler<X, S> handler) {}
 }
