@@ -52,7 +52,7 @@ public class CommandDispatcherBuilder<S> {
     }
 
     @SuppressWarnings("unchecked")
-    public @NotNull CommandDispatcher<S> validateAndBuild() {
+    public @NotNull CommandDispatcher<S> build() {
         final CommandAuthorizer<S> authorizer;
         if (this.authorizer == null) {
             LOGGER.log(WARNING, "No CommandAuthorizer specified, defaulting to no-op implementation");
