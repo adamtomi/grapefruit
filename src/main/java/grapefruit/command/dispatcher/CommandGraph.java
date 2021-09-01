@@ -1,6 +1,7 @@
 package grapefruit.command.dispatcher;
 
 import grapefruit.command.dispatcher.registration.CommandRegistration;
+import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.ParameterNode;
 import grapefruit.command.parameter.StandardParameter;
 import grapefruit.command.parameter.resolver.ParameterResolutionException;
@@ -16,7 +17,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
@@ -25,6 +28,8 @@ import static java.util.Objects.requireNonNull;
 
 final class CommandGraph<S> {
     protected static final String ALIAS_SEPARATOR = "\\|";
+    private static final UnaryOperator<String> AS_REQUIRED = arg -> '<' + arg + '>';
+    private static final UnaryOperator<String> AS_OPTIONAL = arg -> '[' + arg + ']';
     private final CommandNode<S> rootNode = new CommandNode<>("__ROOT__", Set.of(), null);
     private final CommandAuthorizer<S> authorizer;
 
@@ -208,7 +213,38 @@ final class CommandGraph<S> {
     }
 
     public @NotNull String generateSyntaxFor(final @NotNull String commandLine) {
-        throw new RuntimeException(); // TODO
+        final String[] path = commandLine.split(" ");
+        final StringJoiner joiner = new StringJoiner(" ");
+        CommandNode<S> node = this.rootNode;
+
+        for (final String pathPart : path) {
+            final Optional<CommandNode<S>> child = node.findChild(pathPart);
+            if (child.isPresent()) {
+                joiner.add(pathPart);
+                node = child.get();
+
+            } else {
+                break;
+            }
+        }
+
+        final Optional<CommandRegistration<S>> registration = node.registration();
+        if (registration.isPresent()) {
+            for (final ParameterNode<S> parameter : registration.get().parameters()) {
+                final CommandParameter unwrapped = parameter.unwrap();
+                joiner.add(unwrapped.isOptional()
+                        ? AS_OPTIONAL.apply(parameter.name())
+                        : AS_REQUIRED.apply(parameter.name()));
+            }
+
+        } else {
+            final String children = node.children().stream()
+                    .map(CommandNode::primary)
+                    .collect(Collectors.joining("|"));
+            joiner.add(AS_REQUIRED.apply(children));
+        }
+
+        return joiner.toString();
     }
 
     private static final record RouteFragment (@NotNull String primary, @NotNull String[] aliases) {}

@@ -34,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -130,11 +131,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         final boolean runAsync = def.runAsync();
 
         try {
-            final List<ParameterNode<S>> parameters = this.parameterParser.collectParameters(method);
-            final boolean requiresCommandSource = !parameters.isEmpty()
-                    && method.getParameters()[0].isAnnotationPresent(Source.class);
+            final Parameter[] parameters = method.getParameters();
+            final List<ParameterNode<S>> parsedParams = this.parameterParser.collectParameters(method);
+            final boolean requiresCommandSource = parameters.length > 0
+                    && parameters[0].isAnnotationPresent(Source.class);
             final @Nullable TypeToken<?> commandSourceType = requiresCommandSource
-                    ? TypeToken.get(method.getParameters()[0].getType())
+                    ? TypeToken.get(parameters[0].getType())
                     : null;
 
             if (commandSourceType != null) {
@@ -149,7 +151,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final MethodHandle methodHandle = this.lookup.unreflect(method).bindTo(container);
             final CommandRegistration<S> reg = new CommandRegistration<>(
                     methodHandle,
-                    parameters,
+                    parsedParams,
                     permission,
                     commandSourceType,
                     requiresCommandSource,
@@ -412,5 +414,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private void onCommandException(final @NotNull S source, final @NotNull CommandException ex) {
         final Message message = ex.message();
         this.messenger.sendMessage(source, message.get(this.messageProvider));
+        /*
+         * CommandInvocationException means that something went south, and hiding the
+         * stacktrace won't help us find out what the problem was, so just we just print it.
+         */
+        if (ex instanceof CommandInvocationException) {
+            ex.printStackTrace();
+        }
     }
 }
