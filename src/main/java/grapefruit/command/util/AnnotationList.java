@@ -28,7 +28,7 @@ public record AnnotationList(@NotNull Collection<Annotation> elements) {
     }
 
     @Override
-    public final @NotNull Collection<Annotation> elements() {
+    public @NotNull Collection<Annotation> elements() {
         return List.copyOf(this.elements);
     }
 }
