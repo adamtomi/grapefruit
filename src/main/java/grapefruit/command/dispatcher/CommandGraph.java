@@ -175,7 +175,7 @@ final class CommandGraph<S> {
                 }
 
                 try {
-                    param.resolver().resolve(source, args, param.unwrap());
+                    param.resolver().resolve(source, argsCopy, param.unwrap());
                     args.remove();
                 } catch (final ParameterResolutionException ex) {
                     return List.of();
