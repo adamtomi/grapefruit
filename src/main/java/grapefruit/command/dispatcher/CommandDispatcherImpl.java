@@ -329,9 +329,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     final ParsedCommandArgument parsedArg = new ParsedCommandArgument(name);
 
                     if (cmdParam.isOptional()) {
-                        parsedArg.parsedValue(Miscellaneous.nullToPrimitive(GenericTypeReflector.erase(cmdParam.type().getType())));
-                    } else if (parameter instanceof StandardParameter.PresenceFlag) {
-                        parsedArg.parsedValue(false);
+                        final @NotNull Class<?> type = GenericTypeReflector.erase(cmdParam.type().getType());
+                        final Object defaultValue = type.isPrimitive()
+                                ? Miscellaneous.nullToPrimitive(type)
+                                : null;
+                        parsedArg.parsedValue(defaultValue);
                     }
 
                     return parsedArg;

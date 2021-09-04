@@ -87,7 +87,7 @@ public class StandardParameter<S> implements ParameterNode<S> {
             }
 
             @Override
-            public final @NotNull TypeToken<Void> type() {
+            public @NotNull TypeToken<Void> type() {
                 throw new UnsupportedOperationException();
             }
 
@@ -104,14 +104,27 @@ public class StandardParameter<S> implements ParameterNode<S> {
                                                          final @NotNull CommandParameter param) {
                 return List.of(Miscellaneous.formatFlag(this.name));
             }
+
+            @Override
+            public boolean suggestionsNeedValidation() {
+                return false;
+            }
         }
     }
 
     public static final class ValueFlag<S> extends StandardParameter<S> {
+        private final String parameterName;
+
         public ValueFlag(final @NotNull String name,
                          final @NotNull ParameterResolver<S, ?> resolver,
-                         final @NotNull CommandParameter param) {
+                         final @NotNull CommandParameter param,
+                         final @NotNull String parameterName) {
             super(name, resolver, param);
+            this.parameterName = requireNonNull(parameterName, "parameterName cannot be null");
+        }
+
+        public @NotNull String parameterName() {
+            return this.parameterName;
         }
 
         @Override
@@ -120,6 +133,7 @@ public class StandardParameter<S> implements ParameterNode<S> {
                     "name='" + name() + '\'' +
                     ", resolver=" + resolver() +
                     ", param=" + unwrap() +
+                    ", parameterName='" + parameterName() + + '\'' +
                     ']';
         }
     }

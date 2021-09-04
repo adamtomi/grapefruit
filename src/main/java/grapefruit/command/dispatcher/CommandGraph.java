@@ -84,27 +84,19 @@ final class CommandGraph<S> {
             final String rawInput = arg.rawArg();
             // If we don't have a child with this name, throw NoSuchCommand
             if (firstRun) {
-                if (this.rootNode.findChild(rawInput).isEmpty()) {
+                if (findChild(this.rootNode, rawInput).isEmpty()) {
                     return RouteResult.failure(RouteResult.Failure.Reason.NO_SUCH_COMMAND);
                 }
 
                 firstRun = false;
             }
 
-            Optional<CommandNode<S>> possibleChild = commandNode.findChild(rawInput);
-            if (possibleChild.isEmpty()) {
-                for (final CommandNode<S> each : commandNode.children()) {
-                    if (each.aliases().contains(rawInput)) {
-                        possibleChild = Optional.of(each);
-                    }
-                }
-
-                if (possibleChild.isEmpty()) {
-                    return RouteResult.failure(RouteResult.Failure.Reason.INVALID_SYNTAX);
-                }
+            final Optional<CommandNode<S>> childCandidate = findChild(commandNode, rawInput);
+            if (childCandidate.isEmpty()) {
+                return RouteResult.failure(RouteResult.Failure.Reason.INVALID_SYNTAX);
             }
 
-            final CommandNode<S> child = possibleChild.get();
+            final CommandNode<S> child = childCandidate.get();
             if (child.children().isEmpty()) {
                 final Optional<CommandRegistration<S>> registration = child.registration();
                 return registration.map(RouteResult::success).orElseGet(() ->
@@ -126,20 +118,11 @@ final class CommandGraph<S> {
 
             } else {
                 final String rawArg = part.rawArg();
-                Optional<CommandNode<S>> childNode = commandNode.findChild(rawArg);
-                if (childNode.isPresent()) {
-                    commandNode = childNode.get();
-
-                } else {
-                    for (final CommandNode<S> each : commandNode.children()) {
-                        if (each.aliases().contains(rawArg)) {
-                            childNode = Optional.of(each);
-                        }
-                    }
-                }
-
+                final Optional<CommandNode<S>> childNode = findChild(commandNode, rawArg);
                 if (childNode.isEmpty()) {
                     break;
+                } else {
+                    commandNode = childNode.get();
                 }
             }
 
@@ -174,12 +157,15 @@ final class CommandGraph<S> {
                     return suggestFor(source, param, argsCopy, currentArg.rawArg());
                 }
 
-                try {
-                    param.resolver().resolve(source, argsCopy, param.unwrap());
-                    args.remove();
-                } catch (final ParameterResolutionException ex) {
-                    return List.of();
+                if (param.resolver().suggestionsNeedValidation()) {
+                    try {
+                        param.resolver().resolve(source, argsCopy, param.unwrap());
+                    } catch (final ParameterResolutionException ex) {
+                        return List.of();
+                    }
                 }
+
+                args.remove();
             }
 
             return List.of();
@@ -218,7 +204,7 @@ final class CommandGraph<S> {
         CommandNode<S> node = this.rootNode;
 
         for (final String pathPart : path) {
-            final Optional<CommandNode<S>> child = node.findChild(pathPart);
+            final Optional<CommandNode<S>> child = findChild(node, pathPart);
             if (child.isPresent()) {
                 joiner.add(pathPart);
                 node = child.get();
@@ -232,9 +218,15 @@ final class CommandGraph<S> {
         if (registration.isPresent()) {
             for (final ParameterNode<S> parameter : registration.get().parameters()) {
                 final CommandParameter unwrapped = parameter.unwrap();
+                final String parameterName = parameter instanceof StandardParameter.ValueFlag
+                        ? Miscellaneous.formatFlag(parameter.name()) + " " + ((StandardParameter.ValueFlag<?>) parameter).parameterName()
+                        : parameter instanceof StandardParameter.PresenceFlag
+                        ? Miscellaneous.formatFlag(parameter.name())
+                        : parameter.name();
+
                 joiner.add(unwrapped.isOptional()
-                        ? AS_OPTIONAL.apply(parameter.name())
-                        : AS_REQUIRED.apply(parameter.name()));
+                        ? AS_OPTIONAL.apply(parameterName)
+                        : AS_REQUIRED.apply(parameterName));
             }
 
         } else {
@@ -245,6 +237,14 @@ final class CommandGraph<S> {
         }
 
         return joiner.toString();
+    }
+
+    private @NotNull Optional<CommandNode<S>> findChild(final @NotNull CommandNode<S> parent,
+                                                        final @NotNull String alias) {
+        final Optional<CommandNode<S>> child = parent.findChild(alias);
+        return child.isPresent()
+                ? child
+                : parent.children().stream().filter(x -> x.aliases().stream().anyMatch(alias::equalsIgnoreCase)).findFirst();
     }
 
     private static final record RouteFragment (@NotNull String primary, @NotNull String[] aliases) {}

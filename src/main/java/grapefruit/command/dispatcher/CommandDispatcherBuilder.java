@@ -8,7 +8,7 @@ import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 
 import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Objects.requireNonNull;
@@ -63,8 +63,8 @@ public class CommandDispatcherBuilder<S> {
 
         final Executor asyncExecutor;
         if (this.asyncExecutor == null) {
-            LOGGER.log(WARNING, "No async executor specified, defaulting to Executors#newCachedThreadPool");
-            asyncExecutor = Executors.newCachedThreadPool();
+            LOGGER.log(WARNING, "No async executor specified, defaulting to ForkJoinPool#commonPool");
+            asyncExecutor = ForkJoinPool.commonPool();
         } else {
             asyncExecutor = this.asyncExecutor;
         }

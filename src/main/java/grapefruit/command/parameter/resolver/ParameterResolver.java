@@ -22,4 +22,8 @@ public interface ParameterResolver<S, T> {
                                                   final @NotNull CommandParameter param) {
         return List.of();
     }
+
+    default boolean suggestionsNeedValidation() {
+        return true;
+    }
 }

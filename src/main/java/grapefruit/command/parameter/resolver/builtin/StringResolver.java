@@ -98,4 +98,9 @@ public class StringResolver<S> extends AbstractParamterResolver<S, String> {
 
         return parsedValue;
     }
+
+    @Override
+    public boolean suggestionsNeedValidation() {
+        return false;
+    }
 }

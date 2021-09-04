@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -107,8 +108,9 @@ final class MethodParameterParser<S> {
                     throw new IllegalArgumentException(format("Duplicate parameters with name %s", parameterName));
                 }
 
+                final boolean isOptional = Stream.of(OptParam.class, Flag.class).anyMatch(annotations::has);
                 final CommandParameter cmdParam = new CommandParameter(i,
-                        TypeToken.get(parameter.getType()), annotations, annotations.has(OptParam.class));
+                        TypeToken.get(parameter.getType()), annotations, isOptional);
                 final ParameterResolver<S, ?> resolver;
                 final Optional<Resolver> resolverAnnot = annotations.find(Resolver.class);
 
@@ -124,7 +126,7 @@ final class MethodParameterParser<S> {
                 final ParameterNode<S> node = annotations.has(Flag.class)
                         ? cmdParam.type().getType().equals(Boolean.TYPE)
                         ? new StandardParameter.PresenceFlag<>(parameterName, cmdParam)
-                        : new StandardParameter.ValueFlag<>(parameterName, resolver, cmdParam)
+                        : new StandardParameter.ValueFlag<>(parameterName, resolver, cmdParam, parameter.getName())
                         : new StandardParameter<>(parameterName, resolver, cmdParam);
                 parameters.add(node);
             }
