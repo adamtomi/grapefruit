@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'grapefruit'
-version '1.0.0-RC-2'
+version '1.0.0-RC-3'
 
 sourceCompatibility = JavaVersion.VERSION_16
 
@@ -50,6 +50,16 @@ publishing {
                         name = 'GNU General Public License v3.0'
                         url = 'https://www.gnu.org/licenses/gpl-3.0.txt'
                     }
+                }
+            }
+
+            pom.withXml {
+                asNode().dependencies.'*'.findAll() {
+                    it.scope.text() == 'runtime'  && project.configurations.default.allDependencies.find { dep ->
+                        dep.name == it.artifactId.text()
+                    }
+                }.each() {
+                    it.scope*.value = 'compile'
                 }
             }
         }
