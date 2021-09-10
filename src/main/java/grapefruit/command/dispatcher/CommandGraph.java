@@ -159,7 +159,7 @@ final class CommandGraph<S> {
 
                 if (param.resolver().suggestionsNeedValidation()) {
                     try {
-                        param.resolver().resolve(source, argsCopy, param.unwrap());
+                        param.resolver().resolve(source, args, param.unwrap());
                     } catch (final ParameterResolutionException ex) {
                         return List.of();
                     }
