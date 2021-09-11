@@ -31,8 +31,6 @@ import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayDeque;
@@ -57,7 +55,6 @@ import static java.util.Objects.requireNonNull;
 
 final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private static final System.Logger LOGGER = System.getLogger(CommandDispatcherImpl.class.getName());
-    private final MethodHandles.Lookup lookup = MethodHandles.lookup();
     private final ResolverRegistry<S> resolverRegistry = new ResolverRegistry<>();
     private final MethodParameterParser<S> parameterParser = new MethodParameterParser<>(this.resolverRegistry);
     private final Queue<PreProcessLitener<S>> preProcessLiteners = new ConcurrentLinkedQueue<>();
@@ -148,9 +145,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 }
             }
 
-            final MethodHandle methodHandle = this.lookup.unreflect(method).bindTo(container);
             final CommandRegistration<S> reg = new CommandRegistration<>(
-                    methodHandle,
+                    container,
+                    method,
                     parsedParams,
                     permission,
                     commandSourceType,
@@ -395,7 +392,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             finalArgs = args.toArray(Object[]::new);
         }
 
-        reg.methodHandle().invokeWithArguments(finalArgs);
+        reg.method().invoke(reg.holder(), finalArgs);
     }
 
     @Override
@@ -426,7 +423,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         this.messenger.sendMessage(source, message.get(this.messageProvider));
         /*
          * CommandInvocationException means that something went south, and hiding the
-         * stacktrace won't help us find out what the problem was, so just we just print it.
+         * stacktrace won't help us find out what the problem was, so we just print it.
          */
         if (ex instanceof CommandInvocationException) {
             ex.printStackTrace();
