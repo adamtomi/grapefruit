@@ -22,7 +22,7 @@ public final class DefaultMessageProvider implements MessageProvider {
             put(MessageKeys.NO_SUCH_COMMAND, "Root command node with name '{name}' could not be found");
             put(MessageKeys.TOO_FEW_ARGUMENTS, "Too few arguments have been specified. Syntax: {syntax}");
             put(MessageKeys.TOO_MANY_ARGUMENTS, "Too many arguments have been specified. Syntax: {syntax}");
-            put(MessageKeys.UNRECOGNIZED_COMMAND_FLAG, "Command flag {value} is not recognized");
+            put(MessageKeys.UNRECOGNIZED_COMMAND_FLAG, "Command flag {input} is not recognized");
             put(MessageKeys.ILLEGAL_COMMAND_SOURCE, "Illegal command source type ({found}). Required: {required}");
 
             put(MessageKeys.INVALID_BOOLEAN_VALUE, "'{input}' is not a valid boolean value. Options: {options}");

@@ -262,7 +262,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         if (flagParameterOpt.isEmpty()) {
                             throw new CommandException(Message.of(
                                     MessageKeys.UNRECOGNIZED_COMMAND_FLAG,
-                                    Template.of("{value}", rawInput)
+                                    Template.of("{input}", rawInput)
                             ));
                         }
 
