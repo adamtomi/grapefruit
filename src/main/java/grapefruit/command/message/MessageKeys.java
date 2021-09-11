@@ -21,6 +21,7 @@ public final class MessageKeys {
     public static final MessageKey NUMBER_OUT_OF_RANGE = register(MessageKey.of("parameter.number-out-of-range"));
     public static final MessageKey QUOTED_STRING_INVALID_TRAILING_CHARATER = register(MessageKey.of("parameter.quoted-string-invalid-trailing-character"));
     public static final MessageKey STRING_REGEX_ERROR = register(MessageKey.of("parameter.string-regex-error"));
+    public static final MessageKey MISSING_FLAG_VALUE = register(MessageKey.of("parameter.missing-flag-value"));
 
     private static @NotNull MessageKey register(final @NotNull MessageKey key) {
         values.add(key);

@@ -274,6 +274,14 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                             parsedArg.parsedValue(true);
 
                         } else {
+                            if (args.isEmpty()) {
+                                // This means that there aren't any values for this flag
+                                throw new CommandSyntaxException(Message.of(
+                                        MessageKeys.MISSING_FLAG_VALUE,
+                                        Template.of("{input}", rawInput)
+                                ));
+                            }
+
                             final Object parsedValue = flagParameter.resolver().resolve(source, args, flagParameter.unwrap());
                             parsedArg.parsedValue(parsedValue);
                         }
