@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="512pt" height="512pt">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="64pt" height="64pt">
     <circle vector-effect="non-scaling-stroke" cx="512" cy="512" r="270" fill="rgb(247,151,9)" />
     <circle vector-effect="non-scaling-stroke" cx="510" cy="517" r="240" fill="rgb(240,240,240)" />
     <radialGradient id="_rgradient_0" fx="0.5" fy="0.5" cx="0.5" cy="0.5" r="1" gradientTransform="matrix(441,0,0,450.578,290,288.711)" gradientUnits="userSpaceOnUse">
