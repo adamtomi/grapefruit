@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'grapefruit'
-version '1.0.0-RC-3'
+version '1.0.0'
 
 sourceCompatibility = JavaVersion.VERSION_16
 
