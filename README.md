@@ -12,3 +12,5 @@ To find out more about grapefruit, please check out the [wiki](https://github.co
 
 ⚙️**Requirements**
 - Java 16 or higher
+
+*Thanks to [@DaniFoldi](https://github.com/DaniFoldi) for the awesome logo!*
