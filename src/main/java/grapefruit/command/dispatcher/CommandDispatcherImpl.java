@@ -174,7 +174,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     return;
                 }
             } catch (final Throwable ex) {
-                LOGGER.log(WARNING, format("PreProcessListener %s threw an exception", listener.getClass()));
+                LOGGER.log(WARNING, format("PreProcessListener %s threw an exception", listener.getClass().getName()));
+                ex.printStackTrace();
             }
         }
 
@@ -199,7 +200,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                             return;
                         }
                     } catch (final Throwable ex) {
-                        LOGGER.log(WARNING, format("PreDispatchListener %s threw an exception", listener.getClass()));
+                        LOGGER.log(WARNING, format("PreDispatchListener %s threw an exception", listener.getClass().getName()));
+                        ex.printStackTrace();
                     }
                 }
 
@@ -213,7 +215,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                             try {
                                 listener.onPostDispatch(source, commandResult);
                             } catch (final Throwable ex) {
-                                LOGGER.log(WARNING, format("PostDispatchListener %s threw an exception", listener.getClass()));
+                                LOGGER.log(WARNING, format("PostDispatchListener %s threw an exception", listener.getClass().getName()));
+                                ex.printStackTrace();
                             }
                         });
 
@@ -422,8 +425,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         final Message message = ex.message();
         this.messenger.sendMessage(source, message.get(this.messageProvider));
         /*
-         * CommandInvocationException means that something went south, and hiding the
-         * stacktrace won't help us find out what the problem was, so we just print it.
+         * CommandInvocationException means that things went south
          */
         if (ex instanceof CommandInvocationException) {
             ex.printStackTrace();
