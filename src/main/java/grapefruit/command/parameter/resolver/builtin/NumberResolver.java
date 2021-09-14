@@ -70,9 +70,9 @@ public class NumberResolver<S, N extends Number> extends AbstractParamterResolve
                 if (found < min || found > max) {
                     throw new ParameterResolutionException(Message.of(
                             MessageKeys.NUMBER_OUT_OF_RANGE,
-                            Template.of("input", input),
-                            Template.of("min", min),
-                            Template.of("max", max)
+                            Template.of("{input}", input),
+                            Template.of("{min}", min),
+                            Template.of("{max}", max)
                     ), param);
                 }
             }
@@ -81,7 +81,7 @@ public class NumberResolver<S, N extends Number> extends AbstractParamterResolve
         } catch (final NumberFormatException ex) {
             throw new ParameterResolutionException(Message.of(
                     MessageKeys.INVALID_NUMBER_VALUE,
-                    Template.of("input", input)
+                    Template.of("{input}", input)
             ), param);
         }
     }
