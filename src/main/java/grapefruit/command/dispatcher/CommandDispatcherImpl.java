@@ -194,6 +194,19 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     throw new CommandAuthorizationException(permission);
                 }
 
+                if (reg.requiresCommandSource()) {
+                    if (reg.commandSourceType() == null) {
+                        throw new AssertionError("Well, this is kind of unexpected");
+                    }
+
+                    // Validate the type of the command source
+                    final Class<?> foundCommandSourceType = source.getClass();
+                    final Class<?> requiredCommandSourceType = GenericTypeReflector.erase(reg.commandSourceType().getType());
+                    if (!requiredCommandSourceType.isAssignableFrom(foundCommandSourceType)) {
+                        throw new IllegalCommandSourceException(requiredCommandSourceType, foundCommandSourceType);
+                    }
+                }
+
                 for (final PreDispatchListener<S> listener : this.preDispatchListeners) {
                     try {
                         if (!listener.onPreDispatch(source, commandLine, reg)) {
@@ -373,17 +386,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                   final @NotNull Collection<Object> args) throws Throwable {
         final Object[] finalArgs;
         if (reg.requiresCommandSource()) {
-            if (reg.commandSourceType() == null) {
-                throw new AssertionError("Well, this is kind of unexpected");
-            }
-
-            // Validate the type of the command source
-            final Class<?> foundCommandSourceType = source.getClass();
-            final Class<?> requiredCommandSourceType = GenericTypeReflector.erase(reg.commandSourceType().getType());
-            if (!requiredCommandSourceType.isAssignableFrom(foundCommandSourceType)) {
-                throw new IllegalCommandSourceException(requiredCommandSourceType, foundCommandSourceType);
-            }
-
             finalArgs = new Object[args.size() + 1];
             finalArgs[0] = source;
             int idx = 1;
