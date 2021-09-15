@@ -130,9 +130,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         try {
             final Parameter[] parameters = method.getParameters();
             final List<ParameterNode<S>> parsedParams = this.parameterParser.collectParameters(method);
-            final boolean requiresCommandSource = parameters.length > 0
-                    && parameters[0].isAnnotationPresent(Source.class);
-            final @Nullable TypeToken<?> commandSourceType = requiresCommandSource
+            final @Nullable TypeToken<?> commandSourceType = (parameters.length > 0 && parameters[0].isAnnotationPresent(Source.class))
                     ? TypeToken.get(parameters[0].getType())
                     : null;
 
@@ -151,7 +149,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     parsedParams,
                     permission,
                     commandSourceType,
-                    requiresCommandSource,
                     runAsync);
 
             this.commandGraph.registerCommand(route, reg);
@@ -194,11 +191,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     throw new CommandAuthorizationException(permission);
                 }
 
-                if (reg.requiresCommandSource()) {
-                    if (reg.commandSourceType() == null) {
-                        throw new AssertionError("Well, this is kind of unexpected");
-                    }
-
+                if (reg.commandSourceType() != null) {
                     // Validate the type of the command source
                     final Class<?> foundCommandSourceType = source.getClass();
                     final Class<?> requiredCommandSourceType = GenericTypeReflector.erase(reg.commandSourceType().getType());
@@ -385,7 +378,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                   final @NotNull S source,
                                   final @NotNull Collection<Object> args) throws Throwable {
         final Object[] finalArgs;
-        if (reg.requiresCommandSource()) {
+        if (reg.commandSourceType() != null) {
             finalArgs = new Object[args.size() + 1];
             finalArgs[0] = source;
             int idx = 1;

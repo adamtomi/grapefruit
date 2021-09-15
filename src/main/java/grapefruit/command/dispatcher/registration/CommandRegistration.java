@@ -13,6 +13,5 @@ public record CommandRegistration<S>(@NotNull Object holder,
                                      @NotNull List<ParameterNode<S>> parameters,
                                      @Nullable String permission,
                                      @Nullable TypeToken<?> commandSourceType,
-                                     boolean requiresCommandSource,
                                      boolean runAsync) {
 }
