@@ -42,21 +42,20 @@ public class StringResolver<S> extends AbstractParamterResolver<S, String> {
 
             parsedValue = joiner.toString();
         } else if (param.modifiers().has(Quotable.class)) {
-            final String first = args.element().rawArg().trim();
+            final String first = args.element().rawArg();
             if (first.charAt(0) != QUOTE_SIGN) {
-                parsedValue = first;
+                parsedValue = first.trim();
 
             } else {
-                args.element().markConsumed();
-                final CommandArgument removedArg = args.remove();
+                args.remove().markConsumed();
                 final StringJoiner joiner = new StringJoiner(" ");
                 joiner.add(first.substring(1));
                 int joinedCount = 0;
                 for (final CommandArgument arg : args) {
                     final String rawInput = arg.rawArg();
-                    joiner.add(rawInput);
+                    joiner.add(rawInput.isEmpty() ? "" : rawInput);
                     joinedCount++;
-                    if (Miscellaneous.endsWith(rawInput, QUOTE_SIGN)) {
+                    if (!rawInput.isEmpty() && Miscellaneous.endsWith(rawInput, QUOTE_SIGN)) {
                         break;
                     }
                 }
