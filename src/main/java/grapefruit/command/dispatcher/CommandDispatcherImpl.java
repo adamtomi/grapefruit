@@ -15,6 +15,7 @@ import grapefruit.command.dispatcher.registration.CommandRegistration;
 import grapefruit.command.dispatcher.registration.CommandRegistrationContext;
 import grapefruit.command.dispatcher.registration.CommandRegistrationHandler;
 import grapefruit.command.message.Message;
+import grapefruit.command.message.MessageKey;
 import grapefruit.command.message.MessageKeys;
 import grapefruit.command.message.MessageProvider;
 import grapefruit.command.message.Messenger;
@@ -302,6 +303,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         }
 
                         final ParameterNode<S> parameter = parameters.get(parameterIndex);
+                        if (parameter instanceof StandardParameter.ValueFlag
+                                || parameter instanceof StandardParameter.PresenceFlag) {
+                            throw new CommandSyntaxException(Message.of(MessageKeys.MISSING_FLAG,
+                                    Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))));
+                        }
+
                         final Object parsedValue = parameter.resolver().resolve(source, args, parameter.unwrap());
                         final ParsedCommandArgument parsedArg = result.findArgumentAt(parameterIndex);
                         parsedArg.parsedValue(parsedValue);

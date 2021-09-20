@@ -36,6 +36,8 @@ public final class MessageKeys {
     public static final MessageKey STRING_REGEX_ERROR = register(MessageKey.of("parameter.string-regex-error"));
     // Variables: {input}
     public static final MessageKey MISSING_FLAG_VALUE = register(MessageKey.of("parameter.missing-flag-value"));
+    // Variables: {syntax}
+    public static final MessageKey MISSING_FLAG = register(MessageKey.of("parameter.missing-flag"));
 
     private static @NotNull MessageKey register(final @NotNull MessageKey key) {
         values.add(key);

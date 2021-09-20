@@ -31,6 +31,7 @@ public final class DefaultMessageProvider implements MessageProvider {
             put(MessageKeys.QUOTED_STRING_INVALID_TRAILING_CHARATER, "'{input}' has to end with '\"'");
             put(MessageKeys.STRING_REGEX_ERROR, "'{input}' has to match regex {regex}");
             put(MessageKeys.MISSING_FLAG_VALUE, "No flag value specified for flag '{input}'");
+            put(MessageKeys.MISSING_FLAG, "You need to specify a flag. Syntax: {syntax}");
         }};
     private final ReentrantLock lock = new ReentrantLock();
 
