@@ -1,15 +1,15 @@
-package grapefruit.command.parameter.resolver.builtin;
+package grapefruit.command.parameter.mapper.builtin;
 
 import grapefruit.command.dispatcher.CommandArgument;
 import grapefruit.command.message.Message;
 import grapefruit.command.message.MessageKeys;
 import grapefruit.command.message.Template;
 import grapefruit.command.parameter.CommandParameter;
+import grapefruit.command.parameter.mapper.AbstractParamterMapper;
+import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.parameter.modifier.string.Greedy;
 import grapefruit.command.parameter.modifier.string.Quotable;
 import grapefruit.command.parameter.modifier.string.Regex;
-import grapefruit.command.parameter.resolver.AbstractParamterResolver;
-import grapefruit.command.parameter.resolver.ParameterResolutionException;
 import grapefruit.command.util.Miscellaneous;
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
@@ -20,17 +20,17 @@ import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class StringResolver<S> extends AbstractParamterResolver<S, String> {
+public class StringMapper<S> extends AbstractParamterMapper<S, String> {
     private static final char QUOTE_SIGN = '"';
 
-    public StringResolver() {
+    public StringMapper() {
         super(TypeToken.get(String.class));
     }
 
     @Override
-    public @NotNull String resolve(final @NotNull S source,
-                                   final @NotNull Queue<CommandArgument> args,
-                                   final @NotNull CommandParameter param) throws ParameterResolutionException {
+    public @NotNull String map(final @NotNull S source,
+                               final @NotNull Queue<CommandArgument> args,
+                               final @NotNull CommandParameter param) throws ParameterMappingException {
         final String parsedValue;
         if (param.modifiers().has(Greedy.class)) {
             final StringJoiner joiner = new StringJoiner(" ");
@@ -74,7 +74,7 @@ public class StringResolver<S> extends AbstractParamterResolver<S, String> {
                  * isn't QUOTE_SIGN.
                  */
                 if (!Miscellaneous.endsWith(joined, QUOTE_SIGN)) {
-                    throw new ParameterResolutionException(Message.of(MessageKeys.QUOTED_STRING_INVALID_TRAILING_CHARATER), param);
+                    throw new ParameterMappingException(Message.of(MessageKeys.QUOTED_STRING_INVALID_TRAILING_CHARATER), param);
                 }
 
                 parsedValue = joined.substring(0, joined.length() - 1);
@@ -93,7 +93,7 @@ public class StringResolver<S> extends AbstractParamterResolver<S, String> {
             final Matcher matcher = pattern.matcher(parsedValue);
 
             if (!matcher.matches()) {
-                throw new ParameterResolutionException(Message.of(
+                throw new ParameterMappingException(Message.of(
                         MessageKeys.STRING_REGEX_ERROR,
                         Template.of("{input}", parsedValue),
                         Template.of("{regex}", pattern.pattern())

@@ -15,7 +15,6 @@ import grapefruit.command.dispatcher.registration.CommandRegistration;
 import grapefruit.command.dispatcher.registration.CommandRegistrationContext;
 import grapefruit.command.dispatcher.registration.CommandRegistrationHandler;
 import grapefruit.command.message.Message;
-import grapefruit.command.message.MessageKey;
 import grapefruit.command.message.MessageKeys;
 import grapefruit.command.message.MessageProvider;
 import grapefruit.command.message.Messenger;
@@ -23,9 +22,9 @@ import grapefruit.command.message.Template;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.ParameterNode;
 import grapefruit.command.parameter.StandardParameter;
+import grapefruit.command.parameter.mapper.ParameterMapperRegistry;
+import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.parameter.modifier.Source;
-import grapefruit.command.parameter.resolver.ParameterResolutionException;
-import grapefruit.command.parameter.resolver.ResolverRegistry;
 import grapefruit.command.util.Miscellaneous;
 import io.leangen.geantyref.GenericTypeReflector;
 import io.leangen.geantyref.TypeToken;
@@ -56,8 +55,8 @@ import static java.util.Objects.requireNonNull;
 
 final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private static final System.Logger LOGGER = System.getLogger(CommandDispatcherImpl.class.getName());
-    private final ResolverRegistry<S> resolverRegistry = new ResolverRegistry<>();
-    private final MethodParameterParser<S> parameterParser = new MethodParameterParser<>(this.resolverRegistry);
+    private final ParameterMapperRegistry<S> mapperRegistry = new ParameterMapperRegistry<>();
+    private final MethodParameterParser<S> parameterParser = new MethodParameterParser<>(this.mapperRegistry);
     private final Queue<PreProcessLitener<S>> preProcessLiteners = new ConcurrentLinkedQueue<>();
     private final Queue<PreDispatchListener<S>> preDispatchListeners = new ConcurrentLinkedQueue<>();
     private final Queue<PostDispatchListener<S>> postDispatchListeners = new ConcurrentLinkedQueue<>();
@@ -86,8 +85,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     @Override
-    public @NotNull ResolverRegistry<S> resolvers() {
-        return this.resolverRegistry;
+    public @NotNull ParameterMapperRegistry<S> mappers() {
+        return this.mapperRegistry;
     }
 
     @Override
@@ -289,7 +288,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                 ));
                             }
 
-                            final Object parsedValue = flagParameter.resolver().resolve(source, args, flagParameter.unwrap());
+                            final Object parsedValue = flagParameter.mapper().map(source, args, flagParameter.unwrap());
                             parsedArg.parsedValue(parsedValue);
                         }
 
@@ -309,7 +308,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                     Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))));
                         }
 
-                        final Object parsedValue = parameter.resolver().resolve(source, args, parameter.unwrap());
+                        final Object parsedValue = parameter.mapper().map(source, args, parameter.unwrap());
                         final ParsedCommandArgument parsedArg = result.findArgumentAt(parameterIndex);
                         parsedArg.parsedValue(parsedValue);
                         parameterIndex++;
@@ -318,7 +317,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     if (!args.isEmpty()) {
                         args.element().markConsumed();
                     }
-                } catch (final ParameterResolutionException ex) {
+                } catch (final ParameterMappingException ex) {
                     final CommandParameter parameter = ex.parameter();
                     if (!parameter.isOptional()) {
                         throw ex;

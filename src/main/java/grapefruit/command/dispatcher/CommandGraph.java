@@ -4,7 +4,7 @@ import grapefruit.command.dispatcher.registration.CommandRegistration;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.ParameterNode;
 import grapefruit.command.parameter.StandardParameter;
-import grapefruit.command.parameter.resolver.ParameterResolutionException;
+import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
 
@@ -157,10 +157,10 @@ final class CommandGraph<S> {
                     return suggestFor(source, param, argsCopy, currentArg.rawArg());
                 }
 
-                if (param.resolver().suggestionsNeedValidation()) {
+                if (param.mapper().suggestionsNeedValidation()) {
                     try {
-                        param.resolver().resolve(source, args, param.unwrap());
-                    } catch (final ParameterResolutionException ex) {
+                        param.mapper().map(source, args, param.unwrap());
+                    } catch (final ParameterMappingException ex) {
                         return List.of();
                     }
                 }
@@ -189,13 +189,13 @@ final class CommandGraph<S> {
                                              final @NotNull String currentArg) {
         if (parameter instanceof StandardParameter.ValueFlag) {
             if (previousArgs.stream().anyMatch(arg -> arg.rawArg().equalsIgnoreCase(Miscellaneous.formatFlag(parameter.name())))) {
-                return parameter.resolver().listSuggestions(source, currentArg, parameter.unwrap());
+                return parameter.mapper().listSuggestions(source, currentArg, parameter.unwrap());
             }
 
             return List.of(Miscellaneous.formatFlag(parameter.name()));
         }
 
-        return parameter.resolver().listSuggestions(source, currentArg, parameter.unwrap());
+        return parameter.mapper().listSuggestions(source, currentArg, parameter.unwrap());
     }
 
     public @NotNull String generateSyntaxFor(final @NotNull String commandLine) {

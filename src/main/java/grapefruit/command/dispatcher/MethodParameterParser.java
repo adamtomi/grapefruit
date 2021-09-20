@@ -3,17 +3,17 @@ package grapefruit.command.dispatcher;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.ParameterNode;
 import grapefruit.command.parameter.StandardParameter;
+import grapefruit.command.parameter.mapper.ParameterMapper;
+import grapefruit.command.parameter.mapper.ParameterMapperRegistry;
 import grapefruit.command.parameter.modifier.Flag;
+import grapefruit.command.parameter.modifier.Mapper;
 import grapefruit.command.parameter.modifier.Modifier;
 import grapefruit.command.parameter.modifier.OptParam;
 import grapefruit.command.parameter.modifier.Range;
-import grapefruit.command.parameter.modifier.Resolver;
 import grapefruit.command.parameter.modifier.Source;
 import grapefruit.command.parameter.modifier.string.Greedy;
 import grapefruit.command.parameter.modifier.string.Quotable;
 import grapefruit.command.parameter.modifier.string.Regex;
-import grapefruit.command.parameter.resolver.ParameterResolver;
-import grapefruit.command.parameter.resolver.ResolverRegistry;
 import grapefruit.command.util.AnnotationList;
 import grapefruit.command.util.Miscellaneous;
 import io.leangen.geantyref.GenericTypeReflector;
@@ -83,10 +83,10 @@ final class MethodParameterParser<S> {
             SOURCE_NTH_PARAMETER,
             UNRECOGNIZED_ANNOTATION
     );
-    private final ResolverRegistry<?> resolverRegistry;
+    private final ParameterMapperRegistry<?> mapperRegistry;
 
-    MethodParameterParser(final @NotNull ResolverRegistry<?> resolverRegistry) {
-        this.resolverRegistry = requireNonNull(resolverRegistry, "resolverRegistry cannot be null");
+    MethodParameterParser(final @NotNull ParameterMapperRegistry<?> mapperRegistry) {
+        this.mapperRegistry = requireNonNull(mapperRegistry, "mapperRegistry cannot be null");
     }
 
     @SuppressWarnings("unchecked")
@@ -111,23 +111,24 @@ final class MethodParameterParser<S> {
                 final boolean isOptional = Stream.of(OptParam.class, Flag.class).anyMatch(annotations::has);
                 final CommandParameter cmdParam = new CommandParameter(i,
                         TypeToken.get(parameter.getType()), annotations, isOptional);
-                final ParameterResolver<S, ?> resolver;
-                final Optional<Resolver> resolverAnnot = annotations.find(Resolver.class);
+                final ParameterMapper<S, ?> mapper;
+                final Optional<Mapper> mapperAnnot = annotations.find(Mapper.class);
 
-                if (resolverAnnot.isPresent()) {
-                    final String name = resolverAnnot.get().value();
-                    resolver = (ParameterResolver<S, ?>) this.resolverRegistry.findNamedResolver(name)
-                            .orElseThrow(() -> new IllegalArgumentException(format("Could not find ParameterResolver with name %s", name)));
+                if (mapperAnnot.isPresent()) {
+                    final String name = mapperAnnot.get().value();
+                    mapper = (ParameterMapper<S, ?>) this.mapperRegistry.findNamedMapper(name)
+                            .orElseThrow(() -> new IllegalArgumentException(format("Could not find ParameterMapper with name %s", name)));
                 } else {
-                    resolver = (ParameterResolver<S, ?>) this.resolverRegistry.findResolver(cmdParam.type())
-                            .orElseThrow(() -> new IllegalArgumentException(String.format("Could not find ParameterResolver for type %s", cmdParam.type().getType())));
+                    mapper = (ParameterMapper<S, ?>) this.mapperRegistry.findMapper(cmdParam.type())
+                            .orElseThrow(() -> new IllegalArgumentException(String.format("Could not find ParameterMapper for type %s",
+                                    cmdParam.type().getType())));
                 }
 
                 final ParameterNode<S> node = annotations.has(Flag.class)
                         ? cmdParam.type().getType().equals(Boolean.TYPE)
                         ? new StandardParameter.PresenceFlag<>(parameterName, cmdParam)
-                        : new StandardParameter.ValueFlag<>(parameterName, resolver, cmdParam, parameter.getName())
-                        : new StandardParameter<>(parameterName, resolver, cmdParam);
+                        : new StandardParameter.ValueFlag<>(parameterName, mapper, cmdParam, parameter.getName())
+                        : new StandardParameter<>(parameterName, mapper, cmdParam);
                 parameters.add(node);
             }
         }

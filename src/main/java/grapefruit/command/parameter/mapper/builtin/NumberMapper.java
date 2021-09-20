@@ -1,13 +1,13 @@
-package grapefruit.command.parameter.resolver.builtin;
+package grapefruit.command.parameter.mapper.builtin;
 
 import grapefruit.command.dispatcher.CommandArgument;
 import grapefruit.command.message.Message;
 import grapefruit.command.message.MessageKeys;
 import grapefruit.command.message.Template;
 import grapefruit.command.parameter.CommandParameter;
+import grapefruit.command.parameter.mapper.AbstractParamterMapper;
+import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.parameter.modifier.Range;
-import grapefruit.command.parameter.resolver.AbstractParamterResolver;
-import grapefruit.command.parameter.resolver.ParameterResolutionException;
 import grapefruit.command.util.Miscellaneous;
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
-public class NumberResolver<S, N extends Number> extends AbstractParamterResolver<S, N> {
+public class NumberMapper<S, N extends Number> extends AbstractParamterMapper<S, N> {
     private static final List<String> PREFIXES;
     private static final List<String> NUMBER_OPTIONS;
     private final Function<String, N> converter;
@@ -48,15 +48,15 @@ public class NumberResolver<S, N extends Number> extends AbstractParamterResolve
                 .collect(Collectors.toList());
     }
 
-    public NumberResolver(final @NotNull TypeToken<N> type, final @NotNull Function<String, N> converter) {
+    public NumberMapper(final @NotNull TypeToken<N> type, final @NotNull Function<String, N> converter) {
         super(type);
         this.converter = requireNonNull(converter, "converter cannot be null");
     }
 
     @Override
-    public @NotNull N resolve(final @NotNull S source,
-                              final @NotNull Queue<CommandArgument> args,
-                              final @NotNull CommandParameter param) throws ParameterResolutionException {
+    public @NotNull N map(final @NotNull S source,
+                          final @NotNull Queue<CommandArgument> args,
+                          final @NotNull CommandParameter param) throws ParameterMappingException {
         final String input = args.element().rawArg();
         try {
             final N result = this.converter.apply(input);
@@ -68,7 +68,7 @@ public class NumberResolver<S, N extends Number> extends AbstractParamterResolve
                 final double found = result.doubleValue();
 
                 if (found < min || found > max) {
-                    throw new ParameterResolutionException(Message.of(
+                    throw new ParameterMappingException(Message.of(
                             MessageKeys.NUMBER_OUT_OF_RANGE,
                             Template.of("{input}", input),
                             Template.of("{min}", min),
@@ -79,7 +79,7 @@ public class NumberResolver<S, N extends Number> extends AbstractParamterResolve
 
             return result;
         } catch (final NumberFormatException ex) {
-            throw new ParameterResolutionException(Message.of(
+            throw new ParameterMappingException(Message.of(
                     MessageKeys.INVALID_NUMBER_VALUE,
                     Template.of("{input}", input)
             ), param);

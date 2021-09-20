@@ -1,14 +1,14 @@
-package grapefruit.command.parameter.resolver;
+package grapefruit.command.parameter.mapper;
 
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
 import static java.util.Objects.requireNonNull;
 
-public abstract class AbstractParamterResolver<S, T> implements ParameterResolver<S, T> {
+public abstract class AbstractParamterMapper<S, T> implements ParameterMapper<S, T> {
     private final TypeToken<T> type;
 
-    public AbstractParamterResolver(final @NotNull TypeToken<T> type) {
+    public AbstractParamterMapper(final @NotNull TypeToken<T> type) {
         this.type = requireNonNull(type, "type cannot be null");
     }
 
