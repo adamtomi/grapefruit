@@ -27,6 +27,8 @@ public final class MessageKeys {
     public static final MessageKey INVALID_BOOLEAN_VALUE = register(MessageKey.of("parameter.invalid-boolean-value"));
     // Variables: {input}
     public static final MessageKey INVALID_NUMBER_VALUE = register(MessageKey.of("parameter.invalid-number-value"));
+    // Variables: {input}
+    public static final MessageKey INVALID_CHARACTER_VALUE = register(MessageKey.of("parameter.invalid-character-value"));
     // Variables: {input}, {min}, {max}
     public static final MessageKey NUMBER_OUT_OF_RANGE = register(MessageKey.of("parameter.number-out-of-range"));
     // Variables: {input}

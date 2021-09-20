@@ -1,6 +1,7 @@
 package grapefruit.command.parameter.mapper;
 
 import grapefruit.command.parameter.mapper.builtin.BooleanMapper;
+import grapefruit.command.parameter.mapper.builtin.CharacterMapper;
 import grapefruit.command.parameter.mapper.builtin.NumberMapper;
 import grapefruit.command.parameter.mapper.builtin.StringMapper;
 import grapefruit.command.util.Miscellaneous;
@@ -28,6 +29,7 @@ public final class ParameterMapperRegistry<S> {
 
     private void registerDefaults() {
         internalRegister(new StringMapper<>());
+        internalRegister(new CharacterMapper<>());
         internalRegister(new BooleanMapper<>());
         internalRegister(new NumberMapper<>(TypeToken.get(Byte.class), Byte::parseByte));
         internalRegister(new NumberMapper<>(TypeToken.get(Short.class), Short::parseShort));

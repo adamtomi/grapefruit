@@ -27,7 +27,8 @@ public final class DefaultMessageProvider implements MessageProvider {
 
             put(MessageKeys.INVALID_BOOLEAN_VALUE, "'{input}' is not a valid boolean value. Options: {options}");
             put(MessageKeys.INVALID_NUMBER_VALUE, "'{input}' is not a valid number value");
-            put(MessageKeys.NUMBER_OUT_OF_RANGE, "{input} is out of range. Value has to be between {min} and {max}");
+            put(MessageKeys.INVALID_CHARACTER_VALUE, "'{input}' is not a valid character, length must be 1.");
+            put(MessageKeys.NUMBER_OUT_OF_RANGE, "'{input}' is out of range. Value has to be between {min} and {max}");
             put(MessageKeys.QUOTED_STRING_INVALID_TRAILING_CHARATER, "'{input}' has to end with '\"'");
             put(MessageKeys.STRING_REGEX_ERROR, "'{input}' has to match regex {regex}");
             put(MessageKeys.MISSING_FLAG_VALUE, "No flag value specified for flag '{input}'");
