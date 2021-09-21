@@ -48,7 +48,7 @@ public final class Miscellaneous {
 
     public static boolean isNumber(final @NotNull String input) {
         try {
-            Integer.parseInt(input);
+            Double.parseDouble(input);
             return true;
         } catch (final NumberFormatException ex) {
             return false;
@@ -57,7 +57,7 @@ public final class Miscellaneous {
 
     public static @NotNull Object nullToPrimitive(final @NotNull Class<?> clazz) {
         if (clazz.equals(Boolean.TYPE)) {
-            return Boolean.FALSE;
+            return false;
         } else if (clazz.equals(Byte.TYPE)) {
             return (byte) 0;
         } else if (clazz.equals(Short.TYPE)) {
@@ -78,14 +78,19 @@ public final class Miscellaneous {
     }
 
     public static @NotNull String formatFlag(final @NotNull String flagName) {
-        return format("--%s", requireNonNull(flagName, "flagName cannot be null"));
+        requireNonNull(flagName, "flagName cannot be null");
+        if (flagName.startsWith("--")) {
+            return flagName;
+        }
+
+        return format("--%s", flagName);
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public static <S> boolean checkAuthorized(final @NotNull S source,
                                               final @Nullable String permission,
                                               final @NotNull CommandAuthorizer<S> authorizer) {
-        if (permission == null) {
+        if (permission == null || permission.isBlank()) {
             return true;
         }
 

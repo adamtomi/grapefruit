@@ -65,7 +65,7 @@ public final class ParameterMapperRegistry<S> {
         requireNonNull(mapper, "mapper cannot be null");
         final TypeToken<?> type = Miscellaneous.box(mapper.type());
         if (this.defaultMappers.containsKey(type)) {
-            throw new IllegalStateException(String.format("Default arameterMapper with type %s is already registered", type.getType()));
+            throw new IllegalStateException(String.format("Default parameterMapper with type %s is already registered", type.getType()));
         }
 
         this.defaultMappers.put(type, mapper);
