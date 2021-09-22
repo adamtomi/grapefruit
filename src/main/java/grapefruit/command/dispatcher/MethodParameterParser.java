@@ -1,8 +1,13 @@
 package grapefruit.command.dispatcher;
 
+import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.CommandParameter0;
+import grapefruit.command.parameter.FlagParameter;
 import grapefruit.command.parameter.ParameterNode0;
+import grapefruit.command.parameter.PresenceFlagParameter;
+import grapefruit.command.parameter.StandardParameter;
 import grapefruit.command.parameter.StandardParameter0;
+import grapefruit.command.parameter.ValueFlagParameter;
 import grapefruit.command.parameter.mapper.ParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMapperRegistry;
 import grapefruit.command.parameter.modifier.Flag;
@@ -33,6 +38,7 @@ import java.util.stream.Stream;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
+@SuppressWarnings("unchecked")
 final class MethodParameterParser<S> {
     private static final Rule GREEDY_AND_QUOTABLE = (method, param, annotations) -> {
         if (annotations.has(Greedy.class) && annotations.has(Quotable.class)) {
@@ -89,9 +95,8 @@ final class MethodParameterParser<S> {
         this.mapperRegistry = requireNonNull(mapperRegistry, "mapperRegistry cannot be null");
     }
 
-    @SuppressWarnings("unchecked")
-    @NotNull List<ParameterNode0<S>> collectParameters(final @NotNull Method method) throws RuleViolationException {
-        final List<ParameterNode0<S>> parameters = new ArrayList<>();
+    @NotNull List<CommandParameter<S>> collectParameters(final @NotNull Method method) throws RuleViolationException {
+        final List<CommandParameter<S>> parameters = new ArrayList<>();
         for (int i = 0; i < method.getParameters().length; i++) {
             final Parameter parameter = method.getParameters()[i];
             final AnnotationList annotations = new AnnotationList(parameter.getAnnotations());
@@ -101,16 +106,9 @@ final class MethodParameterParser<S> {
             }
 
             if (!annotations.has(Source.class)) {
-                final String parameterName = annotations.find(Flag.class)
-                        .map(Flag::value)
-                        .orElse(parameter.getName());
-                if (parameters.stream().anyMatch(x -> x.name().equalsIgnoreCase(parameterName))) {
-                    throw new IllegalArgumentException(format("Duplicate parameters with name %s", parameterName));
-                }
-
-                final boolean isOptional = Stream.of(OptParam.class, Flag.class).anyMatch(annotations::has);
-                final CommandParameter0 cmdParam = new CommandParameter0(i,
-                        TypeToken.get(parameter.getType()), annotations, isOptional);
+                final boolean isFlag = annotations.has(Flag.class);
+                final boolean isOptional = isFlag || annotations.has(OptParam.class);
+                final TypeToken<?> type = TypeToken.get(parameter.getType());
                 final ParameterMapper<S, ?> mapper;
                 final Optional<Mapper> mapperAnnot = annotations.find(Mapper.class);
 
@@ -119,17 +117,25 @@ final class MethodParameterParser<S> {
                     mapper = (ParameterMapper<S, ?>) this.mapperRegistry.findNamedMapper(name)
                             .orElseThrow(() -> new IllegalArgumentException(format("Could not find ParameterMapper with name %s", name)));
                 } else {
-                    mapper = (ParameterMapper<S, ?>) this.mapperRegistry.findMapper(cmdParam.type())
+                    mapper = (ParameterMapper<S, ?>) this.mapperRegistry.findMapper(type)
                             .orElseThrow(() -> new IllegalArgumentException(String.format("Could not find ParameterMapper for type %s",
-                                    cmdParam.type().getType())));
+                                   type.getType())));
                 }
 
-                final ParameterNode0<S> node = annotations.has(Flag.class)
-                        ? cmdParam.type().getType().equals(Boolean.TYPE)
-                        ? new StandardParameter0.PresenceFlag<>(parameterName, cmdParam)
-                        : new StandardParameter0.ValueFlag<>(parameterName, mapper, cmdParam, parameter.getName())
-                        : new StandardParameter0<>(parameterName, mapper, cmdParam);
-                parameters.add(node);
+                final String paramName = parameter.getName();
+                final CommandParameter<S> cmdParam;
+                if (isFlag) {
+                    final String flagName = annotations.find(Flag.class)
+                            .map(Flag::value)
+                            .orElseThrow();
+                    cmdParam = type.equals(FlagParameter.PRESENCE_FLAG_TYPE)
+                            ? new PresenceFlagParameter<>(flagName, paramName, i, annotations)
+                            : new ValueFlagParameter<>(flagName, paramName, i, type, annotations, mapper);
+                } else {
+                    cmdParam = new StandardParameter<>(paramName, i, isOptional, type, annotations, mapper);
+                }
+
+                parameters.add(cmdParam);
             }
         }
 
