@@ -1,9 +1,9 @@
 package grapefruit.command.dispatcher;
 
 import grapefruit.command.dispatcher.registration.CommandRegistration;
-import grapefruit.command.parameter.CommandParameter;
-import grapefruit.command.parameter.ParameterNode;
-import grapefruit.command.parameter.StandardParameter;
+import grapefruit.command.parameter.CommandParameter0;
+import grapefruit.command.parameter.ParameterNode0;
+import grapefruit.command.parameter.StandardParameter0;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +23,7 @@ import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
-import static grapefruit.command.parameter.ParameterNode.FLAG_PATTERN;
+import static grapefruit.command.parameter.ParameterNode0.FLAG_PATTERN;
 import static java.util.Objects.requireNonNull;
 
 final class CommandGraph<S> {
@@ -137,7 +137,7 @@ final class CommandGraph<S> {
                 return List.of();
             }
 
-            for (final ParameterNode<S> param : registration.parameters()) {
+            for (final ParameterNode0<S> param : registration.parameters()) {
                 if (args.isEmpty()) {
                     return List.of();
                 }
@@ -184,10 +184,10 @@ final class CommandGraph<S> {
     }
 
     private @NotNull List<String> suggestFor(final @NotNull S source,
-                                             final @NotNull ParameterNode<S> parameter,
+                                             final @NotNull ParameterNode0<S> parameter,
                                              final @NotNull Deque<CommandArgument> previousArgs,
                                              final @NotNull String currentArg) {
-        if (parameter instanceof StandardParameter.ValueFlag) {
+        if (parameter instanceof StandardParameter0.ValueFlag) {
             if (previousArgs.stream().anyMatch(arg -> arg.rawArg().equalsIgnoreCase(Miscellaneous.formatFlag(parameter.name())))) {
                 return parameter.mapper().listSuggestions(source, currentArg, parameter.unwrap());
             }
@@ -216,11 +216,11 @@ final class CommandGraph<S> {
 
         final Optional<CommandRegistration<S>> registration = node.registration();
         if (registration.isPresent()) {
-            for (final ParameterNode<S> parameter : registration.get().parameters()) {
-                final CommandParameter unwrapped = parameter.unwrap();
-                final String parameterName = parameter instanceof StandardParameter.ValueFlag
-                        ? Miscellaneous.formatFlag(parameter.name()) + " " + ((StandardParameter.ValueFlag<?>) parameter).parameterName()
-                        : parameter instanceof StandardParameter.PresenceFlag
+            for (final ParameterNode0<S> parameter : registration.get().parameters()) {
+                final CommandParameter0 unwrapped = parameter.unwrap();
+                final String parameterName = parameter instanceof StandardParameter0.ValueFlag
+                        ? Miscellaneous.formatFlag(parameter.name()) + " " + ((StandardParameter0.ValueFlag<?>) parameter).parameterName()
+                        : parameter instanceof StandardParameter0.PresenceFlag
                         ? Miscellaneous.formatFlag(parameter.name())
                         : parameter.name();
 

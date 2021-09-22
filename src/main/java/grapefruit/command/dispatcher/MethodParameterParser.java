@@ -1,8 +1,8 @@
 package grapefruit.command.dispatcher;
 
-import grapefruit.command.parameter.CommandParameter;
-import grapefruit.command.parameter.ParameterNode;
-import grapefruit.command.parameter.StandardParameter;
+import grapefruit.command.parameter.CommandParameter0;
+import grapefruit.command.parameter.ParameterNode0;
+import grapefruit.command.parameter.StandardParameter0;
 import grapefruit.command.parameter.mapper.ParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMapperRegistry;
 import grapefruit.command.parameter.modifier.Flag;
@@ -90,8 +90,8 @@ final class MethodParameterParser<S> {
     }
 
     @SuppressWarnings("unchecked")
-    @NotNull List<ParameterNode<S>> collectParameters(final @NotNull Method method) throws RuleViolationException {
-        final List<ParameterNode<S>> parameters = new ArrayList<>();
+    @NotNull List<ParameterNode0<S>> collectParameters(final @NotNull Method method) throws RuleViolationException {
+        final List<ParameterNode0<S>> parameters = new ArrayList<>();
         for (int i = 0; i < method.getParameters().length; i++) {
             final Parameter parameter = method.getParameters()[i];
             final AnnotationList annotations = new AnnotationList(parameter.getAnnotations());
@@ -109,7 +109,7 @@ final class MethodParameterParser<S> {
                 }
 
                 final boolean isOptional = Stream.of(OptParam.class, Flag.class).anyMatch(annotations::has);
-                final CommandParameter cmdParam = new CommandParameter(i,
+                final CommandParameter0 cmdParam = new CommandParameter0(i,
                         TypeToken.get(parameter.getType()), annotations, isOptional);
                 final ParameterMapper<S, ?> mapper;
                 final Optional<Mapper> mapperAnnot = annotations.find(Mapper.class);
@@ -124,11 +124,11 @@ final class MethodParameterParser<S> {
                                     cmdParam.type().getType())));
                 }
 
-                final ParameterNode<S> node = annotations.has(Flag.class)
+                final ParameterNode0<S> node = annotations.has(Flag.class)
                         ? cmdParam.type().getType().equals(Boolean.TYPE)
-                        ? new StandardParameter.PresenceFlag<>(parameterName, cmdParam)
-                        : new StandardParameter.ValueFlag<>(parameterName, mapper, cmdParam, parameter.getName())
-                        : new StandardParameter<>(parameterName, mapper, cmdParam);
+                        ? new StandardParameter0.PresenceFlag<>(parameterName, cmdParam)
+                        : new StandardParameter0.ValueFlag<>(parameterName, mapper, cmdParam, parameter.getName())
+                        : new StandardParameter0<>(parameterName, mapper, cmdParam);
                 parameters.add(node);
             }
         }

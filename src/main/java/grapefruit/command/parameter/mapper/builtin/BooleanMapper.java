@@ -4,9 +4,10 @@ import grapefruit.command.dispatcher.CommandArgument;
 import grapefruit.command.message.Message;
 import grapefruit.command.message.MessageKeys;
 import grapefruit.command.message.Template;
-import grapefruit.command.parameter.CommandParameter;
+import grapefruit.command.parameter.CommandParameter0;
 import grapefruit.command.parameter.mapper.AbstractParamterMapper;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
+import grapefruit.command.util.AnnotationList;
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,7 +32,7 @@ public class BooleanMapper<S> extends AbstractParamterMapper<S, Boolean> {
     @Override
     public @NotNull Boolean map(final @NotNull S source,
                                 final @NotNull Queue<CommandArgument> args,
-                                final @NotNull CommandParameter param) throws ParameterMappingException {
+                                final @NotNull AnnotationList modifiers) throws ParameterMappingException {
         final String input = args.element().rawArg().toLowerCase(Locale.ROOT);
         if (TRUE_PHRASES.contains(input)) {
             return true;
@@ -43,13 +44,13 @@ public class BooleanMapper<S> extends AbstractParamterMapper<S, Boolean> {
                 MessageKeys.INVALID_BOOLEAN_VALUE,
                 Template.of("{input}", input),
                 Template.of("{options}", ALL_OPTIONS)
-        ), param);
+        ));
     }
 
     @Override
     public @NotNull List<String> listSuggestions(final @NotNull S source,
                                                  final @NotNull String currentArg,
-                                                 final @NotNull CommandParameter param) {
+                                                 final @NotNull CommandParameter0 param) {
         return Stream.of(TRUE_PHRASES, FALSE_PHRASES)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());

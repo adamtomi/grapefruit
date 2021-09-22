@@ -1,7 +1,7 @@
 package grapefruit.command.parameter.mapper;
 
 import grapefruit.command.dispatcher.CommandArgument;
-import grapefruit.command.parameter.CommandParameter;
+import grapefruit.command.util.AnnotationList;
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,12 +14,12 @@ public interface ParameterMapper<S, T> {
 
     @NotNull T map(final @NotNull S source,
                    final @NotNull Queue<CommandArgument> args,
-                   final @NotNull CommandParameter param)
+                   final @NotNull AnnotationList modifiers)
             throws ParameterMappingException;
 
     default @NotNull List<String> listSuggestions(final @NotNull S source,
                                                   final @NotNull String currentArg,
-                                                  final @NotNull CommandParameter param) {
+                                                  final @NotNull AnnotationList modifiers) {
         return List.of();
     }
 

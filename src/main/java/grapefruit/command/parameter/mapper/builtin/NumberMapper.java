@@ -4,10 +4,10 @@ import grapefruit.command.dispatcher.CommandArgument;
 import grapefruit.command.message.Message;
 import grapefruit.command.message.MessageKeys;
 import grapefruit.command.message.Template;
-import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.mapper.AbstractParamterMapper;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.parameter.modifier.Range;
+import grapefruit.command.util.AnnotationList;
 import grapefruit.command.util.Miscellaneous;
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
@@ -56,11 +56,11 @@ public class NumberMapper<S, N extends Number> extends AbstractParamterMapper<S,
     @Override
     public @NotNull N map(final @NotNull S source,
                           final @NotNull Queue<CommandArgument> args,
-                          final @NotNull CommandParameter param) throws ParameterMappingException {
+                          final @NotNull AnnotationList modifiers) throws ParameterMappingException {
         final String input = args.element().rawArg();
         try {
             final N result = this.converter.apply(input);
-            final Optional<Range> rangeOpt = param.modifiers().find(Range.class);
+            final Optional<Range> rangeOpt = modifiers.find(Range.class);
             if (rangeOpt.isPresent()) {
                 final Range range = rangeOpt.get();
                 final double min = range.min();
@@ -73,7 +73,7 @@ public class NumberMapper<S, N extends Number> extends AbstractParamterMapper<S,
                             Template.of("{input}", input),
                             Template.of("{min}", min),
                             Template.of("{max}", max)
-                    ), param);
+                    ));
                 }
             }
 
@@ -82,14 +82,14 @@ public class NumberMapper<S, N extends Number> extends AbstractParamterMapper<S,
             throw new ParameterMappingException(Message.of(
                     MessageKeys.INVALID_NUMBER_VALUE,
                     Template.of("{input}", input)
-            ), param);
+            ));
         }
     }
 
     @Override
     public @NotNull List<String> listSuggestions(final @NotNull S source,
                                                  final @NotNull String currentArg,
-                                                 final @NotNull CommandParameter param) {
+                                                 final @NotNull AnnotationList modifiers) {
         if (currentArg.isEmpty()) {
             return PREFIXES;
         } else {

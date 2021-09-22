@@ -4,12 +4,12 @@ import grapefruit.command.dispatcher.CommandArgument;
 import grapefruit.command.message.Message;
 import grapefruit.command.message.MessageKeys;
 import grapefruit.command.message.Template;
-import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.mapper.AbstractParamterMapper;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.parameter.modifier.string.Greedy;
 import grapefruit.command.parameter.modifier.string.Quotable;
 import grapefruit.command.parameter.modifier.string.Regex;
+import grapefruit.command.util.AnnotationList;
 import grapefruit.command.util.Miscellaneous;
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
@@ -30,9 +30,9 @@ public class StringMapper<S> extends AbstractParamterMapper<S, String> {
     @Override
     public @NotNull String map(final @NotNull S source,
                                final @NotNull Queue<CommandArgument> args,
-                               final @NotNull CommandParameter param) throws ParameterMappingException {
+                               final @NotNull AnnotationList modifiers) throws ParameterMappingException {
         final String parsedValue;
-        if (param.modifiers().has(Greedy.class)) {
+        if (modifiers.has(Greedy.class)) {
             final StringJoiner joiner = new StringJoiner(" ");
             while (!args.isEmpty()) {
                 final CommandArgument each = args.remove();
@@ -41,7 +41,7 @@ public class StringMapper<S> extends AbstractParamterMapper<S, String> {
             }
 
             parsedValue = joiner.toString();
-        } else if (param.modifiers().has(Quotable.class)) {
+        } else if (modifiers.has(Quotable.class)) {
             final String first = args.element().rawArg();
             if (first.charAt(0) != QUOTE_SIGN) {
                 parsedValue = first.trim();
@@ -74,7 +74,7 @@ public class StringMapper<S> extends AbstractParamterMapper<S, String> {
                  * isn't QUOTE_SIGN.
                  */
                 if (!Miscellaneous.endsWith(joined, QUOTE_SIGN)) {
-                    throw new ParameterMappingException(Message.of(MessageKeys.QUOTED_STRING_INVALID_TRAILING_CHARATER), param);
+                    throw new ParameterMappingException(Message.of(MessageKeys.QUOTED_STRING_INVALID_TRAILING_CHARATER));
                 }
 
                 parsedValue = joined.substring(0, joined.length() - 1);
@@ -84,7 +84,7 @@ public class StringMapper<S> extends AbstractParamterMapper<S, String> {
             parsedValue = args.element().rawArg();
         }
 
-        final Optional<Regex> regexOpt = param.modifiers().find(Regex.class);
+        final Optional<Regex> regexOpt = modifiers.find(Regex.class);
         if (regexOpt.isPresent()) {
             final Regex regex = regexOpt.get();
             final int allowUnicode = regex.allowUnicode() ? Pattern.UNICODE_CHARACTER_CLASS : 0;
@@ -97,7 +97,7 @@ public class StringMapper<S> extends AbstractParamterMapper<S, String> {
                         MessageKeys.STRING_REGEX_ERROR,
                         Template.of("{input}", parsedValue),
                         Template.of("{regex}", pattern.pattern())
-                ), param);
+                ));
             }
         }
 
