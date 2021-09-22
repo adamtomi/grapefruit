@@ -2,8 +2,7 @@ package grapefruit.command.dispatcher;
 
 import grapefruit.command.dispatcher.registration.CommandRegistration;
 import grapefruit.command.parameter.CommandParameter;
-import grapefruit.command.parameter.ParameterNode;
-import grapefruit.command.parameter.StandardParameter;
+import grapefruit.command.parameter.FlagParameter;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +22,7 @@ import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
-import static grapefruit.command.parameter.ParameterNode.FLAG_PATTERN;
+import static grapefruit.command.parameter.FlagParameter.FLAG_PATTERN;
 import static java.util.Objects.requireNonNull;
 
 final class CommandGraph<S> {
@@ -137,7 +136,7 @@ final class CommandGraph<S> {
                 return List.of();
             }
 
-            for (final ParameterNode<S> param : registration.parameters()) {
+            for (final CommandParameter<S> param : registration.parameters()) {
                 if (args.isEmpty()) {
                     return List.of();
                 }
@@ -159,7 +158,7 @@ final class CommandGraph<S> {
 
                 if (param.mapper().suggestionsNeedValidation()) {
                     try {
-                        param.mapper().map(source, args, param.unwrap());
+                        param.mapper().map(source, args, param.modifiers());
                     } catch (final ParameterMappingException ex) {
                         return List.of();
                     }
@@ -184,18 +183,18 @@ final class CommandGraph<S> {
     }
 
     private @NotNull List<String> suggestFor(final @NotNull S source,
-                                             final @NotNull ParameterNode<S> parameter,
+                                             final @NotNull CommandParameter<S> parameter,
                                              final @NotNull Deque<CommandArgument> previousArgs,
                                              final @NotNull String currentArg) {
-        if (parameter instanceof StandardParameter.ValueFlag) {
+        if (parameter.isFlag() && !parameter.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
             if (previousArgs.stream().anyMatch(arg -> arg.rawArg().equalsIgnoreCase(Miscellaneous.formatFlag(parameter.name())))) {
-                return parameter.mapper().listSuggestions(source, currentArg, parameter.unwrap());
+                return parameter.mapper().listSuggestions(source, currentArg, parameter.modifiers());
             }
 
             return List.of(Miscellaneous.formatFlag(parameter.name()));
         }
 
-        return parameter.mapper().listSuggestions(source, currentArg, parameter.unwrap());
+        return parameter.mapper().listSuggestions(source, currentArg, parameter.modifiers());
     }
 
     public @NotNull String generateSyntaxFor(final @NotNull String commandLine) {
@@ -216,17 +215,20 @@ final class CommandGraph<S> {
 
         final Optional<CommandRegistration<S>> registration = node.registration();
         if (registration.isPresent()) {
-            for (final ParameterNode<S> parameter : registration.get().parameters()) {
-                final CommandParameter unwrapped = parameter.unwrap();
-                final String parameterName = parameter instanceof StandardParameter.ValueFlag
-                        ? Miscellaneous.formatFlag(parameter.name()) + " " + ((StandardParameter.ValueFlag<?>) parameter).parameterName()
-                        : parameter instanceof StandardParameter.PresenceFlag
-                        ? Miscellaneous.formatFlag(parameter.name())
-                        : parameter.name();
+            for (final CommandParameter<S> parameter : registration.get().parameters()) {
+                final String syntaxPart;
+                if (parameter.isFlag()) {
+                    final FlagParameter<?> flag = (FlagParameter<?>) parameter;
+                    if (flag.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
+                        syntaxPart = flag.flagName();
+                    } else {
+                        syntaxPart = flag.flagName() + " " + flag.name();
+                    }
+                } else {
+                    syntaxPart = parameter.name();
+                }
 
-                joiner.add(unwrapped.isOptional()
-                        ? AS_OPTIONAL.apply(parameterName)
-                        : AS_REQUIRED.apply(parameterName));
+                joiner.add(parameter.isOptional() ? AS_OPTIONAL.apply(syntaxPart) : AS_REQUIRED.apply(syntaxPart));
             }
 
         } else {
@@ -249,6 +251,7 @@ final class CommandGraph<S> {
 
     private static final record RouteFragment (@NotNull String primary, @NotNull String[] aliases) {}
 
+    @SuppressWarnings("all") // Don't complain about generics.
     interface RouteResult<S> {
 
         static <S> @NotNull RouteResult<S> success(final @NotNull CommandRegistration<S> registration) {

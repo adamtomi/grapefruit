@@ -20,8 +20,7 @@ import grapefruit.command.message.MessageProvider;
 import grapefruit.command.message.Messenger;
 import grapefruit.command.message.Template;
 import grapefruit.command.parameter.CommandParameter;
-import grapefruit.command.parameter.ParameterNode;
-import grapefruit.command.parameter.StandardParameter;
+import grapefruit.command.parameter.FlagParameter;
 import grapefruit.command.parameter.mapper.ParameterMapperRegistry;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.parameter.modifier.Source;
@@ -48,7 +47,7 @@ import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import static grapefruit.command.dispatcher.CommandGraph.ALIAS_SEPARATOR;
-import static grapefruit.command.parameter.ParameterNode.FLAG_PATTERN;
+import static grapefruit.command.parameter.FlagParameter.FLAG_PATTERN;
 import static java.lang.String.format;
 import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Objects.requireNonNull;
@@ -69,7 +68,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final CommandRegistrationHandler<S> registrationHandler;
     private final Messenger<S> messenger;
 
-    protected CommandDispatcherImpl(final @NotNull TypeToken<S> commandSourceType,
+    CommandDispatcherImpl(final @NotNull TypeToken<S> commandSourceType,
                                     final @NotNull CommandAuthorizer<S> commandAuthorizer,
                                     final @NotNull Executor asyncExecutor,
                                     final @NotNull MessageProvider messageProvider,
@@ -129,7 +128,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
         try {
             final Parameter[] parameters = method.getParameters();
-            final List<ParameterNode<S>> parsedParams = this.parameterParser.collectParameters(method);
+            final List<CommandParameter<S>> parsedParams = this.parameterParser.collectParameters(method);
             final @Nullable TypeToken<?> commandSourceType = (parameters.length > 0 && parameters[0].isAnnotationPresent(Source.class))
                     ? TypeToken.get(parameters[0].getType())
                     : null;
@@ -258,10 +257,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     final Matcher matcher = FLAG_PATTERN.matcher(rawInput);
                     if (matcher.matches()) {
                         final String flagName = matcher.group(1).toLowerCase(Locale.ROOT);
-                        final Optional<ParameterNode<S>> flagParameterOpt = registration.parameters()
+                        final Optional<CommandParameter<S>> flagParameterOpt = registration.parameters()
                                 .stream()
-                                .filter(param -> param instanceof StandardParameter.ValueFlag
-                                        || param instanceof StandardParameter.PresenceFlag)
+                                .filter(CommandParameter::isFlag)
                                 .filter(param -> param.name().equals(flagName))
                                 .findFirst();
 
@@ -274,9 +272,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
                         input.markConsumed();
                         args.remove();
-                        final ParameterNode<S> flagParameter = flagParameterOpt.get();
+                        final CommandParameter<S> flagParameter = flagParameterOpt.get();
                         final ParsedCommandArgument parsedArg = result.findArgumentUnchecked(flagName);
-                        if (flagParameter instanceof StandardParameter.PresenceFlag) {
+                        if (flagParameter.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
                             parsedArg.parsedValue(true);
 
                         } else {
@@ -288,12 +286,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                 ));
                             }
 
-                            final Object parsedValue = flagParameter.mapper().map(source, args, flagParameter.unwrap());
+                            final Object parsedValue = flagParameter.mapper().map(source, args, flagParameter.modifiers());
                             parsedArg.parsedValue(parsedValue);
                         }
 
                     } else {
-                        final List<ParameterNode<S>> parameters = registration.parameters();
+                        final List<CommandParameter<S>> parameters = registration.parameters();
                         if (parameterIndex >= parameters.size()) {
                             throw new CommandSyntaxException(Message.of(
                                     MessageKeys.TOO_MANY_ARGUMENTS,
@@ -301,14 +299,13 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                             ));
                         }
 
-                        final ParameterNode<S> parameter = parameters.get(parameterIndex);
-                        if (parameter instanceof StandardParameter.ValueFlag
-                                || parameter instanceof StandardParameter.PresenceFlag) {
+                        final CommandParameter<S> parameter = parameters.get(parameterIndex);
+                        if (parameter.isFlag()) {
                             throw new CommandSyntaxException(Message.of(MessageKeys.MISSING_FLAG,
                                     Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))));
                         }
 
-                        final Object parsedValue = parameter.mapper().map(source, args, parameter.unwrap());
+                        final Object parsedValue = parameter.mapper().map(source, args, parameter.modifiers());
                         final ParsedCommandArgument parsedArg = result.findArgumentAt(parameterIndex);
                         parsedArg.parsedValue(parsedValue);
                         parameterIndex++;
@@ -318,10 +315,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         args.element().markConsumed();
                     }
                 } catch (final ParameterMappingException ex) {
-                    final CommandParameter parameter = ex.parameter();
+                    // TODO
+                    /*final CommandParameter0 parameter = ex.parameter();
                     if (!parameter.isOptional()) {
                         throw ex;
-                    }
+                    }*/
 
                 } finally {
                     if (!args.isEmpty() && args.element().isConsumed()) {
@@ -341,15 +339,14 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
-    private @NotNull List<ParsedCommandArgument> preprocessArguments(final @NotNull Collection<ParameterNode<S>> parameters) {
+    private @NotNull List<ParsedCommandArgument> preprocessArguments(final @NotNull Collection<CommandParameter<S>> parameters) {
         return parameters.stream()
                 .map(parameter -> {
-                    final CommandParameter cmdParam = parameter.unwrap();
                     final String name = parameter.name();
                     final ParsedCommandArgument parsedArg = new ParsedCommandArgument(name);
 
-                    if (cmdParam.isOptional()) {
-                        final @NotNull Class<?> type = GenericTypeReflector.erase(cmdParam.type().getType());
+                    if (parameter.isOptional()) {
+                        final @NotNull Class<?> type = GenericTypeReflector.erase(parameter.type().getType());
                         final Object defaultValue = type.isPrimitive()
                                 ? Miscellaneous.nullToPrimitive(type)
                                 : null;
@@ -362,12 +359,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     private @NotNull List<Object> postprocessArguments(final @NotNull CommandResult result,
-                                                       final @NotNull List<ParameterNode<S>> params,
+                                                       final @NotNull List<CommandParameter<S>> parameters,
                                                        final @NotNull String commandLine) throws CommandException {
         final List<Object> objects = new ArrayList<>();
-        for (final ParameterNode<S> param : params) {
+        for (final CommandParameter<S> param : parameters) {
             final ParsedCommandArgument parsedArg = result.findArgumentUnchecked(param.name());
-            if (!param.unwrap().isOptional() && parsedArg.parsedValue().isEmpty()) {
+            if (!param.isOptional() && parsedArg.parsedValue().isEmpty()) {
                 throw new CommandSyntaxException(Message.of(
                         MessageKeys.TOO_FEW_ARGUMENTS,
                         Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))
