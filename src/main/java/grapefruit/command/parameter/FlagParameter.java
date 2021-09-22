@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 
 public interface FlagParameter<S> extends CommandParameter<S> {
     TypeToken<Boolean> PRESENCE_FLAG_TYPE = TypeToken.get(Boolean.TYPE);
-    Pattern FLAG_PATTERN = Pattern.compile("^--(.+)$");
+    Pattern FLAG_PATTERN = Pattern.compile("^--(\\S+)$");
 
     @NotNull String flagName();
 
