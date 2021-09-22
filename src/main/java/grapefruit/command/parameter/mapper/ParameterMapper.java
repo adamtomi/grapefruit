@@ -1,6 +1,6 @@
 package grapefruit.command.parameter.mapper;
 
-import grapefruit.command.dispatcher.CommandArgument;
+import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.util.AnnotationList;
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
@@ -13,7 +13,7 @@ public interface ParameterMapper<S, T> {
     @NotNull TypeToken<T> type();
 
     @NotNull T map(final @NotNull S source,
-                   final @NotNull Queue<CommandArgument> args,
+                   final @NotNull Queue<CommandInput> args,
                    final @NotNull AnnotationList modifiers)
             throws ParameterMappingException;
 
