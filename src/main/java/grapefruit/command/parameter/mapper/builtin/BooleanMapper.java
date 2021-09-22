@@ -4,7 +4,6 @@ import grapefruit.command.dispatcher.CommandArgument;
 import grapefruit.command.message.Message;
 import grapefruit.command.message.MessageKeys;
 import grapefruit.command.message.Template;
-import grapefruit.command.parameter.CommandParameter0;
 import grapefruit.command.parameter.mapper.AbstractParamterMapper;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.util.AnnotationList;
@@ -50,7 +49,7 @@ public class BooleanMapper<S> extends AbstractParamterMapper<S, Boolean> {
     @Override
     public @NotNull List<String> listSuggestions(final @NotNull S source,
                                                  final @NotNull String currentArg,
-                                                 final @NotNull CommandParameter0 param) {
+                                                 final @NotNull AnnotationList modifiers) {
         return Stream.of(TRUE_PHRASES, FALSE_PHRASES)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());

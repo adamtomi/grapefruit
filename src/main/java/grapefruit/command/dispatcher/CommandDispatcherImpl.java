@@ -20,7 +20,6 @@ import grapefruit.command.message.MessageProvider;
 import grapefruit.command.message.Messenger;
 import grapefruit.command.message.Template;
 import grapefruit.command.parameter.CommandParameter;
-import grapefruit.command.parameter.CommandParameter0;
 import grapefruit.command.parameter.FlagParameter;
 import grapefruit.command.parameter.mapper.ParameterMapperRegistry;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
