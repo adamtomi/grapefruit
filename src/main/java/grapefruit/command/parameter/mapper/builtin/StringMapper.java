@@ -53,9 +53,9 @@ public class StringMapper<S> extends AbstractParamterMapper<S, String> {
                 int joinedCount = 0;
                 for (final CommandInput arg : args) {
                     final String rawInput = arg.rawArg();
-                    joiner.add(rawInput.isEmpty() ? "" : rawInput);
+                    joiner.add(rawInput);
                     joinedCount++;
-                    if (!rawInput.isEmpty() && Miscellaneous.endsWith(rawInput, QUOTE_SIGN)) {
+                    if (!Miscellaneous.endsWith(rawInput, QUOTE_SIGN)) {
                         break;
                     }
                 }
