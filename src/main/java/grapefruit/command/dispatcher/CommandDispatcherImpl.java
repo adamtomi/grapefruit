@@ -257,7 +257,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         final Optional<CommandParameter<S>> flagParameterOpt = registration.parameters()
                                 .stream()
                                 .filter(CommandParameter::isFlag)
-                                .filter(param -> param.name().equals(flagName))
+                                .filter(param -> ((FlagParameter<S>) param).flagName().equals(flagName))
                                 .findFirst();
 
                         if (flagParameterOpt.isEmpty()) {
@@ -296,14 +296,24 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                             ));
                         }
 
-                        final CommandParameter<S> parameter = parameters.get(parameterIndex);
+                        int actualIndex = parameterIndex;
+                        CommandParameter<S> parameter = parameters.get(parameterIndex);
                         if (parameter.isFlag()) {
-                            throw new CommandSyntaxException(Message.of(MessageKeys.MISSING_FLAG,
-                                    Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))));
+                            final Optional<CommandParameter<S>> firstNonFlagParameter = parameters.stream()
+                                    .filter(x -> !x.isFlag())
+                                    .filter(x -> result.findArgument(x.name()).isEmpty())
+                                    .findFirst();
+                            if (firstNonFlagParameter.isEmpty()) {
+                                throw new CommandSyntaxException(Message.of(MessageKeys.MISSING_FLAG,
+                                        Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))));
+                            }
+
+                            parameter = firstNonFlagParameter.orElseThrow();
+                            actualIndex = parameters.indexOf(parameter);
                         }
 
                         final Object parsedValue = parameter.mapper().map(source, args, parameter.modifiers());
-                        final ParsedCommandArgument parsedArg = result.findArgumentAt(parameterIndex);
+                        final ParsedCommandArgument parsedArg = result.findArgumentAt(actualIndex);
                         parsedArg.parsedValue(parsedValue);
                         parameterIndex++;
                     }
@@ -339,7 +349,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private @NotNull List<ParsedCommandArgument> preprocessArguments(final @NotNull Collection<CommandParameter<S>> parameters) {
         return parameters.stream()
                 .map(parameter -> {
-                    final String name = parameter.name();
+                    final String name = parameter.isFlag()
+                            ? ((FlagParameter<S>) parameter).flagName()
+                            : parameter.name();
                     final ParsedCommandArgument parsedArg = new ParsedCommandArgument(name);
 
                     if (parameter.isOptional()) {
@@ -360,7 +372,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                                        final @NotNull String commandLine) throws CommandException {
         final List<Object> objects = new ArrayList<>();
         for (final CommandParameter<S> param : parameters) {
-            final ParsedCommandArgument parsedArg = result.findArgumentUnchecked(param.name());
+            final String parameterName = param.isFlag()
+                    ? ((FlagParameter<S>) param).flagName()
+                    : param.name();
+            final ParsedCommandArgument parsedArg = result.findArgumentUnchecked(parameterName);
             if (!param.isOptional() && parsedArg.parsedValue().isEmpty()) {
                 throw new CommandSyntaxException(Message.of(
                         MessageKeys.TOO_FEW_ARGUMENTS,
