@@ -33,7 +33,13 @@ public final class CommandInputTokenizer {
                     blankCount++;
                 }
 
-                result.add(new BlankCommandInput(blankCount));
+                /*
+                 * For instance: "/root first  second" Between first and second there's an extra space,
+                 * so just ignore it instead of throwing an error or adding a blank entry.
+                 */
+                if (blankCount > 0) {
+                    result.add(new BlankCommandInput(blankCount));
+                }
             }
         }
 
