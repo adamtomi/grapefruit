@@ -59,6 +59,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final Queue<PreProcessLitener<S>> preProcessLiteners = new ConcurrentLinkedQueue<>();
     private final Queue<PreDispatchListener<S>> preDispatchListeners = new ConcurrentLinkedQueue<>();
     private final Queue<PostDispatchListener<S>> postDispatchListeners = new ConcurrentLinkedQueue<>();
+    private final CommandInputTokenizer inputTokenizer = new CommandInputTokenizer();
     private final TypeToken<S> commandSourceType;
     private final CommandAuthorizer<S> commandAuthorizer;
     private final CommandGraph<S> commandGraph;
@@ -176,11 +177,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
 
         try {
-            final Queue<CommandArgument> args = Arrays.stream(commandLine.split(" "))
-                    .map(String::trim)
-                    .map(CommandArgument::new)
-                    .collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
-
+            final Queue<CommandInput> args = this.inputTokenizer.tokenizeInput(commandLine);
             final CommandGraph.RouteResult<S> routeResult = this.commandGraph.routeCommand(args);
             if (routeResult instanceof CommandGraph.RouteResult.Success<S> success) {
                 final CommandRegistration<S> reg = success.registration();
@@ -246,11 +243,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private @NotNull CommandResult dispatchCommand(final @NotNull CommandRegistration<S> registration,
                                                    final @NotNull String commandLine,
                                                    final @NotNull S source,
-                                                   final @NotNull Queue<CommandArgument> args) throws CommandException {
+                                                   final @NotNull Queue<CommandInput> args) throws CommandException {
         final CommandResult result = new CommandResult(commandLine, preprocessArguments(registration.parameters()));
         try {
             int parameterIndex = 0;
-            CommandArgument input;
+            CommandInput input;
             while ((input = args.peek()) != null) {
                 try {
                     final String rawInput = input.rawArg();
@@ -400,16 +397,16 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     public @NotNull List<String> listSuggestions(final @NotNull S source,
                                                  final @NotNull String commandLine) {
         requireNonNull(source, "source cannot be null");
-        final Deque<CommandArgument> args = Arrays.stream(commandLine.split(" "))
+        final Deque<CommandInput> args = Arrays.stream(commandLine.split(" "))
                 .map(String::trim)
-                .map(CommandArgument::new)
+                .map(StringCommandInput::new)
                 .collect(Collectors.toCollection(ArrayDeque::new));
         if (args.size() == 0) {
             return List.of();
         }
 
         if (commandLine.charAt(commandLine.length() - 1) == ' ') {
-            args.add(new CommandArgument("")); // This is a bit hacky
+            args.add(new BlankCommandInput(1)); // This is a bit hacky
         }
 
         final String last = args.getLast().rawArg();

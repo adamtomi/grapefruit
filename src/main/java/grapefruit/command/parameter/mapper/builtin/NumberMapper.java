@@ -1,6 +1,6 @@
 package grapefruit.command.parameter.mapper.builtin;
 
-import grapefruit.command.dispatcher.CommandArgument;
+import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.message.Message;
 import grapefruit.command.message.MessageKeys;
 import grapefruit.command.message.Template;
@@ -55,7 +55,7 @@ public class NumberMapper<S, N extends Number> extends AbstractParamterMapper<S,
 
     @Override
     public @NotNull N map(final @NotNull S source,
-                          final @NotNull Queue<CommandArgument> args,
+                          final @NotNull Queue<CommandInput> args,
                           final @NotNull AnnotationList modifiers) throws ParameterMappingException {
         final String input = args.element().rawArg();
         try {

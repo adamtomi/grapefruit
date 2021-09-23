@@ -75,9 +75,9 @@ final class CommandGraph<S> {
         }
     }
 
-    public @NotNull RouteResult<S> routeCommand(final @NotNull Queue<CommandArgument> args) {
+    public @NotNull RouteResult<S> routeCommand(final @NotNull Queue<CommandInput> args) {
         CommandNode<S> commandNode = this.rootNode;
-        CommandArgument arg;
+        CommandInput arg;
         boolean firstRun = true;
         while ((arg = args.poll()) != null) {
             final String rawInput = arg.rawArg();
@@ -108,9 +108,9 @@ final class CommandGraph<S> {
         return RouteResult.failure(RouteResult.Failure.Reason.INVALID_SYNTAX);
     }
 
-    public @NotNull List<String> listSuggestions(final @NotNull S source, final @NotNull Deque<CommandArgument> args) {
+    public @NotNull List<String> listSuggestions(final @NotNull S source, final @NotNull Deque<CommandInput> args) {
         CommandNode<S> commandNode = this.rootNode;
-        CommandArgument part;
+        CommandInput part;
         while ((part = args.peek()) != null) {
             if (commandNode.registration().isPresent()) {
                 break;
@@ -129,7 +129,7 @@ final class CommandGraph<S> {
         }
 
         final Optional<CommandRegistration<S>> registrationOpt = commandNode.registration();
-        final Deque<CommandArgument> argsCopy = new ConcurrentLinkedDeque<>(args);
+        final Deque<CommandInput> argsCopy = new ConcurrentLinkedDeque<>(args);
         if (registrationOpt.isPresent()) {
             final CommandRegistration<S> registration = registrationOpt.orElseThrow();
             if (!Miscellaneous.checkAuthorized(source, registration.permission(), this.authorizer)) {
@@ -141,7 +141,7 @@ final class CommandGraph<S> {
                     return List.of();
                 }
 
-                CommandArgument currentArg = args.element();
+                CommandInput currentArg = args.element();
                 final Matcher flagPatternMatcher = FLAG_PATTERN.matcher(currentArg.rawArg());
                 if (flagPatternMatcher.matches()) {
                     args.remove();
@@ -184,7 +184,7 @@ final class CommandGraph<S> {
 
     private @NotNull List<String> suggestFor(final @NotNull S source,
                                              final @NotNull CommandParameter<S> parameter,
-                                             final @NotNull Deque<CommandArgument> previousArgs,
+                                             final @NotNull Deque<CommandInput> previousArgs,
                                              final @NotNull String currentArg) {
         if (parameter.isFlag() && !parameter.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
             if (previousArgs.stream().anyMatch(arg -> arg.rawArg().equalsIgnoreCase(Miscellaneous.formatFlag(parameter.name())))) {

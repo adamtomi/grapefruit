@@ -1,6 +1,6 @@
 package grapefruit.command.parameter.mapper.builtin;
 
-import grapefruit.command.dispatcher.CommandArgument;
+import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.message.Message;
 import grapefruit.command.message.MessageKeys;
 import grapefruit.command.message.Template;
@@ -29,13 +29,13 @@ public class StringMapper<S> extends AbstractParamterMapper<S, String> {
 
     @Override
     public @NotNull String map(final @NotNull S source,
-                               final @NotNull Queue<CommandArgument> args,
+                               final @NotNull Queue<CommandInput> args,
                                final @NotNull AnnotationList modifiers) throws ParameterMappingException {
         final String parsedValue;
         if (modifiers.has(Greedy.class)) {
             final StringJoiner joiner = new StringJoiner(" ");
             while (!args.isEmpty()) {
-                final CommandArgument each = args.remove();
+                final CommandInput each = args.remove();
                 joiner.add(each.rawArg());
                 each.markConsumed();
             }
@@ -51,18 +51,18 @@ public class StringMapper<S> extends AbstractParamterMapper<S, String> {
                 final StringJoiner joiner = new StringJoiner(" ");
                 joiner.add(first.substring(1));
                 int joinedCount = 0;
-                for (final CommandArgument arg : args) {
+                for (final CommandInput arg : args) {
                     final String rawInput = arg.rawArg();
-                    joiner.add(rawInput.isEmpty() ? "" : rawInput);
+                    joiner.add(rawInput);
                     joinedCount++;
-                    if (!rawInput.isEmpty() && Miscellaneous.endsWith(rawInput, QUOTE_SIGN)) {
+                    if (!Miscellaneous.endsWith(rawInput, QUOTE_SIGN)) {
                         break;
                     }
                 }
 
                 // Remove (joinedCount - 1) arguments
                 for (int i = 1; i < joinedCount - 1; i++) {
-                    final CommandArgument arg = args.remove();
+                    final CommandInput arg = args.remove();
                     arg.markConsumed();
                 }
 

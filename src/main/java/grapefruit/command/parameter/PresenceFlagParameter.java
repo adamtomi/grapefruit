@@ -1,6 +1,6 @@
 package grapefruit.command.parameter;
 
-import grapefruit.command.dispatcher.CommandArgument;
+import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.parameter.mapper.ParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.util.AnnotationList;
@@ -46,7 +46,7 @@ public class PresenceFlagParameter<S> extends AbstractFlagParameter<S> {
 
         @Override
         public @NotNull Void map(final @NotNull S source,
-                                 final @NotNull Queue<CommandArgument> args,
+                                 final @NotNull Queue<CommandInput> args,
                                  final @NotNull AnnotationList modifiers) throws ParameterMappingException {
             throw new UnsupportedOperationException();
         }
