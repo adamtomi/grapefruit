@@ -223,7 +223,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         });
 
                     } catch (final CommandException ex) {
-                        onCommandException(source, ex);
+                        handleCommandException(source, ex);
                     }
                 });
             } else {
@@ -236,7 +236,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 ));
             }
         } catch (final CommandException ex) {
-            onCommandException(source, ex);
+            handleCommandException(source, ex);
         }
     }
 
@@ -431,7 +431,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 .collect(Collectors.toList());
     }
 
-    private void onCommandException(final @NotNull S source, final @NotNull CommandException ex) {
+    private void handleCommandException(final @NotNull S source, final @NotNull CommandException ex) {
         final Message message = ex.message();
         this.messenger.sendMessage(source, message.get(this.messageProvider));
         /*
