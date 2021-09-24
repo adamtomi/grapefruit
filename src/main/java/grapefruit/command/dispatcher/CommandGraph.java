@@ -108,7 +108,9 @@ final class CommandGraph<S> {
         return RouteResult.failure(RouteResult.Failure.Reason.INVALID_SYNTAX);
     }
 
-    public @NotNull List<String> listSuggestions(final @NotNull S source, final @NotNull Deque<CommandInput> args) {
+    public @NotNull List<String> listSuggestions(final @NotNull CommandContext<S> context,
+                                                 final @NotNull Deque<CommandInput> args) {
+        final S source = context.source();
         CommandNode<S> commandNode = this.rootNode;
         CommandInput part;
         while ((part = args.peek()) != null) {
@@ -146,19 +148,19 @@ final class CommandGraph<S> {
                 if (flagPatternMatcher.matches()) {
                     args.remove();
                     if (args.isEmpty()) {
-                        return suggestFor(source, param, args, currentArg.rawArg());
+                        return suggestFor(context, param, args, currentArg.rawArg());
                     }
 
                     currentArg = args.element();
                 }
 
                 if (currentArg.rawArg().equals("") || args.size() < 2) {
-                    return suggestFor(source, param, argsCopy, currentArg.rawArg());
+                    return suggestFor(context, param, argsCopy, currentArg.rawArg());
                 }
 
                 if (param.mapper().suggestionsNeedValidation()) {
                     try {
-                        param.mapper().map(source, args, param.modifiers());
+                        param.mapper().map(context, args, param.modifiers());
                     } catch (final ParameterMappingException ex) {
                         return List.of();
                     }
@@ -182,19 +184,19 @@ final class CommandGraph<S> {
         }
     }
 
-    private @NotNull List<String> suggestFor(final @NotNull S source,
+    private @NotNull List<String> suggestFor(final @NotNull CommandContext<S> context,
                                              final @NotNull CommandParameter<S> parameter,
                                              final @NotNull Deque<CommandInput> previousArgs,
                                              final @NotNull String currentArg) {
         if (parameter.isFlag() && !parameter.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
             if (previousArgs.stream().anyMatch(arg -> arg.rawArg().equalsIgnoreCase(Miscellaneous.formatFlag(parameter.name())))) {
-                return parameter.mapper().listSuggestions(source, currentArg, parameter.modifiers());
+                return parameter.mapper().listSuggestions(context, currentArg, parameter.modifiers());
             }
 
             return List.of(Miscellaneous.formatFlag(parameter.name()));
         }
 
-        return parameter.mapper().listSuggestions(source, currentArg, parameter.modifiers());
+        return parameter.mapper().listSuggestions(context, currentArg, parameter.modifiers());
     }
 
     public @NotNull String generateSyntaxFor(final @NotNull String commandLine) {

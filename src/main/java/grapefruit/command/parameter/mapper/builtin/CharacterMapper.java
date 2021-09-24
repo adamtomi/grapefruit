@@ -1,5 +1,6 @@
 package grapefruit.command.parameter.mapper.builtin;
 
+import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.message.Message;
 import grapefruit.command.message.MessageKeys;
@@ -19,7 +20,7 @@ public class CharacterMapper<S> extends AbstractParamterMapper<S, Character> {
     }
 
     @Override
-    public @NotNull Character map(final @NotNull S source,
+    public @NotNull Character map(final @NotNull CommandContext<S> context,
                                   final @NotNull Queue<CommandInput> args,
                                   final @NotNull AnnotationList modifiers) throws ParameterMappingException {
         final String input = args.element().rawArg();

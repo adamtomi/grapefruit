@@ -1,5 +1,6 @@
 package grapefruit.command.parameter.mapper.builtin;
 
+import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.message.Message;
 import grapefruit.command.message.MessageKeys;
@@ -29,7 +30,7 @@ public class BooleanMapper<S> extends AbstractParamterMapper<S, Boolean> {
     }
 
     @Override
-    public @NotNull Boolean map(final @NotNull S source,
+    public @NotNull Boolean map(final @NotNull CommandContext<S> context,
                                 final @NotNull Queue<CommandInput> args,
                                 final @NotNull AnnotationList modifiers) throws ParameterMappingException {
         final String input = args.element().rawArg().toLowerCase(Locale.ROOT);
@@ -47,7 +48,7 @@ public class BooleanMapper<S> extends AbstractParamterMapper<S, Boolean> {
     }
 
     @Override
-    public @NotNull List<String> listSuggestions(final @NotNull S source,
+    public @NotNull List<String> listSuggestions(final @NotNull CommandContext<S> context,
                                                  final @NotNull String currentArg,
                                                  final @NotNull AnnotationList modifiers) {
         return Stream.of(TRUE_PHRASES, FALSE_PHRASES)

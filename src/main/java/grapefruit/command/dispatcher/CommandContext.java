@@ -8,20 +8,28 @@ import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
-public class CommandResult {
+public class CommandContext<S> {
+    private final S source;
     private final String commandLine;
     private final List<ParsedCommandArgument> parsedArguments;
 
-    public CommandResult(final @NotNull String commandLine, final @NotNull List<ParsedCommandArgument> arguments) {
+    public CommandContext(final @NotNull S source,
+                          final @NotNull String commandLine,
+                          final @NotNull List<ParsedCommandArgument> arguments) {
+        this.source = requireNonNull(source, "source cannot be null");
         this.commandLine = requireNonNull(commandLine, "commandLine cannot be null");
         this.parsedArguments = requireNonNull(arguments, "arguments cannot be null");
+    }
+
+    public @NotNull S source() {
+        return this.source;
     }
 
     public @NotNull String commandLine() {
         return this.commandLine;
     }
 
-    public @NotNull List<ParsedCommandArgument> parsedArguments() {
+    public @NotNull List<ParsedCommandArgument> arguments() {
         return List.copyOf(this.parsedArguments);
     }
 
@@ -36,18 +44,23 @@ public class CommandResult {
                 .findFirst();
     }
 
-    public @NotNull ParsedCommandArgument findArgumentAt(final int index) {
+    public @NotNull Optional<ParsedCommandArgument> findArgumentAt(final int index) {
         try {
-            return this.parsedArguments.get(index);
+            return Optional.of(this.parsedArguments.get(index));
         } catch (final IndexOutOfBoundsException ex) {
-            throw new NoSuchElementException();
+            return Optional.empty();
         }
+    }
+
+    public @NotNull ParsedCommandArgument findArgumentAtUnsafe(final int index) {
+        return findArgumentAt(index).orElseThrow(NoSuchElementException::new);
     }
 
     @Override
     public String toString() {
-        return "CommandResult[" +
-                "commandLine='" + this.commandLine + '\'' +
+        return "CommandContext[" +
+                "source=" + this.source + '\'' +
+                ", commandLine='" + this.commandLine + '\'' +
                 ", parsedArguments=" + this.parsedArguments +
                 ']';
     }

@@ -30,7 +30,7 @@ public class ParsedCommandArgument {
 
     @Override
     public String toString() {
-        return "ParsedCommandInput[" +
+        return "ParsedCommandArgument[" +
                 "name='" + this.name + '\'' +
                 ", parsedValue=" + this.parsedValue +
                 ']';

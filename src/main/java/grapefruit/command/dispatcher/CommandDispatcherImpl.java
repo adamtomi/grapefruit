@@ -212,10 +212,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         : this.sameThreadExecutor;
                 executor.execute(() -> {
                     try {
-                        final CommandResult commandResult = dispatchCommand(reg, commandLine, source, args);
+                        final CommandContext<S> commandContext = dispatchCommand(reg, commandLine, source, args);
                         this.postDispatchListeners.forEach(listener -> {
                             try {
-                                listener.onPostDispatch(source, commandResult);
+                                listener.onPostDispatch(commandContext);
                             } catch (final Throwable ex) {
                                 LOGGER.log(WARNING, format("PostDispatchListener %s threw an exception", listener.getClass().getName()));
                                 ex.printStackTrace();
@@ -240,11 +240,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
-    private @NotNull CommandResult dispatchCommand(final @NotNull CommandRegistration<S> registration,
-                                                   final @NotNull String commandLine,
-                                                   final @NotNull S source,
-                                                   final @NotNull Queue<CommandInput> args) throws CommandException {
-        final CommandResult result = new CommandResult(commandLine, preprocessArguments(registration.parameters()));
+    private @NotNull CommandContext<S> dispatchCommand(final @NotNull CommandRegistration<S> registration,
+                                                       final @NotNull String commandLine,
+                                                       final @NotNull S source,
+                                                       final @NotNull Queue<CommandInput> args) throws CommandException {
+        final CommandContext<S> context = new CommandContext<>(source, commandLine, preprocessArguments(registration.parameters()));
         try {
             int parameterIndex = 0;
             CommandInput input;
@@ -270,7 +270,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         input.markConsumed();
                         args.remove();
                         final CommandParameter<S> flagParameter = flagParameterOpt.get();
-                        final ParsedCommandArgument parsedArg = result.findArgumentUnchecked(flagName);
+                        final ParsedCommandArgument parsedArg = context.findArgumentUnchecked(flagName);
                         if (flagParameter.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
                             parsedArg.parsedValue(true);
 
@@ -283,7 +283,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                 ));
                             }
 
-                            final Object parsedValue = flagParameter.mapper().map(source, args, flagParameter.modifiers());
+                            final Object parsedValue = flagParameter.mapper().map(context, args, flagParameter.modifiers());
                             parsedArg.parsedValue(parsedValue);
                         }
 
@@ -301,7 +301,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         if (parameter.isFlag()) {
                             final Optional<CommandParameter<S>> firstNonFlagParameter = parameters.stream()
                                     .filter(x -> !x.isFlag())
-                                    .filter(x -> result.findArgument(x.name()).isEmpty())
+                                    .filter(x -> context.findArgument(x.name()).isEmpty())
                                     .findFirst();
                             if (firstNonFlagParameter.isEmpty()) {
                                 throw new CommandSyntaxException(Message.of(MessageKeys.MISSING_FLAG,
@@ -312,8 +312,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                             actualIndex = parameters.indexOf(parameter);
                         }
 
-                        final Object parsedValue = parameter.mapper().map(source, args, parameter.modifiers());
-                        final ParsedCommandArgument parsedArg = result.findArgumentAt(actualIndex);
+                        final Object parsedValue = parameter.mapper().map(context, args, parameter.modifiers());
+                        final ParsedCommandArgument parsedArg = context.findArgumentAtUnsafe(actualIndex);
                         parsedArg.parsedValue(parsedValue);
                         parameterIndex++;
                     }
@@ -335,8 +335,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 }
             }
 
-            dispatchCommand0(registration, source, postprocessArguments(result, registration.parameters(), commandLine));
-            return result;
+            dispatchCommand0(registration, source, postprocessArguments(context, registration.parameters(), commandLine));
+            return context;
         } catch (final Throwable ex) {
             if (ex instanceof CommandException) {
                 throw (CommandException) ex;
@@ -367,7 +367,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 .collect(Collectors.toList());
     }
 
-    private @NotNull List<Object> postprocessArguments(final @NotNull CommandResult result,
+    private @NotNull List<Object> postprocessArguments(final @NotNull CommandContext<S> result,
                                                        final @NotNull List<CommandParameter<S>> parameters,
                                                        final @NotNull String commandLine) throws CommandException {
         final List<Object> objects = new ArrayList<>();
