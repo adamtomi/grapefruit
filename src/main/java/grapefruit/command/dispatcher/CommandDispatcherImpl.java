@@ -21,9 +21,11 @@ import grapefruit.command.message.Messenger;
 import grapefruit.command.message.Template;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.FlagParameter;
+import grapefruit.command.parameter.mapper.ParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMapperRegistry;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.parameter.modifier.Source;
+import grapefruit.command.util.AnnotationList;
 import grapefruit.command.util.BooleanFunction;
 import grapefruit.command.util.Miscellaneous;
 import io.leangen.geantyref.GenericTypeReflector;
@@ -318,7 +320,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                 ));
                             }
 
-                            final Object parsedValue = flagParameter.mapper().map(context, args, flagParameter.modifiers());
+                            final Object parsedValue = mapParameter(flagParameter, context, args);
                             parsedArg.parsedValue(parsedValue);
                         }
 
@@ -347,7 +349,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                             actualIndex = parameters.indexOf(parameter);
                         }
 
-                        final Object parsedValue = parameter.mapper().map(context, args, parameter.modifiers());
+                        final Object parsedValue = mapParameter(parameter, context, args);
                         final ParsedCommandArgument parsedArg = context.findArgumentAtUnsafe(actualIndex);
                         parsedArg.parsedValue(parsedValue);
                         parameterIndex++;
@@ -356,13 +358,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     if (!args.isEmpty()) {
                         args.element().markConsumed();
                     }
-                } catch (final ParameterMappingException ex) {
-                    // TODO
-                    /*final CommandParameter0 parameter = ex.parameter();
-                    if (!parameter.isOptional()) {
-                        throw ex;
-                    }*/
-
                 } finally {
                     if (!args.isEmpty() && args.element().isConsumed()) {
                         args.remove();
@@ -378,6 +373,22 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             }
 
             throw new CommandInvocationException(ex, commandLine);
+        }
+    }
+
+    private @Nullable Object mapParameter(final @NotNull CommandParameter<S> parameter,
+                                          final @NotNull CommandContext<S> context,
+                                          final @NotNull Queue<CommandInput> args) throws ParameterMappingException {
+        final ParameterMapper<S, ?> mapper = parameter.mapper();
+        final AnnotationList modifiers = parameter.modifiers();
+        try {
+            return mapper.map(context, args, modifiers);
+        } catch (final ParameterMappingException ex) {
+            if (parameter.isOptional()) {
+                return null;
+            }
+
+            throw ex;
         }
     }
 
