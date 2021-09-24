@@ -75,11 +75,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final Messenger<S> messenger;
 
     CommandDispatcherImpl(final @NotNull TypeToken<S> commandSourceType,
-                                    final @NotNull CommandAuthorizer<S> commandAuthorizer,
-                                    final @NotNull Executor asyncExecutor,
-                                    final @NotNull MessageProvider messageProvider,
-                                    final @NotNull CommandRegistrationHandler<S> registrationHandler,
-                                    final @NotNull Messenger<S> messenger) {
+                          final @NotNull CommandAuthorizer<S> commandAuthorizer,
+                          final @NotNull Executor asyncExecutor,
+                          final @NotNull MessageProvider messageProvider,
+                          final @NotNull CommandRegistrationHandler<S> registrationHandler,
+                          final @NotNull Messenger<S> messenger) {
         this.commandSourceType = requireNonNull(commandSourceType, "commandSourceType cannot be null");
         this.commandAuthorizer = requireNonNull(commandAuthorizer, "commandAuthorizer cannot be null");
         this.asyncExecutor = requireNonNull(asyncExecutor, "asyncExecutor cannot be null");
