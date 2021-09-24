@@ -24,6 +24,7 @@ import grapefruit.command.parameter.FlagParameter;
 import grapefruit.command.parameter.mapper.ParameterMapperRegistry;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.parameter.modifier.Source;
+import grapefruit.command.util.BooleanFunction;
 import grapefruit.command.util.Miscellaneous;
 import io.leangen.geantyref.GenericTypeReflector;
 import io.leangen.geantyref.TypeToken;
@@ -43,6 +44,8 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
@@ -161,19 +164,66 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
+    private <L> boolean invokeListeners(final @NotNull Supplier<Queue<L>> listeners,
+                                        final @NotNull BooleanFunction<L> action,
+                                        final @NotNull BiConsumer<L, Throwable> errorHandler) {
+        for (final L listener : listeners.get()) {
+            try {
+                if (!action.apply(listener)) {
+                    return false;
+                }
+            } catch (final Throwable ex) {
+                errorHandler.accept(listener, ex);
+            }
+        }
+
+        return true;
+    }
+
+    private boolean invokePreProcessListeners(final @NotNull S source, final @NotNull String commandLine) {
+        return invokeListeners(
+                () -> this.preProcessLiteners,
+                x -> x.onPreProcess(source, commandLine),
+                (x, ex) -> {
+                    LOGGER.log(WARNING, format("PreProcessListener %s threw an exception", x.getClass().getName()));
+                    ex.printStackTrace();
+                }
+        );
+    }
+
+    private boolean invokePreDispatchListeners(final @NotNull S source,
+                                               final @NotNull String commandLine,
+                                               final @NotNull CommandRegistration<S> registration) {
+        return invokeListeners(
+                () -> this.preDispatchListeners,
+                x -> x.onPreDispatch(source, commandLine, registration),
+                (x, ex) -> {
+                    LOGGER.log(WARNING, format("PreDispatchListener %s threw an exception", x.getClass().getName()));
+                    ex.printStackTrace();
+                }
+        );
+    }
+
+    private void invokePostDispatchListeners(final @NotNull CommandContext<S> context) {
+        invokeListeners(
+                () -> this.postDispatchListeners,
+                x -> {
+                    x.onPostDispatch(context);
+                    return true;
+                },
+                (x, ex) -> {
+                    LOGGER.log(WARNING, format("PostDispatchListener %s threw an exception", x.getClass().getName()));
+                    ex.printStackTrace();
+                }
+        );
+    }
+
     @Override
     public void dispatchCommand(final @NotNull S source, final @NotNull String commandLine) {
         requireNonNull(source, "source cannot be null");
         requireNonNull(commandLine, "commandLine cannot be null");
-        for (final PreProcessLitener<S> listener : this.preProcessLiteners) {
-            try {
-                if (!listener.onPreProcess(source, commandLine)) {
-                    return;
-                }
-            } catch (final Throwable ex) {
-                LOGGER.log(WARNING, format("PreProcessListener %s threw an exception", listener.getClass().getName()));
-                ex.printStackTrace();
-            }
+        if (!invokePreProcessListeners(source, commandLine)) {
+            return;
         }
 
         try {
@@ -196,15 +246,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     }
                 }
 
-                for (final PreDispatchListener<S> listener : this.preDispatchListeners) {
-                    try {
-                        if (!listener.onPreDispatch(source, commandLine, reg)) {
-                            return;
-                        }
-                    } catch (final Throwable ex) {
-                        LOGGER.log(WARNING, format("PreDispatchListener %s threw an exception", listener.getClass().getName()));
-                        ex.printStackTrace();
-                    }
+                if (!invokePreDispatchListeners(source, commandLine, reg)) {
+                    return;
                 }
 
                 final Executor executor = reg.runAsync()
@@ -213,15 +256,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 executor.execute(() -> {
                     try {
                         final CommandContext<S> commandContext = dispatchCommand(reg, commandLine, source, args);
-                        this.postDispatchListeners.forEach(listener -> {
-                            try {
-                                listener.onPostDispatch(commandContext);
-                            } catch (final Throwable ex) {
-                                LOGGER.log(WARNING, format("PostDispatchListener %s threw an exception", listener.getClass().getName()));
-                                ex.printStackTrace();
-                            }
-                        });
-
+                        invokePostDispatchListeners(commandContext);
                     } catch (final CommandException ex) {
                         handleCommandException(source, ex);
                     }
