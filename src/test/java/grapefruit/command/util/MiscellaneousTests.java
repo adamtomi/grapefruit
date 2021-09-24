@@ -1,11 +1,14 @@
 package grapefruit.command.util;
 
+import io.leangen.geantyref.TypeToken;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.lang.reflect.AnnotatedType;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -27,6 +30,13 @@ public class MiscellaneousTests {
     @Test
     public void emptyToNull_invalidInput() {
         assertNull(Miscellaneous.emptyToNull(""));
+    }
+
+    @Test
+    public void typeToken_validInput() {
+        final TypeToken<List<String>> listType = new TypeToken<>() {};
+        final AnnotatedType type = listType.getAnnotatedType();
+        assertEquals(listType, Miscellaneous.constructTypeToken(type));
     }
 
     @Test
