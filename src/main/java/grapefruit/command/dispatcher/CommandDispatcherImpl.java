@@ -68,7 +68,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final TypeToken<S> commandSourceType;
     private final CommandAuthorizer<S> commandAuthorizer;
     private final CommandGraph<S> commandGraph;
-    private final Executor sameThreadExecutor = Runnable::run;
+    private final Executor directExecutor = Runnable::run;
     private final Executor asyncExecutor;
     private final MessageProvider messageProvider;
     private final CommandRegistrationHandler<S> registrationHandler;
@@ -254,7 +254,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
                 final Executor executor = reg.runAsync()
                         ? this.asyncExecutor
-                        : this.sameThreadExecutor;
+                        : this.directExecutor;
                 executor.execute(() -> {
                     try {
                         final CommandContext<S> commandContext = dispatchCommand(reg, commandLine, source, args);
