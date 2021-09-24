@@ -9,10 +9,11 @@ import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
-public record AnnotationList(@NotNull Collection<Annotation> elements) {
+public final class AnnotationList {
+    private final List<Annotation> elements;
 
     public AnnotationList(final @NotNull Annotation... annotations) {
-        this(List.of(annotations));
+        this.elements = List.of(annotations);
     }
 
     public <A extends Annotation> @NotNull Optional<A> find(final @NotNull Class<A> clazz) {
@@ -27,8 +28,7 @@ public record AnnotationList(@NotNull Collection<Annotation> elements) {
         return find(clazz).isPresent();
     }
 
-    @Override
     public @NotNull Collection<Annotation> elements() {
-        return List.copyOf(this.elements);
+        return this.elements;
     }
 }
