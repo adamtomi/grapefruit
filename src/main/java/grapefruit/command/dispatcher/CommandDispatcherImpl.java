@@ -471,18 +471,15 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
 
         final String last = args.getLast().rawArg();
-        /*return this.commandGraph.listSuggestions(source, args)
-                .stream()
-                .filter(x -> Miscellaneous.startsWithIgnoreCase(x, last))
-                .collect(Collectors.toList());*/
         final CommandGraph.RouteResult<S> routeResult = this.commandGraph.routeCommand(args);
-        final CommandContext<S> context;
+        CommandContext<S> context = new CommandContext<>(source, commandLine, List.of());
+
         if (routeResult instanceof CommandGraph.RouteResult.Success<S> success) {
             final CommandRegistration<S> registration = success.registration();
-            context = new CommandContext<>(source, commandLine, preprocessArguments(registration.parameters()));
+            try {
+                context = dispatchCommand(registration, commandLine, source, args);
+            } catch (final CommandException ignored) {}
 
-        } else {
-            context = new CommandContext<>(source, commandLine, List.of());
         }
 
         return this.commandGraph.listSuggestions(context, args)
