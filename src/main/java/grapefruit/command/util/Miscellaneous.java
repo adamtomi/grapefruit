@@ -6,6 +6,8 @@ import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
@@ -15,6 +17,17 @@ import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 public final class Miscellaneous {
+    private static final Field ANNOTATED_TYPE_FIELD;
+
+    static {
+        try {
+            final Field annotatedTypeField = TypeToken.class.getDeclaredField("type");
+            annotatedTypeField.setAccessible(true);
+            ANNOTATED_TYPE_FIELD = annotatedTypeField;
+        } catch (final ReflectiveOperationException ex) {
+            throw new ExceptionInInitializerError(ex);
+        }
+    }
 
     private Miscellaneous() {
         throw new UnsupportedOperationException("No instances for you :(");
@@ -22,6 +35,16 @@ public final class Miscellaneous {
 
     public static @Nullable String emptyToNull(final @NotNull String value) {
         return requireNonNull(value, "Value cannot be null").trim().isEmpty() ? null : value;
+    }
+
+    public static @NotNull TypeToken<?> constructTypeToken(final @NotNull AnnotatedType type) {
+        try {
+            final TypeToken<?> result = new TypeToken<>() {};
+            ANNOTATED_TYPE_FIELD.set(result, type);
+            return result;
+        } catch (final ReflectiveOperationException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     @SuppressWarnings("unchecked")

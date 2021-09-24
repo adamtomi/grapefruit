@@ -104,7 +104,7 @@ final class MethodParameterParser<S> {
             if (!annotations.has(Source.class)) {
                 final boolean isFlag = annotations.has(Flag.class);
                 final boolean isOptional = isFlag || annotations.has(OptParam.class);
-                final TypeToken<?> type = TypeToken.get(parameter.getType());
+                final TypeToken<?> type = Miscellaneous.constructTypeToken(parameter.getAnnotatedType());
                 final ParameterMapper<S, ?> mapper;
                 final Optional<Mapper> mapperAnnot = annotations.find(Mapper.class);
 
