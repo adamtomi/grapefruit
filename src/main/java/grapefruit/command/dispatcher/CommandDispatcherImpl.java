@@ -425,10 +425,24 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
 
         final String last = args.getLast().rawArg();
-        return this.commandGraph.listSuggestions(source, args)
+        /*return this.commandGraph.listSuggestions(source, args)
                 .stream()
                 .filter(x -> Miscellaneous.startsWithIgnoreCase(x, last))
-                .collect(Collectors.toList());
+                .collect(Collectors.toList());*/
+        final CommandGraph.RouteResult<S> routeResult = this.commandGraph.routeCommand(args);
+        final CommandContext<S> context;
+        if (routeResult instanceof CommandGraph.RouteResult.Success<S> success) {
+            final CommandRegistration<S> registration = success.registration();
+            context = new CommandContext<>(source, commandLine, preprocessArguments(registration.parameters()));
+
+        } else {
+            context = new CommandContext<>(source, commandLine, List.of());
+        }
+
+        return this.commandGraph.listSuggestions(context, args)
+                .stream()
+                .filter(x -> Miscellaneous.startsWithIgnoreCase(x, last))
+                .toList();
     }
 
     private void handleCommandException(final @NotNull S source, final @NotNull CommandException ex) {
