@@ -63,7 +63,7 @@ public final class ParameterMapperRegistry<S> {
 
     private void registerMapper0(final @NotNull ParameterMapper<S, ?> mapper) {
         requireNonNull(mapper, "mapper cannot be null");
-        final TypeToken<?> type = Miscellaneous.box(mapper.type());
+        final TypeToken<?> type = mapper.type();
         if (this.defaultMappers.containsKey(type)) {
             throw new IllegalStateException(String.format("Default parameterMapper with type %s is already registered", type.getType()));
         }
@@ -105,8 +105,7 @@ public final class ParameterMapperRegistry<S> {
     public <T> @NotNull Optional<ParameterMapper<S, T>> findMapper(final @NotNull TypeToken<T> type) {
         try {
             this.lock.lock();
-            final TypeToken<T> boxedType = Miscellaneous.box(type);
-            final @Nullable ParameterMapper<S, T> mapper = (ParameterMapper<S, T>) this.defaultMappers.get(boxedType);
+            final @Nullable ParameterMapper<S, T> mapper = (ParameterMapper<S, T>) this.defaultMappers.get(type);
             return Optional.ofNullable(mapper);
         } finally {
             this.lock.unlock();

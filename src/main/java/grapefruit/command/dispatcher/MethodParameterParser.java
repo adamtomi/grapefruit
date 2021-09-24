@@ -54,7 +54,7 @@ final class MethodParameterParser<S> {
     };
     private static final Rule RANGE_INVALID_TYPE = (method, parameter, annotations) -> {
         if (annotations.has(Range.class)
-                && !Number.class.isAssignableFrom(GenericTypeReflector.erase(Miscellaneous.box(parameter.getType()).getType()))) {
+                && !Number.class.isAssignableFrom((Class<?>) GenericTypeReflector.box(parameter.getType()))) {
             throw new RuleViolationException("@Range annotation is only allowed on numbers");
         }
     };

@@ -1,14 +1,12 @@
 package grapefruit.command.util;
 
 import grapefruit.command.dispatcher.CommandAuthorizer;
-import io.leangen.geantyref.GenericTypeReflector;
 import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Field;
-import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.Supplier;
@@ -45,17 +43,6 @@ public final class Miscellaneous {
         } catch (final ReflectiveOperationException ex) {
             throw new RuntimeException(ex);
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T> @NotNull TypeToken<T> box(final @NotNull TypeToken<T> type) {
-        final Type boxedType = GenericTypeReflector.box(type.getType());
-        return (TypeToken<T>) TypeToken.get(boxedType);
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T> @NotNull TypeToken<T> box(final @NotNull Type type) {
-        return (TypeToken<T>) TypeToken.get(GenericTypeReflector.box(type));
     }
 
     public static boolean endsWith(final @NotNull String value, final char suffix) {
