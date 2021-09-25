@@ -388,7 +388,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         try {
             return mapper.map(context, args, modifiers);
         } catch (final ParameterMappingException ex) {
-            if (parameter.isOptional()) {
+            if (parameter.isOptional() && !parameter.isFlag()) {
                 return null;
             }
 
