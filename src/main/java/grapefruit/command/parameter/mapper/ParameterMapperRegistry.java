@@ -5,6 +5,7 @@ import grapefruit.command.parameter.mapper.builtin.BooleanMapper;
 import grapefruit.command.parameter.mapper.builtin.CharacterMapper;
 import grapefruit.command.parameter.mapper.builtin.NumberMapper;
 import grapefruit.command.parameter.mapper.builtin.StringMapper;
+import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -104,7 +105,9 @@ public final class ParameterMapperRegistry<S> {
     public <T> @NotNull Optional<ParameterMapper<S, T>> findMapper(final @NotNull TypeToken<T> type) {
         try {
             this.lock.lock();
-            final @Nullable ParameterMapper<S, T> mapper = (ParameterMapper<S, T>) this.defaultMappers.get(type);
+            final @Nullable ParameterMapper<S, T> mapper = (ParameterMapper<S, T>) this.defaultMappers.get(
+                    TypeToken.of(Miscellaneous.box(type.getRawType()))
+            );
             return Optional.ofNullable(mapper);
         } finally {
             this.lock.unlock();
