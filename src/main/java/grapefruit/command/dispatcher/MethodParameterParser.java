@@ -1,5 +1,6 @@
 package grapefruit.command.dispatcher;
 
+import com.google.common.reflect.TypeToken;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.FlagParameter;
 import grapefruit.command.parameter.PresenceFlagParameter;
@@ -18,8 +19,6 @@ import grapefruit.command.parameter.modifier.string.Quotable;
 import grapefruit.command.parameter.modifier.string.Regex;
 import grapefruit.command.util.AnnotationList;
 import grapefruit.command.util.Miscellaneous;
-import io.leangen.geantyref.GenericTypeReflector;
-import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serial;
@@ -54,7 +53,7 @@ final class MethodParameterParser<S> {
     };
     private static final Rule RANGE_INVALID_TYPE = (method, parameter, annotations) -> {
         if (annotations.has(Range.class)
-                && !Number.class.isAssignableFrom((Class<?>) GenericTypeReflector.box(parameter.getType()))) {
+                && !Number.class.isAssignableFrom(Miscellaneous.box(parameter.getType()))) {
             throw new RuleViolationException("@Range annotation is only allowed on numbers");
         }
     };
@@ -104,7 +103,7 @@ final class MethodParameterParser<S> {
             if (!annotations.has(Source.class)) {
                 final boolean isFlag = annotations.has(Flag.class);
                 final boolean isOptional = isFlag || annotations.has(OptParam.class);
-                final TypeToken<?> type = Miscellaneous.constructTypeToken(parameter.getAnnotatedType());
+                final TypeToken<?> type = TypeToken.of(parameter.getAnnotatedType().getType());
                 final ParameterMapper<S, ?> mapper;
                 final Optional<Mapper> mapperAnnot = annotations.find(Mapper.class);
 

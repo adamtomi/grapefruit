@@ -1,5 +1,6 @@
 package grapefruit.command.parameter.mapper.builtin;
 
+import com.google.common.reflect.TypeToken;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.message.Message;
@@ -12,7 +13,6 @@ import grapefruit.command.parameter.modifier.string.Quotable;
 import grapefruit.command.parameter.modifier.string.Regex;
 import grapefruit.command.util.AnnotationList;
 import grapefruit.command.util.Miscellaneous;
-import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
@@ -25,7 +25,7 @@ public class StringMapper<S> extends AbstractParameterMapper<S, String> {
     private static final char QUOTE_SIGN = '"';
 
     public StringMapper() {
-        super(TypeToken.get(String.class));
+        super(TypeToken.of(String.class));
     }
 
     @Override

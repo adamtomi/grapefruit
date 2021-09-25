@@ -1,6 +1,6 @@
 package grapefruit.command.parameter.mapper;
 
-import io.leangen.geantyref.TypeToken;
+import com.google.common.reflect.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
 import static java.util.Objects.requireNonNull;

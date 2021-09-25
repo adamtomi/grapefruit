@@ -1,11 +1,10 @@
 package grapefruit.command.parameter.mapper;
 
+import com.google.common.reflect.TypeToken;
 import grapefruit.command.parameter.mapper.builtin.BooleanMapper;
 import grapefruit.command.parameter.mapper.builtin.CharacterMapper;
 import grapefruit.command.parameter.mapper.builtin.NumberMapper;
 import grapefruit.command.parameter.mapper.builtin.StringMapper;
-import grapefruit.command.util.Miscellaneous;
-import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,12 +30,12 @@ public final class ParameterMapperRegistry<S> {
         internalRegister(new StringMapper<>());
         internalRegister(new CharacterMapper<>());
         internalRegister(new BooleanMapper<>());
-        internalRegister(new NumberMapper<>(TypeToken.get(Byte.class), Byte::parseByte));
-        internalRegister(new NumberMapper<>(TypeToken.get(Short.class), Short::parseShort));
-        internalRegister(new NumberMapper<>(TypeToken.get(Integer.class), Integer::parseInt));
-        internalRegister(new NumberMapper<>(TypeToken.get(Double.class), Double::parseDouble));
-        internalRegister(new NumberMapper<>(TypeToken.get(Float.class), Float::parseFloat));
-        internalRegister(new NumberMapper<>(TypeToken.get(Long.class), Long::parseLong));
+        internalRegister(new NumberMapper<>(TypeToken.of(Byte.class), Byte::parseByte));
+        internalRegister(new NumberMapper<>(TypeToken.of(Short.class), Short::parseShort));
+        internalRegister(new NumberMapper<>(TypeToken.of(Integer.class), Integer::parseInt));
+        internalRegister(new NumberMapper<>(TypeToken.of(Double.class), Double::parseDouble));
+        internalRegister(new NumberMapper<>(TypeToken.of(Float.class), Float::parseFloat));
+        internalRegister(new NumberMapper<>(TypeToken.of(Long.class), Long::parseLong));
     }
 
     private void internalRegister(final @NotNull ParameterMapper<S, ?> mapper) {

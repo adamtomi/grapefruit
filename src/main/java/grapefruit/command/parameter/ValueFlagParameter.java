@@ -1,8 +1,8 @@
 package grapefruit.command.parameter;
 
+import com.google.common.reflect.TypeToken;
 import grapefruit.command.parameter.mapper.ParameterMapper;
 import grapefruit.command.util.AnnotationList;
-import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
 public class ValueFlagParameter<S> extends AbstractFlagParameter<S> {

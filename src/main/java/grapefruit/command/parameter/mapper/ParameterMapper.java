@@ -1,9 +1,9 @@
 package grapefruit.command.parameter.mapper;
 
+import com.google.common.reflect.TypeToken;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.util.AnnotationList;
-import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

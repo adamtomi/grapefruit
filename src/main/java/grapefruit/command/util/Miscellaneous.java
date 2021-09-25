@@ -1,48 +1,40 @@
 package grapefruit.command.util;
 
 import grapefruit.command.dispatcher.CommandAuthorizer;
-import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 public final class Miscellaneous {
-    private static final Field ANNOTATED_TYPE_FIELD;
-
-    static {
-        try {
-            final Field annotatedTypeField = TypeToken.class.getDeclaredField("type");
-            annotatedTypeField.setAccessible(true);
-            ANNOTATED_TYPE_FIELD = annotatedTypeField;
-        } catch (final ReflectiveOperationException ex) {
-            throw new ExceptionInInitializerError(ex);
-        }
-    }
+    private static final Map<Class<?>, Class<?>> BOX_MAP = Map.of(
+            Boolean.TYPE, Boolean.class,
+            Byte.TYPE, Byte.class,
+            Short.TYPE, Short.class,
+            Integer.TYPE, Integer.class,
+            Float.TYPE, Float.class,
+            Double.TYPE, Double.class,
+            Long.TYPE, Long.class,
+            Character.TYPE, Character.class
+    );
 
     private Miscellaneous() {
         throw new UnsupportedOperationException("No instances for you :(");
     }
 
-    public static @Nullable String emptyToNull(final @NotNull String value) {
-        return requireNonNull(value, "Value cannot be null").trim().isEmpty() ? null : value;
+    public static @NotNull Class<?> box(final @NotNull Class<?> clazz) {
+        final @Nullable Class<?> boxed = BOX_MAP.get(clazz);
+        return boxed == null ? clazz : boxed;
     }
 
-    public static @NotNull TypeToken<?> constructTypeToken(final @NotNull AnnotatedType type) {
-        try {
-            final TypeToken<?> result = new TypeToken<>() {};
-            ANNOTATED_TYPE_FIELD.set(result, type);
-            return result;
-        } catch (final ReflectiveOperationException ex) {
-            throw new RuntimeException(ex);
-        }
+    public static @Nullable String emptyToNull(final @NotNull String value) {
+        return requireNonNull(value, "Value cannot be null").trim().isEmpty() ? null : value;
     }
 
     public static boolean endsWith(final @NotNull String value, final char suffix) {

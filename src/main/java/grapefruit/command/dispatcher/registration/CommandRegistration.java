@@ -1,7 +1,7 @@
 package grapefruit.command.dispatcher.registration;
 
+import com.google.common.reflect.TypeToken;
 import grapefruit.command.parameter.CommandParameter;
-import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

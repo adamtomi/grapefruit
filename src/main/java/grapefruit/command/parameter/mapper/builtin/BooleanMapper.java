@@ -1,5 +1,6 @@
 package grapefruit.command.parameter.mapper.builtin;
 
+import com.google.common.reflect.TypeToken;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.message.Message;
@@ -8,7 +9,6 @@ import grapefruit.command.message.Template;
 import grapefruit.command.parameter.mapper.AbstractParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.util.AnnotationList;
-import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -26,7 +26,7 @@ public class BooleanMapper<S> extends AbstractParameterMapper<S, Boolean> {
             .collect(Collectors.toSet());
 
     public BooleanMapper() {
-        super(TypeToken.get(Boolean.class));
+        super(TypeToken.of(Boolean.class));
     }
 
     @Override

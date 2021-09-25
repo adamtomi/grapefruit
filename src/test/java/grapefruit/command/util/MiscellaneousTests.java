@@ -1,25 +1,37 @@
 package grapefruit.command.util;
 
-import io.leangen.geantyref.TypeToken;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.lang.reflect.AnnotatedType;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MiscellaneousTests {
+
+    @ParameterizedTest
+    @ValueSource(classes = {int.class, boolean.class, long.class})
+    public void box_primitiveInput(final Class<?> clazz) {
+        final Class<?> boxed = Miscellaneous.box(clazz);
+        assertNotEquals(clazz, boxed);
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {Object.class, String.class, CharSequence.class})
+    public void box_nonPrimitiveInput(final Class<?> clazz) {
+        final Class<?> boxed = Miscellaneous.box(clazz);
+        assertEquals(clazz, boxed);
+    }
 
     @ParameterizedTest
     @ValueSource(strings = {"first", "second"})
@@ -30,13 +42,6 @@ public class MiscellaneousTests {
     @Test
     public void emptyToNull_invalidInput() {
         assertNull(Miscellaneous.emptyToNull(""));
-    }
-
-    @Test
-    public void typeToken_validInput() {
-        final TypeToken<List<String>> listType = new TypeToken<>() {};
-        final AnnotatedType type = listType.getAnnotatedType();
-        assertEquals(listType, Miscellaneous.constructTypeToken(type));
     }
 
     @Test

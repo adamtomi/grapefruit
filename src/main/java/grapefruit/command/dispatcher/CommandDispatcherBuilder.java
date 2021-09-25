@@ -1,10 +1,10 @@
 package grapefruit.command.dispatcher;
 
+import com.google.common.reflect.TypeToken;
 import grapefruit.command.dispatcher.registration.CommandRegistrationHandler;
 import grapefruit.command.message.DefaultMessageProvider;
 import grapefruit.command.message.MessageProvider;
 import grapefruit.command.message.Messenger;
-import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.Executor;

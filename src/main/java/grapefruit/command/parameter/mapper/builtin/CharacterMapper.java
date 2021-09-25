@@ -1,5 +1,6 @@
 package grapefruit.command.parameter.mapper.builtin;
 
+import com.google.common.reflect.TypeToken;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.message.Message;
@@ -8,7 +9,6 @@ import grapefruit.command.message.Template;
 import grapefruit.command.parameter.mapper.AbstractParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.util.AnnotationList;
-import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Queue;
@@ -16,7 +16,7 @@ import java.util.Queue;
 public class CharacterMapper<S> extends AbstractParameterMapper<S, Character> {
 
     public CharacterMapper() {
-        super(TypeToken.get(Character.class));
+        super(TypeToken.of(Character.class));
     }
 
     @Override
