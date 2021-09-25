@@ -5,7 +5,7 @@ import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.message.Message;
 import grapefruit.command.message.MessageKeys;
 import grapefruit.command.message.Template;
-import grapefruit.command.parameter.mapper.AbstractParamterMapper;
+import grapefruit.command.parameter.mapper.AbstractParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.parameter.modifier.string.Greedy;
 import grapefruit.command.parameter.modifier.string.Quotable;
@@ -21,7 +21,7 @@ import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class StringMapper<S> extends AbstractParamterMapper<S, String> {
+public class StringMapper<S> extends AbstractParameterMapper<S, String> {
     private static final char QUOTE_SIGN = '"';
 
     public StringMapper() {

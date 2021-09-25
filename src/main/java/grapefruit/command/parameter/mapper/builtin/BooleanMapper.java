@@ -5,7 +5,7 @@ import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.message.Message;
 import grapefruit.command.message.MessageKeys;
 import grapefruit.command.message.Template;
-import grapefruit.command.parameter.mapper.AbstractParamterMapper;
+import grapefruit.command.parameter.mapper.AbstractParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.util.AnnotationList;
 import io.leangen.geantyref.TypeToken;
@@ -19,7 +19,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class BooleanMapper<S> extends AbstractParamterMapper<S, Boolean> {
+public class BooleanMapper<S> extends AbstractParameterMapper<S, Boolean> {
     private static final Set<String> TRUE_PHRASES = Set.of("true", "t", "yes", "y", "allow", "1");
     private static final Set<String> FALSE_PHRASES = Set.of("false", "f", "no", "n", "deny", "0");
     private static final Set<String> ALL_OPTIONS = Stream.of(TRUE_PHRASES, FALSE_PHRASES).flatMap(Collection::stream)

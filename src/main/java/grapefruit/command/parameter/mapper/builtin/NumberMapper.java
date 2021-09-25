@@ -5,7 +5,7 @@ import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.message.Message;
 import grapefruit.command.message.MessageKeys;
 import grapefruit.command.message.Template;
-import grapefruit.command.parameter.mapper.AbstractParamterMapper;
+import grapefruit.command.parameter.mapper.AbstractParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.parameter.modifier.Range;
 import grapefruit.command.util.AnnotationList;
@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
-public class NumberMapper<S, N extends Number> extends AbstractParamterMapper<S, N> {
+public class NumberMapper<S, N extends Number> extends AbstractParameterMapper<S, N> {
     private static final List<String> PREFIXES;
     private static final List<String> NUMBER_OPTIONS;
     private final Function<String, N> converter;
