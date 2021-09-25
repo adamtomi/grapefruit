@@ -1,5 +1,6 @@
 package grapefruit.command.dispatcher;
 
+import com.google.common.reflect.TypeToken;
 import grapefruit.command.CommandContainer;
 import grapefruit.command.CommandDefinition;
 import grapefruit.command.CommandException;
@@ -28,8 +29,6 @@ import grapefruit.command.parameter.modifier.Source;
 import grapefruit.command.util.AnnotationList;
 import grapefruit.command.util.BooleanFunction;
 import grapefruit.command.util.Miscellaneous;
-import io.leangen.geantyref.GenericTypeReflector;
-import io.leangen.geantyref.TypeToken;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -136,12 +135,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final Parameter[] parameters = method.getParameters();
             final List<CommandParameter<S>> parsedParams = this.parameterParser.collectParameters(method);
             final @Nullable TypeToken<?> commandSourceType = (parameters.length > 0 && parameters[0].isAnnotationPresent(Source.class))
-                    ? TypeToken.get(parameters[0].getType())
+                    ? TypeToken.of(parameters[0].getAnnotatedType().getType())
                     : null;
 
             if (commandSourceType != null) {
-                final Class<?> baseCommandSourceType = GenericTypeReflector.erase(this.commandSourceType.getType());
-                final Class<?> foundCommandSourceType = GenericTypeReflector.erase(commandSourceType.getType());
+                final Class<?> baseCommandSourceType = this.commandSourceType.getRawType();
+                final Class<?> foundCommandSourceType = commandSourceType.getRawType();
                 if (!baseCommandSourceType.isAssignableFrom(foundCommandSourceType)) {
                     throw new IllegalArgumentException(format("Invalid command source type detected (%s)! Must implement %s",
                             foundCommandSourceType.getName(), baseCommandSourceType.getName()));
@@ -162,7 +161,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         } catch (final MethodParameterParser.RuleViolationException ex) {
             throw new RuntimeException(ex);
         } catch (final Throwable ex) {
-            throw new RuntimeException("Could not register command", ex);
+            throw new RuntimeException(format("Failed to register command at '%s' (%s)", route, method), ex);
         }
     }
 
@@ -242,7 +241,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 if (reg.commandSourceType() != null) {
                     // Validate the type of the command source
                     final Class<?> foundCommandSourceType = source.getClass();
-                    final Class<?> requiredCommandSourceType = GenericTypeReflector.erase(reg.commandSourceType().getType());
+                    final Class<?> requiredCommandSourceType = reg.commandSourceType().getRawType();
                     if (!requiredCommandSourceType.isAssignableFrom(foundCommandSourceType)) {
                         throw new IllegalCommandSourceException(requiredCommandSourceType, foundCommandSourceType);
                     }
@@ -257,8 +256,14 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         : this.directExecutor;
                 executor.execute(() -> {
                     try {
-                        final CommandContext<S> commandContext = dispatchCommand(reg, commandLine, source, args);
-                        invokePostDispatchListeners(commandContext);
+                        final CommandContext<S> context = processCommand(reg, commandLine, source, args);
+                        dispatchCommand0(
+                                commandLine,
+                                reg,
+                                source,
+                                postprocessArguments(context, reg.parameters(), commandLine)
+                        );
+                        invokePostDispatchListeners(context);
                     } catch (final CommandException ex) {
                         handleCommandException(source, ex);
                     }
@@ -277,10 +282,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
-    private @NotNull CommandContext<S> dispatchCommand(final @NotNull CommandRegistration<S> registration,
-                                                       final @NotNull String commandLine,
-                                                       final @NotNull S source,
-                                                       final @NotNull Queue<CommandInput> args) throws CommandException {
+    private @NotNull CommandContext<S> processCommand(final @NotNull CommandRegistration<S> registration,
+                                                      final @NotNull String commandLine,
+                                                      final @NotNull S source,
+                                                      final @NotNull Queue<CommandInput> args) throws CommandException {
         final CommandContext<S> context = new CommandContext<>(source, commandLine, preprocessArguments(registration.parameters()));
         try {
             int parameterIndex = 0;
@@ -365,7 +370,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 }
             }
 
-            dispatchCommand0(registration, source, postprocessArguments(context, registration.parameters(), commandLine));
             return context;
         } catch (final Throwable ex) {
             if (ex instanceof CommandException) {
@@ -401,7 +405,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     final ParsedCommandArgument parsedArg = new ParsedCommandArgument(name);
 
                     if (parameter.isOptional()) {
-                        final @NotNull Class<?> type = GenericTypeReflector.erase(parameter.type().getType());
+                        final @NotNull Class<?> type = parameter.type().getRawType();
                         final Object defaultValue = type.isPrimitive()
                                 ? Miscellaneous.nullToPrimitive(type)
                                 : null;
@@ -435,33 +439,35 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         return objects;
     }
 
-    private void dispatchCommand0(final @NotNull CommandRegistration<S> reg,
+    private void dispatchCommand0(final @NotNull String commandLine,
+                                  final @NotNull CommandRegistration<S> reg,
                                   final @NotNull S source,
-                                  final @NotNull Collection<Object> args) throws Throwable {
-        final Object[] finalArgs;
-        if (reg.commandSourceType() != null) {
-            finalArgs = new Object[args.size() + 1];
-            finalArgs[0] = source;
-            int idx = 1;
-            for (final Object arg : args) {
-                finalArgs[idx++] = arg;
+                                  final @NotNull Collection<Object> args) throws CommandException {
+        try {
+            final Object[] finalArgs;
+            if (reg.commandSourceType() != null) {
+                finalArgs = new Object[args.size() + 1];
+                finalArgs[0] = source;
+                int idx = 1;
+                for (final Object arg : args) {
+                    finalArgs[idx++] = arg;
+                }
+
+            } else {
+                finalArgs = args.toArray(Object[]::new);
             }
 
-        } else {
-            finalArgs = args.toArray(Object[]::new);
+            reg.method().invoke(reg.holder(), finalArgs);
+        } catch (final Throwable ex) {
+            throw new CommandInvocationException(ex, commandLine);
         }
-
-        reg.method().invoke(reg.holder(), finalArgs);
     }
 
     @Override
     public @NotNull List<String> listSuggestions(final @NotNull S source,
                                                  final @NotNull String commandLine) {
         requireNonNull(source, "source cannot be null");
-        final Deque<CommandInput> args = Arrays.stream(commandLine.split(" "))
-                .map(String::trim)
-                .map(StringCommandInput::new)
-                .collect(Collectors.toCollection(ArrayDeque::new));
+        final Deque<CommandInput> args = new ArrayDeque<>(this.inputTokenizer.tokenizeInput(commandLine));
         if (args.size() == 0) {
             return List.of();
         }
@@ -477,7 +483,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         if (routeResult instanceof CommandGraph.RouteResult.Success<S> success) {
             final CommandRegistration<S> registration = success.registration();
             try {
-                context = dispatchCommand(registration, commandLine, source, args);
+                context = processCommand(registration, commandLine, source, args);
             } catch (final CommandException ignored) {}
 
         }
