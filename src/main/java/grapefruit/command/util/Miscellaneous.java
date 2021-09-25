@@ -4,6 +4,7 @@ import grapefruit.command.dispatcher.CommandAuthorizer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -28,9 +29,10 @@ public final class Miscellaneous {
         throw new UnsupportedOperationException("No instances for you :(");
     }
 
-    public static @NotNull Class<?> box(final @NotNull Class<?> clazz) {
-        final @Nullable Class<?> boxed = BOX_MAP.get(clazz);
-        return boxed == null ? clazz : boxed;
+    @SuppressWarnings("SuspiciousMethodCalls")
+    public static @NotNull Class<?> box(final @NotNull Type type) {
+        final @Nullable Class<?> boxed = BOX_MAP.get(type);
+        return boxed == null ? (Class<?>) type : boxed;
     }
 
     public static @Nullable String emptyToNull(final @NotNull String value) {
