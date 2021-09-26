@@ -23,6 +23,7 @@ import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import static grapefruit.command.parameter.FlagParameter.FLAG_PATTERN;
+import static grapefruit.command.util.Miscellaneous.formatFlag;
 import static java.util.Objects.requireNonNull;
 
 final class CommandGraph<S> {
@@ -189,11 +190,11 @@ final class CommandGraph<S> {
                                              final @NotNull Deque<CommandInput> previousArgs,
                                              final @NotNull String currentArg) {
         if (parameter.isFlag() && !parameter.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
-            if (previousArgs.stream().anyMatch(arg -> arg.rawArg().equalsIgnoreCase(Miscellaneous.formatFlag(parameter.name())))) {
+            if (previousArgs.stream().anyMatch(arg -> arg.rawArg().equalsIgnoreCase(formatFlag(parameter.name())))) {
                 return parameter.mapper().listSuggestions(context, currentArg, parameter.modifiers());
             }
 
-            return List.of(Miscellaneous.formatFlag(parameter.name()));
+            return List.of(formatFlag(parameter.name()));
         }
 
         return parameter.mapper().listSuggestions(context, currentArg, parameter.modifiers());
@@ -222,9 +223,9 @@ final class CommandGraph<S> {
                 if (parameter.isFlag()) {
                     final FlagParameter<?> flag = (FlagParameter<?>) parameter;
                     if (flag.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
-                        syntaxPart = flag.flagName();
+                        syntaxPart = formatFlag(flag.flagName());
                     } else {
-                        syntaxPart = flag.flagName() + " " + flag.name();
+                        syntaxPart = formatFlag(flag.flagName()) + " " + flag.name();
                     }
                 } else {
                     syntaxPart = parameter.name();
