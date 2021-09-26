@@ -33,6 +33,7 @@ public final class DefaultMessageProvider implements MessageProvider {
             put(MessageKeys.STRING_REGEX_ERROR, "'{input}' has to match regex {regex}");
             put(MessageKeys.MISSING_FLAG_VALUE, "No flag value specified for flag '{input}'");
             put(MessageKeys.MISSING_FLAG, "You need to specify a flag. Syntax: {syntax}");
+            put(MessageKeys.DUPLICATE_FLAG, "Command flag {flag} has been specified already.");
         }};
     private final ReentrantLock lock = new ReentrantLock();
 

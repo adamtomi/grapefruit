@@ -7,6 +7,7 @@ import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
 import grapefruit.command.dispatcher.exception.CommandInvocationException;
 import grapefruit.command.dispatcher.exception.CommandSyntaxException;
+import grapefruit.command.dispatcher.exception.DuplicateFlagException;
 import grapefruit.command.dispatcher.exception.IllegalCommandSourceException;
 import grapefruit.command.dispatcher.exception.NoSuchCommandException;
 import grapefruit.command.dispatcher.listener.PostDispatchListener;
@@ -307,6 +308,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                             input.markConsumed();
                             final ParsedCommandArgument parsedArg = context.findArgumentUnchecked(flag.flagName());
                             if (flag.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
+                                if (parsedArg.parsedValue().map(Boolean.TYPE::cast).orElse(false)) {
+                                    throw new DuplicateFlagException(rawInput);
+                                }
+                                
                                 parsedArg.parsedValue(true);
 
                             } else {
@@ -316,6 +321,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                             MessageKeys.MISSING_FLAG_VALUE,
                                             Template.of("{input}", rawInput)
                                     ));
+                                }
+                                if (!flag.isMultiFlag() && parsedArg.parsedValue().orElse(null) != null) {
+                                    throw new DuplicateFlagException(rawInput);
                                 }
 
                                 args.remove();

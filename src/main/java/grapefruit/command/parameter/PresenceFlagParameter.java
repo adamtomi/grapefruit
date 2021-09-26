@@ -34,6 +34,11 @@ public class PresenceFlagParameter<S> extends AbstractFlagParameter<S> {
     }
 
     @Override
+    public final boolean isMultiFlag() {
+        return false;
+    }
+
+    @Override
     public @NotNull String toString() {
         return "PresenceFlagParameter[" +
                 "name='" + flagName() + '\'' +
