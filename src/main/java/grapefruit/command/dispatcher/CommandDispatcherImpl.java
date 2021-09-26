@@ -33,6 +33,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -127,11 +128,16 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             throw new IllegalStateException(format("Missing @CommandDefinition annotation on %s", method.getName()));
         }
 
+        if (Modifier.isStatic(method.getModifiers())) {
+            throw new IllegalStateException(format("Static methods cannot be annotated with @CommandDefinition (%s)", method));
+        }
+
         final String route = def.route();
         final @Nullable String permission = Miscellaneous.emptyToNull(def.permission());
         final boolean runAsync = def.runAsync();
 
         try {
+            method.setAccessible(true);
             final Parameter[] parameters = method.getParameters();
             final List<CommandParameter<S>> parsedParams = this.parameterParser.collectParameters(method);
             final @Nullable TypeToken<?> commandSourceType = (parameters.length > 0 && parameters[0].isAnnotationPresent(Source.class))
