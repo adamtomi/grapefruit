@@ -120,12 +120,12 @@ final class MethodParameterParser<S> {
                 final String paramName = parameter.getName();
                 final CommandParameter<S> cmdParam;
                 if (isFlag) {
-                    final String flagName = annotations.find(Flag.class)
-                            .map(Flag::value)
-                            .orElseThrow();
+                    final Flag flagDef = annotations.find(Flag.class).orElseThrow();
+                    final String flagName = flagDef.value();
+                    final char shorthand = flagDef.shorthand();
                     cmdParam = type.equals(FlagParameter.PRESENCE_FLAG_TYPE)
-                            ? new PresenceFlagParameter<>(flagName, paramName, i, annotations)
-                            : new ValueFlagParameter<>(flagName, paramName, i, type, annotations, mapper);
+                            ? new PresenceFlagParameter<>(flagName, shorthand, paramName, i, annotations)
+                            : new ValueFlagParameter<>(flagName, shorthand, paramName, i, type, annotations, mapper);
                 } else {
                     cmdParam = new StandardParameter<>(paramName, i, isOptional, type, annotations, mapper);
                 }

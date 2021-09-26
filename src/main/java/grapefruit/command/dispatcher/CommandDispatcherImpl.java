@@ -301,38 +301,27 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     final String rawInput = input.rawArg();
                     final Matcher matcher = FLAG_PATTERN.matcher(rawInput);
                     if (matcher.matches()) {
-                        final String flagName = matcher.group(1).toLowerCase(Locale.ROOT);
-                        final Optional<CommandParameter<S>> flagParameterOpt = registration.parameters()
-                                .stream()
-                                .filter(CommandParameter::isFlag)
-                                .filter(param -> ((FlagParameter<S>) param).flagName().equals(flagName))
-                                .findFirst();
+                        final FlagGroup<S> flags = FlagGroup.parse(rawInput, matcher, registration);
 
-                        if (flagParameterOpt.isEmpty()) {
-                            throw new CommandException(Message.of(
-                                    MessageKeys.UNRECOGNIZED_COMMAND_FLAG,
-                                    Template.of("{input}", rawInput)
-                            ));
-                        }
+                        for (final FlagParameter<S> flag : flags) {
+                            input.markConsumed();
+                            final ParsedCommandArgument parsedArg = context.findArgumentUnchecked(flag.flagName());
+                            if (flag.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
+                                parsedArg.parsedValue(true);
 
-                        input.markConsumed();
-                        args.remove();
-                        final CommandParameter<S> flagParameter = flagParameterOpt.get();
-                        final ParsedCommandArgument parsedArg = context.findArgumentUnchecked(flagName);
-                        if (flagParameter.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
-                            parsedArg.parsedValue(true);
+                            } else {
+                                if (args.isEmpty()) {
+                                    // This means that there aren't any values for this flag
+                                    throw new CommandSyntaxException(Message.of(
+                                            MessageKeys.MISSING_FLAG_VALUE,
+                                            Template.of("{input}", rawInput)
+                                    ));
+                                }
 
-                        } else {
-                            if (args.isEmpty()) {
-                                // This means that there aren't any values for this flag
-                                throw new CommandSyntaxException(Message.of(
-                                        MessageKeys.MISSING_FLAG_VALUE,
-                                        Template.of("{input}", rawInput)
-                                ));
+                                args.remove();
+                                final Object parsedValue = mapParameter(flag, context, args);
+                                parsedArg.parsedValue(parsedValue);
                             }
-
-                            final Object parsedValue = mapParameter(flagParameter, context, args);
-                            parsedArg.parsedValue(parsedValue);
                         }
 
                     } else {

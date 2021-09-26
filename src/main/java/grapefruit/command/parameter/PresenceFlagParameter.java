@@ -17,16 +17,27 @@ import static java.util.Objects.requireNonNull;
 public class PresenceFlagParameter<S> extends AbstractFlagParameter<S> {
 
     public PresenceFlagParameter(final @NotNull String flagName,
-                                    final @NotNull String name,
-                                    final int index,
-                                    final @NotNull AnnotationList modifiers) {
-        super(flagName, name, index, true, FlagParameter.PRESENCE_FLAG_TYPE, modifiers, new DummyParameterMapper<>(flagName));
+                                 final char shorthand,
+                                 final @NotNull String name,
+                                 final int index,
+                                 final @NotNull AnnotationList modifiers) {
+        super(
+                flagName,
+                shorthand,
+                name,
+                index,
+                true,
+                FlagParameter.PRESENCE_FLAG_TYPE,
+                modifiers,
+                new DummyParameterMapper<>(flagName)
+        );
     }
 
     @Override
     public @NotNull String toString() {
         return "PresenceFlagParameter[" +
                 "name='" + flagName() + '\'' +
+                ", shorthand='" + shorthand() + '\'' +
                 ", index=" + index() +
                 ", modifiers=" + modifiers() +
                 ", mapper=" + mapper().getClass().getName() +

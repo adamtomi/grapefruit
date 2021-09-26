@@ -11,4 +11,6 @@ import java.lang.annotation.Target;
 public @interface Flag {
 
     String value();
+
+    char shorthand() default ' ';
 }

@@ -12,8 +12,10 @@ import static java.util.Objects.requireNonNull;
 
 public abstract class AbstractFlagParameter<S> extends AbstractCommandParameter<S> implements FlagParameter<S> {
     private final String flagName;
+    private final char shorthand;
 
     public AbstractFlagParameter(final @NotNull String flagName,
+                                 final char shorthand,
                                  final @NotNull String name,
                                  final int index,
                                  final boolean optional,
@@ -22,11 +24,17 @@ public abstract class AbstractFlagParameter<S> extends AbstractCommandParameter<
                                  final @NotNull ParameterMapper<S, ?> mapper) {
         super(name, index, optional, type, modifiers, mapper);
         this.flagName = requireNonNull(flagName, "flagName cannot be null");
+        this.shorthand = shorthand;
     }
 
     @Override
     public @NotNull String flagName() {
         return this.flagName;
+    }
+
+    @Override
+    public char shorthand() {
+        return this.shorthand;
     }
 
     @Override
@@ -41,6 +49,7 @@ public abstract class AbstractFlagParameter<S> extends AbstractCommandParameter<
         final AbstractFlagParameter<?> that = (AbstractFlagParameter<?>) o;
         return this.index() == that.index()
                 && this.isOptional() == that.isOptional()
+                && this.shorthand() == that.shorthand()
                 && Objects.equals(this.flagName(), that.flagName())
                 && Objects.equals(this.name(), that.name())
                 && Objects.equals(this.type(), that.type())
@@ -50,7 +59,7 @@ public abstract class AbstractFlagParameter<S> extends AbstractCommandParameter<
 
     @Override
     public int hashCode() {
-        return Objects.hash(flagName(), name(), index(), isOptional(), type(), modifiers(), mapper());
+        return Objects.hash(flagName(), shorthand(), name(), index(), isOptional(), type(), modifiers(), mapper());
     }
 
     @Override
