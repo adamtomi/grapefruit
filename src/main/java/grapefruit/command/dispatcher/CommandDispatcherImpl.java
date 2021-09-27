@@ -23,8 +23,6 @@ import grapefruit.command.message.Messenger;
 import grapefruit.command.message.Template;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.FlagParameter;
-import grapefruit.command.parameter.FlagValueSet;
-import grapefruit.command.parameter.FlagValueSetImpl;
 import grapefruit.command.parameter.mapper.ParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMapperRegistry;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
@@ -44,6 +42,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -290,7 +289,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
     private @NotNull CommandContext<S> processCommand(final @NotNull CommandRegistration<S> registration,
                                                       final @NotNull String commandLine,
                                                       final @NotNull S source,
@@ -324,24 +322,13 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                             Template.of("{input}", rawInput)
                                     ));
                                 }
-                                final boolean multiFlag = flag.isMultiFlag();
-                                if (!multiFlag && parsedArg.parsedValue().orElse(null) != null) {
+                                if (!flag.isMultiFlag() && parsedArg.parsedValue().orElse(null) != null) {
                                     throw new DuplicateFlagException(rawInput);
                                 }
 
                                 args.remove();
                                 final Object parsedValue = mapParameter(flag, context, args);
-                                final @Nullable Object storedValue = parsedArg.parsedValue().orElse(null);
-                                if (storedValue instanceof FlagValueSet) {
-                                    if (!multiFlag || !(parsedValue instanceof FlagValueSet valueSet)) {
-                                        throw new AssertionError();
-                                    }
-
-                                    final FlagValueSetImpl storedValueSet = (FlagValueSetImpl) storedValue;
-                                    valueSet.asList().forEach(storedValueSet::add);
-                                } else {
-                                    parsedArg.parsedValue(parsedValue);
-                                }
+                                parsedArg.parsedValue(parsedValue);
                             }
                         }
 
@@ -424,8 +411,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         final @NotNull Class<?> type = parameter.type().getRawType();
                         final Object defaultValue = type.isPrimitive()
                                 ? Miscellaneous.nullToPrimitive(type)
-                                : FlagValueSet.class.isAssignableFrom(type)
-                                ? new FlagValueSetImpl<>(new TypeToken<>() {}, new ArrayList<>())
                                 : null;
                         parsedArg.parsedValue(defaultValue);
                     }

@@ -9,7 +9,6 @@ import grapefruit.command.parameter.StandardParameter;
 import grapefruit.command.parameter.ValueFlagParameter;
 import grapefruit.command.parameter.mapper.ParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMapperRegistry;
-import grapefruit.command.parameter.mapper.builtin.FlagValueSetMapper;
 import grapefruit.command.parameter.modifier.Flag;
 import grapefruit.command.parameter.modifier.Mapper;
 import grapefruit.command.parameter.modifier.Modifier;
@@ -28,7 +27,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -77,11 +75,6 @@ final class MethodParameterParser<S> {
             }
         }
     };
-    private static final Rule FLAG_VALUE_SET_NOT_A_FLAG = ((method, parameter, annotations) -> {
-        if (parameter.getType().equals(FlagValueSet.class) && !annotations.has(Flag.class)) {
-            throw new RuleViolationException(format("Parameter %s is of type FlagValueSet but is not annotated with @Flag", parameter));
-        }
-    });
 
     private final Set<Rule> rules = Set.of(
             GREEDY_AND_QUOTABLE,
@@ -90,8 +83,7 @@ final class MethodParameterParser<S> {
             RANGE_INVALID_TYPE,
             SOURCE_HAS_MORE_ANNOTATIONS,
             SOURCE_NTH_PARAMETER,
-            UNRECOGNIZED_ANNOTATION,
-            FLAG_VALUE_SET_NOT_A_FLAG
+            UNRECOGNIZED_ANNOTATION
     );
     private final ParameterMapperRegistry<?> mapperRegistry;
 
@@ -121,17 +113,6 @@ final class MethodParameterParser<S> {
                     mapper = (ParameterMapper<S, ?>) this.mapperRegistry.findNamedMapper(name)
                             .orElseThrow(() -> new IllegalArgumentException(format("Could not find ParameterMapper with name %s", name)));
                 } else {
-                    if (FlagValueSet.class.isAssignableFrom(type.getRawType())) {
-                        System.out.println("FlagValueSet");
-                        System.out.println(Arrays.toString(parameter.getAnnotations()));
-                        System.out.println(parameter.getParameterizedType());
-                        System.out.println(parameter.getAnnotatedType());
-                        System.out.println(parameter.getAnnotatedType().getAnnotatedOwnerType());
-                        System.out.println(type.getTypes());
-                        System.out.println(type.getComponentType());
-                        System.out.println(Arrays.toString(parameter.getDeclaringExecutable().getGenericParameterTypes()));
-                    }
-
                     mapper = (ParameterMapper<S, ?>) this.mapperRegistry.findMapper(type)
                             .orElseThrow(() -> new IllegalArgumentException(String.format("Could not find ParameterMapper for type %s",
                                    type.getType())));
@@ -146,16 +127,7 @@ final class MethodParameterParser<S> {
                     final boolean isMultiFlag = FlagValueSet.class.isAssignableFrom(type.getRawType());
                     cmdParam = type.equals(FlagParameter.PRESENCE_FLAG_TYPE)
                             ? new PresenceFlagParameter<>(flagName, shorthand, paramName, i, annotations)
-                            : new ValueFlagParameter<>(
-                                    flagName,
-                                    shorthand,
-                                    isMultiFlag,
-                                    paramName,
-                                    i,
-                                    type,
-                                    annotations,
-                                    isMultiFlag ? new FlagValueSetMapper<>(mapper) : mapper
-                            );
+                            : new ValueFlagParameter<>(flagName, shorthand, isMultiFlag, paramName, i, type, annotations, mapper);
                 } else {
                     cmdParam = new StandardParameter<>(paramName, i, isOptional, type, annotations, mapper);
                 }

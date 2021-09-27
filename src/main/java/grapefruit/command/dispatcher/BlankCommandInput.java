@@ -5,12 +5,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public class BlankCommandInput implements CommandInput {
+class BlankCommandInput implements CommandInput {
     private static final String BLANK = " ";
     private final int length;
     private boolean consumed;
 
-    public BlankCommandInput(final int length) {
+    BlankCommandInput(final int length) {
         if (length <= 0) {
             throw new IllegalArgumentException("Invalid length! Should be at least 1!");
         }

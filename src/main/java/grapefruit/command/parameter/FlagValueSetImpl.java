@@ -22,10 +22,6 @@ public class FlagValueSetImpl<T> implements FlagValueSet<T> {
         this.elements = List.copyOf(requireNonNull(elements, "elements cannot be null"));
     }
 
-    public void add(final @NotNull T element) {
-        requireNonNull(element, "element cannot be null");
-    }
-
     @Override
     public @NotNull TypeToken<T> type() {
         return this.type;
