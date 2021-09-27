@@ -40,8 +40,6 @@ public final class MessageKeys {
     public static final MessageKey MISSING_FLAG_VALUE = register(MessageKey.of("parameter.missing-flag-value"));
     // Variables: {syntax}
     public static final MessageKey MISSING_FLAG = register(MessageKey.of("parameter.missing-flag"));
-    // Variables: {flag}
-    public static final MessageKey DUPLICATE_FLAG = register(MessageKey.of("parameter.duplicate.flag"));
 
     private static @NotNull MessageKey register(final @NotNull MessageKey key) {
         values.add(key);

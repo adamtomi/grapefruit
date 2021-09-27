@@ -17,6 +17,4 @@ public interface FlagParameter<S> extends CommandParameter<S> {
     default boolean isFlag() {
         return true;
     }
-
-    boolean isMultiFlag();
 }
