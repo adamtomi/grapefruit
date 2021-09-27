@@ -3,7 +3,6 @@ package grapefruit.command.dispatcher;
 import com.google.common.reflect.TypeToken;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.FlagParameter;
-import grapefruit.command.parameter.FlagValueSet;
 import grapefruit.command.parameter.PresenceFlagParameter;
 import grapefruit.command.parameter.StandardParameter;
 import grapefruit.command.parameter.ValueFlagParameter;
@@ -124,10 +123,9 @@ final class MethodParameterParser<S> {
                     final Flag flagDef = annotations.find(Flag.class).orElseThrow();
                     final String flagName = flagDef.value();
                     final char shorthand = flagDef.shorthand();
-                    final boolean isMultiFlag = FlagValueSet.class.isAssignableFrom(type.getRawType());
                     cmdParam = type.equals(FlagParameter.PRESENCE_FLAG_TYPE)
                             ? new PresenceFlagParameter<>(flagName, shorthand, paramName, i, annotations)
-                            : new ValueFlagParameter<>(flagName, shorthand, isMultiFlag, paramName, i, type, annotations, mapper);
+                            : new ValueFlagParameter<>(flagName, shorthand, paramName, i, type, annotations, mapper);
                 } else {
                     cmdParam = new StandardParameter<>(paramName, i, isOptional, type, annotations, mapper);
                 }
