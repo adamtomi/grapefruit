@@ -351,60 +351,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         final FlagGroup<S> flags = FlagGroup.parse(rawInput, matcher, parameters);
 
                         for (final FlagParameter<S> flag : flags) {
-                            input.markConsumed();
-                            final String flagName = flag.flagName();
-                            final Optional<Object> stored = context.find(flagName);
-                            if (flag.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
-                                if (stored.map(Boolean.TYPE::cast).orElse(false)) {
-                                    throw new FlagDuplicateException(flagName);
-                                }
-
-                                context.put(flagName, true);
-                            } else {
-                                if (args.isEmpty()) {
-                                    // This means that there aren't any values for this flag
-                                    throw new CommandSyntaxException(Message.of(
-                                            MessageKeys.MISSING_FLAG_VALUE,
-                                            Template.of("{input}", rawInput)
-                                    ));
-                                }
-
-                                if (stored.isPresent()) {
-                                    throw new FlagDuplicateException(flagName);
-                                }
-
-                                args.remove();
-                                final Object parsedValue = mapParameter(flag, context, args);
-                                context.put(flagName, parsedValue);
-                            }
+                            consumeFlag(flag, context, args, input, rawInput);
                         }
 
                     } else {
-                        if (parameterIndex >= parameters.size()) {
-                            throw new CommandSyntaxException(Message.of(
-                                    MessageKeys.TOO_MANY_ARGUMENTS,
-                                    Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))
-                            ));
-                        }
-
-                        int actualIndex = parameterIndex;
-                        CommandParameter<S> parameter = parameters.get(parameterIndex);
-                        if (parameter.isFlag()) {
-                            final Optional<CommandParameter<S>> firstNonFlagParameter = parameters.stream()
-                                    .filter(x -> !x.isFlag())
-                                    .filter(x -> context.find(x.name()).isEmpty())
-                                    .findFirst();
-                            if (firstNonFlagParameter.isEmpty()) {
-                                throw new CommandSyntaxException(Message.of(MessageKeys.MISSING_FLAG,
-                                        Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))));
-                            }
-
-                            parameter = firstNonFlagParameter.orElseThrow();
-                            actualIndex = parameters.indexOf(parameter);
-                        }
-
-                        final Object parsedValue = mapParameter(parameter, context, args);
-                        context.put(actualIndex, parsedValue);
+                        consumeArgument(commandLine, parameters, context, args, parameterIndex);
                         parameterIndex++;
                     }
 
@@ -426,6 +377,71 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
             throw new CommandInvocationException(ex, commandLine);
         }
+    }
+
+    private void consumeFlag(final @NotNull FlagParameter<S> flag,
+                             final @NotNull CommandContext<S> context,
+                             final @NotNull Queue<CommandInput> args,
+                             final @NotNull CommandInput input,
+                             final @NotNull String rawInput) throws CommandException {
+        input.markConsumed();
+        final String flagName = flag.flagName();
+        final Optional<Object> stored = context.find(flagName);
+        if (flag.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
+            if (stored.map(Boolean.TYPE::cast).orElse(false)) {
+                throw new FlagDuplicateException(flagName);
+            }
+
+            context.put(flagName, true);
+        } else {
+            if (args.isEmpty()) {
+                // This means that there aren't any values for this flag
+                throw new CommandSyntaxException(Message.of(
+                        MessageKeys.MISSING_FLAG_VALUE,
+                        Template.of("{input}", rawInput)
+                ));
+            }
+
+            if (stored.isPresent()) {
+                throw new FlagDuplicateException(flagName);
+            }
+
+            args.remove();
+            final Object parsedValue = mapParameter(flag, context, args);
+            context.put(flagName, parsedValue);
+        }
+    }
+
+    private void consumeArgument(final @NotNull String commandLine,
+                                 final @NotNull List<CommandParameter<S>> parameters,
+                                 final @NotNull CommandContext<S> context,
+                                 final @NotNull Queue<CommandInput> args,
+                                 final int parameterIndex) throws CommandException {
+        if (parameterIndex >= parameters.size()) {
+            throw new CommandSyntaxException(Message.of(
+                    MessageKeys.TOO_MANY_ARGUMENTS,
+                    Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))
+            ));
+        }
+
+        int actualIndex = parameterIndex;
+        CommandParameter<S> parameter = parameters.get(parameterIndex);
+        if (parameter.isFlag()) {
+            final Optional<CommandParameter<S>> firstNonFlagParameter = parameters.stream()
+                    .filter(x -> !x.isFlag())
+                    .filter(x -> context.find(x.name()).isEmpty())
+                    .findFirst();
+            if (firstNonFlagParameter.isEmpty()) {
+                throw new CommandSyntaxException(Message.of(MessageKeys.MISSING_FLAG,
+                        Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))));
+            }
+
+            parameter = firstNonFlagParameter.orElseThrow();
+            actualIndex = parameters.indexOf(parameter);
+        }
+
+        final Object parsedValue = mapParameter(parameter, context, args);
+        context.put(actualIndex, parsedValue);
     }
 
     private @Nullable Object mapParameter(final @NotNull CommandParameter<S> parameter,
