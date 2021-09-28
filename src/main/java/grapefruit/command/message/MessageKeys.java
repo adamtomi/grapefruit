@@ -18,8 +18,6 @@ public final class MessageKeys {
     public static final MessageKey TOO_FEW_ARGUMENTS = register(MessageKey.of("dispatcher.too-few-arguments"));
     // Variables: {syntax}
     public static final MessageKey TOO_MANY_ARGUMENTS = register(MessageKey.of("dispatcher.too-many-arguments"));
-    // Variables: {input}
-    public static final MessageKey UNRECOGNIZED_COMMAND_FLAG = register(MessageKey.of("dispatcher.unrecognized-command-flag"));
     // Variables: {found}, {required}
     public static final MessageKey ILLEGAL_COMMAND_SOURCE = register(MessageKey.of("dispatcher.illegal-command-source"));
 
@@ -42,6 +40,8 @@ public final class MessageKeys {
     public static final MessageKey MISSING_FLAG = register(MessageKey.of("parameter.missing-flag"));
     // Variables: {flag}
     public static final MessageKey DUPLICATE_FLAG = register(MessageKey.of("parameter.duplicate.flag"));
+    // Variables: {input}
+    public static final MessageKey UNRECOGNIZED_COMMAND_FLAG = register(MessageKey.of("parameter.unrecognized-command-flag"));
 
     private static @NotNull MessageKey register(final @NotNull MessageKey key) {
         values.add(key);

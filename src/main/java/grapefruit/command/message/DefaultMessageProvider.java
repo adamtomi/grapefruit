@@ -22,7 +22,6 @@ public final class DefaultMessageProvider implements MessageProvider {
             put(MessageKeys.NO_SUCH_COMMAND, "Root command node with name '{name}' could not be found");
             put(MessageKeys.TOO_FEW_ARGUMENTS, "Too few arguments have been specified. Syntax: {syntax}");
             put(MessageKeys.TOO_MANY_ARGUMENTS, "Too many arguments have been specified. Syntax: {syntax}");
-            put(MessageKeys.UNRECOGNIZED_COMMAND_FLAG, "Command flag {input} is not recognized");
             put(MessageKeys.ILLEGAL_COMMAND_SOURCE, "Illegal command source type ({found}). Required: {required}");
 
             put(MessageKeys.INVALID_BOOLEAN_VALUE, "'{input}' is not a valid boolean value. Options: {options}");
@@ -34,6 +33,7 @@ public final class DefaultMessageProvider implements MessageProvider {
             put(MessageKeys.MISSING_FLAG_VALUE, "No flag value specified for flag '{input}'");
             put(MessageKeys.MISSING_FLAG, "You need to specify a flag. Syntax: {syntax}");
             put(MessageKeys.DUPLICATE_FLAG, "Command flag {flag} has been specified already.");
+            put(MessageKeys.UNRECOGNIZED_COMMAND_FLAG, "Command flag {input} is not recognized");
         }};
     private final ReentrantLock lock = new ReentrantLock();
 
