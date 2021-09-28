@@ -31,4 +31,9 @@ public final class AnnotationList {
     public @NotNull Collection<Annotation> elements() {
         return this.elements;
     }
+
+    @Override
+    public @NotNull String toString() {
+        return "AnnotationList" + this.elements;
+    }
 }
