@@ -85,6 +85,10 @@ public final class Miscellaneous {
 
     public static @NotNull String formatFlag(final @NotNull String flagName) {
         requireNonNull(flagName, "flagName cannot be null");
+        if (flagName.isBlank()) {
+            throw new IllegalArgumentException("Cannot format empty string");
+        }
+
         if (flagName.length() == 1) {
             return flagName.startsWith("-") ? flagName : format("-%s", flagName);
         }
