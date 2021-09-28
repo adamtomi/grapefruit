@@ -310,6 +310,30 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
+    private void dispatchCommand(final @NotNull String commandLine,
+                                 final @NotNull CommandRegistration<S> reg,
+                                 final @NotNull S source,
+                                 final @NotNull Collection<Object> args) throws CommandException {
+        try {
+            final Object[] finalArgs;
+            if (reg.commandSourceType().isPresent()) {
+                finalArgs = new Object[args.size() + 1];
+                finalArgs[0] = source;
+                int idx = 1;
+                for (final Object arg : args) {
+                    finalArgs[idx++] = arg;
+                }
+
+            } else {
+                finalArgs = args.toArray(Object[]::new);
+            }
+
+            reg.method().invoke(reg.holder(), finalArgs);
+        } catch (final Throwable ex) {
+            throw new CommandInvocationException(ex, commandLine);
+        }
+    }
+
     private @NotNull CommandContext<S> processCommand(final @NotNull CommandRegistration<S> registration,
                                                       final @NotNull String commandLine,
                                                       final @NotNull S source,
@@ -450,30 +474,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))
                 ));
             }
-        }
-    }
-
-    private void dispatchCommand(final @NotNull String commandLine,
-                                 final @NotNull CommandRegistration<S> reg,
-                                 final @NotNull S source,
-                                 final @NotNull Collection<Object> args) throws CommandException {
-        try {
-            final Object[] finalArgs;
-            if (reg.commandSourceType() != null) {
-                finalArgs = new Object[args.size() + 1];
-                finalArgs[0] = source;
-                int idx = 1;
-                for (final Object arg : args) {
-                    finalArgs[idx++] = arg;
-                }
-
-            } else {
-                finalArgs = args.toArray(Object[]::new);
-            }
-
-            reg.method().invoke(reg.holder(), finalArgs);
-        } catch (final Throwable ex) {
-            throw new CommandInvocationException(ex, commandLine);
         }
     }
 
