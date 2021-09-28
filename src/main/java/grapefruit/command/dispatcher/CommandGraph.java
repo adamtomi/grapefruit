@@ -206,7 +206,6 @@ final class CommandGraph<S> {
         return parameter.mapper().listSuggestions(context, currentArg, parameter.modifiers());
     }
 
-    // TODO fix syntax generation (screwed up by redirect regs)
     public @NotNull String generateSyntaxFor(final @NotNull String commandLine) {
         final String[] path = commandLine.split(" ");
         final StringJoiner joiner = new StringJoiner(" ");
