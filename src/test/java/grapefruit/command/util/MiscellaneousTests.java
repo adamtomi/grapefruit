@@ -167,7 +167,7 @@ public class MiscellaneousTests {
 
     @ParameterizedTest
     @CsvSource({"first,true", "fifth,false", "second,true", "FOuRth,true", "something,false"})
-    public void containsIgnoreCase(final String element, final boolean shouldContain) {
+    public void containsIgnoreCase_validInput(final String element, final boolean shouldContain) {
         final Collection<String> strings = Set.of("first", "SECOND", "thIrD", "FouRtH");
         final boolean contains = Miscellaneous.containsIgnoreCase(element, strings);
         assertEquals(contains, shouldContain);
