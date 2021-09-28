@@ -2,7 +2,6 @@ package grapefruit.command.dispatcher;
 
 import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.exception.UnrecognizedFlagException;
-import grapefruit.command.dispatcher.registration.CommandRegistration;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.FlagParameter;
 import org.jetbrains.annotations.NotNull;
@@ -24,9 +23,8 @@ public class FlagGroup<S> implements Iterable<FlagParameter<S>> {
 
     public static <S> @NotNull FlagGroup<S> parse(final @NotNull String rawInput,
                                                   final @NotNull Matcher matcher,
-                                                  final @NotNull CommandRegistration<S> registration) throws CommandException {
+                                                  final @NotNull List<CommandParameter<S>> parameters) throws CommandException {
         final Set<FlagParameter<S>> flags = new LinkedHashSet<>();
-        final List<CommandParameter<S>> parameters = registration.parameters();
         // This means that flags are grouped together (like -abc)
         if (matcher.group(1).isEmpty()) {
             for (final char shorthand : matcher.group(2).toCharArray()) {
