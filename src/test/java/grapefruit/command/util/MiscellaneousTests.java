@@ -5,6 +5,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -125,9 +126,15 @@ public class MiscellaneousTests {
     }
 
     @ParameterizedTest
-    @CsvSource({"first,--first", "--second,--second", "'',--"})
+    @CsvSource({"first,--first", "--second,--second", "-,-", "a,-a", "b,-b"})
     public void formatFlag_validInput(final String input, final String flagName) {
         assertEquals(Miscellaneous.formatFlag(input), flagName);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", " "})
+    public void formatFlag_invalidInput(final String input) {
+        assertThrows(IllegalArgumentException.class, () -> Miscellaneous.formatFlag(input));
     }
 
     @ParameterizedTest
@@ -156,5 +163,13 @@ public class MiscellaneousTests {
     public void mutableCollectionOf_invalidInput() {
         final String[] elements = {"first", "second", "third", "random john"};
         assertThrows(UnsupportedOperationException.class, () -> Miscellaneous.mutableCollectionOf(elements, Set::of));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"first,true", "fifth,false", "second,true", "FOuRth,true", "something,false"})
+    public void containsIgnoreCase(final String element, final boolean shouldContain) {
+        final Collection<String> strings = Set.of("first", "SECOND", "thIrD", "FouRtH");
+        final boolean contains = Miscellaneous.containsIgnoreCase(element, strings);
+        assertEquals(contains, shouldContain);
     }
 }
