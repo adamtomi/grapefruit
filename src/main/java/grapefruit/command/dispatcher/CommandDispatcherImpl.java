@@ -258,6 +258,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             if (routeResult instanceof CommandGraph.RouteResult.Success<S> success) {
                 final CommandRegistration<S> reg = success.registration();
                 if (reg instanceof RedirectingCommandRegistration<S> redirect) {
+                    args.clear(); // Will use arguments provided by @Redirect#arguments
                     redirect.rawArguments().stream()
                             .map(StringCommandInput::new)
                             .forEach(args::offer);
