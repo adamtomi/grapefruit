@@ -1,6 +1,7 @@
 package grapefruit.command.dispatcher;
 
 import grapefruit.command.dispatcher.registration.CommandRegistration;
+import grapefruit.command.dispatcher.registration.RedirectingCommandRegistration;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.FlagParameter;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
@@ -62,13 +63,17 @@ final class CommandGraph<S> {
             final Optional<CommandNode<S>> possibleChild = node.findChild(childNode.primary());
 
             if (possibleChild.isPresent()) {
-                if (last) {
+                final boolean isRedirectReg = reg instanceof RedirectingCommandRegistration;
+                if (last && !isRedirectReg) {
                     throw new IllegalStateException("Ambigious command tree");
                 }
 
                 final CommandNode<S> realChildNode = possibleChild.get();
                 realChildNode.mergeAliases(childNode.aliases());
                 node = realChildNode;
+                if (isRedirectReg) {
+                    node.registration(reg);
+                }
             } else {
                 node.addChild(childNode);
                 node = childNode;
@@ -97,8 +102,9 @@ final class CommandGraph<S> {
             }
 
             final CommandNode<S> child = childCandidate.get();
-            if (child.children().isEmpty()) {
-                final Optional<CommandRegistration<S>> registration = child.registration();
+            final Optional<CommandRegistration<S>> registration = child.registration();
+            final boolean redirectReg = registration.map(RedirectingCommandRegistration.class::isInstance).orElse(false);
+            if (child.children().isEmpty() || (redirectReg && args.peek() == null)) {
                 return registration.map(RouteResult::success).orElseGet(() ->
                         RouteResult.failure(RouteResult.Failure.Reason.INVALID_SYNTAX));
             } else {
@@ -135,7 +141,7 @@ final class CommandGraph<S> {
         final Deque<CommandInput> argsCopy = new ConcurrentLinkedDeque<>(args);
         if (registrationOpt.isPresent()) {
             final CommandRegistration<S> registration = registrationOpt.orElseThrow();
-            if (!Miscellaneous.checkAuthorized(source, registration.permission(), this.authorizer)) {
+            if (!Miscellaneous.checkAuthorized(source, registration.permission().orElse(null), this.authorizer)) {
                 return List.of();
             }
 
@@ -200,6 +206,7 @@ final class CommandGraph<S> {
         return parameter.mapper().listSuggestions(context, currentArg, parameter.modifiers());
     }
 
+    // TODO fix syntax generation (screwed up by redirect regs)
     public @NotNull String generateSyntaxFor(final @NotNull String commandLine) {
         final String[] path = commandLine.split(" ");
         final StringJoiner joiner = new StringJoiner(" ");

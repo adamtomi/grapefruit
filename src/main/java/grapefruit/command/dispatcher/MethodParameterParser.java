@@ -74,6 +74,11 @@ final class MethodParameterParser<S> {
             }
         }
     };
+    private static final Rule FLAG_OPTIONAL = (method, parameter, annotations) -> {
+        if (annotations.has(Flag.class) && annotations.has(OptParam.class)) {
+            throw new RuleViolationException(format("Flags are optional by default, so they may not be annotated with @OptParam (%s)", parameter));
+        }
+    };
 
     private final Set<Rule> rules = Set.of(
             GREEDY_AND_QUOTABLE,
@@ -82,7 +87,8 @@ final class MethodParameterParser<S> {
             RANGE_INVALID_TYPE,
             SOURCE_HAS_MORE_ANNOTATIONS,
             SOURCE_NTH_PARAMETER,
-            UNRECOGNIZED_ANNOTATION
+            UNRECOGNIZED_ANNOTATION,
+            FLAG_OPTIONAL
     );
     private final ParameterMapperRegistry<?> mapperRegistry;
 

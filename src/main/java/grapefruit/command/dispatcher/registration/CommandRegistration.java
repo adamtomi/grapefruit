@@ -1,16 +1,25 @@
 package grapefruit.command.dispatcher.registration;
 
 import com.google.common.reflect.TypeToken;
+import grapefruit.command.CommandContainer;
 import grapefruit.command.parameter.CommandParameter;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Optional;
 
-public record CommandRegistration<S>(@NotNull Object holder,
-                                     @NotNull Method method,
-                                     @NotNull List<CommandParameter<S>> parameters,
-                                     @Nullable String permission,
-                                     @Nullable TypeToken<?> commandSourceType,
-                                     boolean runAsync) {}
+public interface CommandRegistration<S> {
+
+    @NotNull CommandContainer holder();
+
+    @NotNull Method method();
+
+    @NotNull List<CommandParameter<S>> parameters();
+
+    @NotNull Optional<String> permission();
+
+    @NotNull Optional<TypeToken<?>> commandSourceType();
+
+    boolean runAsync();
+}

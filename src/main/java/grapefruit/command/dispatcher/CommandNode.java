@@ -14,7 +14,7 @@ public class CommandNode<S> {
     private final String primary;
     private final Set<String> aliases;
     private final Set<CommandNode<S>> children = new HashSet<>();
-    private final @Nullable CommandRegistration<S> registration;
+    private @Nullable CommandRegistration<S> registration;
 
     public CommandNode(final @NotNull String primary,
                        final @NotNull Set<String> aliases,
@@ -44,6 +44,10 @@ public class CommandNode<S> {
 
     public @NotNull Optional<CommandRegistration<S>> registration() {
         return Optional.ofNullable(this.registration);
+    }
+
+    public void registration(final @NotNull CommandRegistration<S> registration) {
+        this.registration = registration;
     }
 
     public void addChild(final @NotNull CommandNode<S> child) {

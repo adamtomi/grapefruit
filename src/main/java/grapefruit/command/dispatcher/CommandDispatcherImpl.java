@@ -16,6 +16,8 @@ import grapefruit.command.dispatcher.listener.PreProcessLitener;
 import grapefruit.command.dispatcher.registration.CommandRegistration;
 import grapefruit.command.dispatcher.registration.CommandRegistrationContext;
 import grapefruit.command.dispatcher.registration.CommandRegistrationHandler;
+import grapefruit.command.dispatcher.registration.RedirectingCommandRegistration;
+import grapefruit.command.dispatcher.registration.StandardCommandRegistration;
 import grapefruit.command.message.Message;
 import grapefruit.command.message.MessageKeys;
 import grapefruit.command.message.MessageProvider;
@@ -130,6 +132,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             throw new IllegalStateException(format("Static methods cannot be annotated with @CommandDefinition (%s)", method));
         }
 
+        final @Nullable String redirectFrom = method.isAnnotationPresent(RedirectFrom.class)
+                ? method.getAnnotation(RedirectFrom.class).value()
+                : null;
         final String route = def.route();
         final @Nullable String permission = Miscellaneous.emptyToNull(def.permission());
         final boolean runAsync = def.runAsync();
@@ -137,6 +142,14 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         try {
             method.setAccessible(true);
             final Parameter[] parameters = method.getParameters();
+            if (redirectFrom != null) {
+                // The only parameter allowed is the source
+                if (parameters.length > 2 || (parameters.length == 1 && !parameters[0].isAnnotationPresent(Source.class))) {
+                    throw new IllegalStateException(format(
+                            "Methods annotated with @RedirectFrom may only accept the source as a parameter (%s)", method));
+                }
+            }
+
             final List<CommandParameter<S>> parsedParams = this.parameterParser.collectParameters(method);
             final @Nullable TypeToken<?> commandSourceType = (parameters.length > 0 && parameters[0].isAnnotationPresent(Source.class))
                     ? TypeToken.of(parameters[0].getAnnotatedType().getType())
@@ -151,17 +164,21 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 }
             }
 
-            final CommandRegistration<S> reg = new CommandRegistration<>(
+            final CommandRegistration<S> reg = new StandardCommandRegistration<>(
                     container,
                     method,
                     parsedParams,
                     permission,
                     commandSourceType,
                     runAsync);
-
             this.commandGraph.registerCommand(route, reg);
             final CommandRegistrationContext<S> regContext = new CommandRegistrationContext<>(Arrays.asList(route.split(" ")), reg);
             this.registrationHandler.accept(regContext);
+
+            if (redirectFrom != null) {
+                final CommandRegistration<S> redirect = new RedirectingCommandRegistration<>(reg);
+                this.commandGraph.registerCommand(redirectFrom, redirect);
+            }
         } catch (final MethodParameterParser.RuleViolationException ex) {
             throw new RuntimeException(ex);
         } catch (final Throwable ex) {
@@ -236,18 +253,19 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final CommandGraph.RouteResult<S> routeResult = this.commandGraph.routeCommand(args);
             if (routeResult instanceof CommandGraph.RouteResult.Success<S> success) {
                 final CommandRegistration<S> reg = success.registration();
-                final @Nullable String permission = reg.permission();
+                final @Nullable String permission = reg.permission().orElse(null);
 
                 if (!Miscellaneous.checkAuthorized(source, permission, this.commandAuthorizer)) {
                     throw new CommandAuthorizationException(permission);
                 }
 
-                if (reg.commandSourceType() != null) {
+                final Optional<TypeToken<?>> requiredCommandSourceType = reg.commandSourceType();
+                if (reg.commandSourceType().isPresent()) {
                     // Validate the type of the command source
-                    final Class<?> foundCommandSourceType = source.getClass();
-                    final Class<?> requiredCommandSourceType = reg.commandSourceType().getRawType();
-                    if (!requiredCommandSourceType.isAssignableFrom(foundCommandSourceType)) {
-                        throw new IllegalCommandSourceException(requiredCommandSourceType, foundCommandSourceType);
+                    final Class<?> foundCommandSourceClass = source.getClass();
+                    final Class<?> requiredCommandSourceClass = requiredCommandSourceType.orElseThrow().getRawType();
+                    if (!requiredCommandSourceClass.isAssignableFrom(foundCommandSourceClass)) {
+                        throw new IllegalCommandSourceException(requiredCommandSourceClass, foundCommandSourceClass);
                     }
                 }
 
