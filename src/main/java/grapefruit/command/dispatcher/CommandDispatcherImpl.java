@@ -45,11 +45,13 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 import static grapefruit.command.dispatcher.CommandGraph.ALIAS_SEPARATOR;
 import static grapefruit.command.parameter.FlagParameter.FLAG_PATTERN;
@@ -132,24 +134,21 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             throw new IllegalStateException(format("Static methods cannot be annotated with @CommandDefinition (%s)", method));
         }
 
-        final @Nullable String redirectFrom = method.isAnnotationPresent(RedirectFrom.class)
-                ? method.getAnnotation(RedirectFrom.class).value()
-                : null;
         final String route = def.route();
+        final Set<RedirectNode> redirectNodes = Arrays.stream(method.getAnnotationsByType(Redirect.class))
+                .peek(x -> {
+                    if (x.from().equalsIgnoreCase(route)) {
+                        throw new IllegalArgumentException(format("Method %s has a @Redirect annotation that redirects to itself", method));
+                    }
+                })
+                .map(x -> new RedirectNode(x.from(), x.arguments()))
+                .collect(Collectors.toSet());
         final @Nullable String permission = Miscellaneous.emptyToNull(def.permission());
         final boolean runAsync = def.runAsync();
 
         try {
             method.setAccessible(true);
             final Parameter[] parameters = method.getParameters();
-            if (redirectFrom != null) {
-                // The only parameter allowed is the source
-                if (parameters.length > 2 || (parameters.length == 1 && !parameters[0].isAnnotationPresent(Source.class))) {
-                    throw new IllegalStateException(format(
-                            "Methods annotated with @RedirectFrom may only accept the source as a parameter (%s)", method));
-                }
-            }
-
             final List<CommandParameter<S>> parsedParams = this.parameterParser.collectParameters(method);
             final @Nullable TypeToken<?> commandSourceType = (parameters.length > 0 && parameters[0].isAnnotationPresent(Source.class))
                     ? TypeToken.of(parameters[0].getAnnotatedType().getType())
@@ -171,19 +170,24 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     permission,
                     commandSourceType,
                     runAsync);
-            this.commandGraph.registerCommand(route, reg);
-            final CommandRegistrationContext<S> regContext = new CommandRegistrationContext<>(Arrays.asList(route.split(" ")), reg);
-            this.registrationHandler.accept(regContext);
-
-            if (redirectFrom != null) {
-                final CommandRegistration<S> redirect = new RedirectingCommandRegistration<>(reg);
-                this.commandGraph.registerCommand(redirectFrom, redirect);
-            }
+            registerCommand(route, reg);
+            redirectNodes.forEach(node ->
+                    registerCommand(node.route(), new RedirectingCommandRegistration<>(reg, Arrays.asList(node.arguments()))));
         } catch (final MethodParameterParser.RuleViolationException ex) {
             throw new RuntimeException(ex);
         } catch (final Throwable ex) {
             throw new RuntimeException(format("Failed to register command at '%s' (%s)", route, method), ex);
         }
+    }
+
+    private void registerCommand(final @NotNull String route,
+                                 final @NotNull CommandRegistration<S> registration) {
+        this.commandGraph.registerCommand(route, registration);
+        final CommandRegistrationContext<S> regContext = new CommandRegistrationContext<>(
+                Arrays.asList(route.split(" ")),
+                registration
+        );
+        this.registrationHandler.accept(regContext);
     }
 
     private <L> boolean invokeListeners(final @NotNull Supplier<Queue<L>> listeners,
@@ -253,6 +257,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final CommandGraph.RouteResult<S> routeResult = this.commandGraph.routeCommand(args);
             if (routeResult instanceof CommandGraph.RouteResult.Success<S> success) {
                 final CommandRegistration<S> reg = success.registration();
+                if (reg instanceof RedirectingCommandRegistration<S> redirect) {
+                    redirect.rawArguments().stream()
+                            .map(StringCommandInput::new)
+                            .forEach(args::offer);
+                }
+
                 final @Nullable String permission = reg.permission().orElse(null);
 
                 if (!Miscellaneous.checkAuthorized(source, permission, this.commandAuthorizer)) {

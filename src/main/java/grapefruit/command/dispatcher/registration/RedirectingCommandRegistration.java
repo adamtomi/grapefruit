@@ -15,12 +15,16 @@ import static java.util.Objects.requireNonNull;
 
 public final class RedirectingCommandRegistration<S> implements CommandRegistration<S> {
     private final CommandRegistration<S> delegate;
+    private final List<String> rawArguments;
 
-    public RedirectingCommandRegistration(final @NotNull CommandRegistration<S> delegate) {
+    public RedirectingCommandRegistration(final @NotNull CommandRegistration<S> delegate,
+                                          final @NotNull List<String> rawArguments) {
         this.delegate = requireNonNull(delegate, "delegate cannot be null");
-        if (!delegate.parameters().isEmpty()) {
-            throw new IllegalStateException("Parameters must be empty");
-        }
+        this.rawArguments = requireNonNull(rawArguments, "rawParameters cannot be null");
+    }
+
+    public @NotNull List<String> rawArguments() {
+        return List.copyOf(this.rawArguments);
     }
 
     @Override
@@ -57,6 +61,7 @@ public final class RedirectingCommandRegistration<S> implements CommandRegistrat
     public @NotNull String toString() {
         return "RedirectingCommandRegistration[" +
                 "delegate=" + this.delegate +
+                ", rawArguments=" + this.rawArguments +
                 ']';
     }
 
