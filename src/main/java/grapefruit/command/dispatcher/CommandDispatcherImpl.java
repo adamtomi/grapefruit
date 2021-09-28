@@ -264,7 +264,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 }
 
                 final @Nullable String permission = reg.permission().orElse(null);
-
                 if (!Miscellaneous.checkAuthorized(source, permission, this.commandAuthorizer)) {
                     throw new CommandAuthorizationException(permission);
                 }
