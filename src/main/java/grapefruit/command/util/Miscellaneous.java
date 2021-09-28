@@ -1,5 +1,6 @@
 package grapefruit.command.util;
 
+import com.google.common.reflect.TypeToken;
 import grapefruit.command.dispatcher.CommandAuthorizer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,6 +15,7 @@ import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 public final class Miscellaneous {
+    private static final TypeToken<Number> NUMBER_TYPE = TypeToken.of(Number.class);
     private static final Map<Class<?>, Class<?>> BOX_MAP = Map.of(
             Boolean.TYPE, Boolean.class,
             Byte.TYPE, Byte.class,
@@ -83,11 +85,11 @@ public final class Miscellaneous {
 
     public static @NotNull String formatFlag(final @NotNull String flagName) {
         requireNonNull(flagName, "flagName cannot be null");
-        if (flagName.startsWith("--")) {
-            return flagName;
+        if (flagName.length() == 1) {
+            return flagName.startsWith("-") ? flagName : format("-%s", flagName);
         }
 
-        return format("--%s", flagName);
+        return flagName.startsWith("--") ? flagName : format("--%s", flagName);
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
@@ -109,5 +111,16 @@ public final class Miscellaneous {
         collection.addAll(Arrays.asList(elements));
 
         return collection;
+    }
+
+    public static boolean containsIgnoreCase(final @NotNull String element,
+                                             final @NotNull Collection<String> elements) {
+        requireNonNull(element, "element cannot be null");
+        requireNonNull(elements, "elements cannot be null");
+        return elements.stream().anyMatch(element::equalsIgnoreCase);
+    }
+
+    public static @NotNull TypeToken<Number> numberType() {
+        return NUMBER_TYPE;
     }
 }

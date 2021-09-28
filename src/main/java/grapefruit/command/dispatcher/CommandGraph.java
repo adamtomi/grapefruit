@@ -1,5 +1,6 @@
 package grapefruit.command.dispatcher;
 
+import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.registration.CommandRegistration;
 import grapefruit.command.dispatcher.registration.RedirectingCommandRegistration;
 import grapefruit.command.parameter.CommandParameter;
@@ -117,9 +118,11 @@ final class CommandGraph<S> {
 
     public @NotNull List<String> listSuggestions(final @NotNull CommandContext<S> context,
                                                  final @NotNull Deque<CommandInput> args) {
+        System.out.println("listSuggestions");
         final S source = context.source();
         CommandNode<S> commandNode = this.rootNode;
         CommandInput part;
+        System.out.println(context);
         while ((part = args.peek()) != null) {
             if (commandNode.registration().isPresent()) {
                 break;
@@ -140,29 +143,67 @@ final class CommandGraph<S> {
         final Optional<CommandRegistration<S>> registrationOpt = commandNode.registration();
         final Deque<CommandInput> argsCopy = new ConcurrentLinkedDeque<>(args);
         if (registrationOpt.isPresent()) {
+            System.out.println("registration is present");
             final CommandRegistration<S> registration = registrationOpt.orElseThrow();
             if (!Miscellaneous.checkAuthorized(source, registration.permission().orElse(null), this.authorizer)) {
                 return List.of();
             }
 
-            for (final CommandParameter<S> param : registration.parameters()) {
+            final List<CommandParameter<S>> parameters = registration.parameters();
+            final List<FlagParameter<S>> flags = parameters.stream()
+                    .filter(CommandParameter::isFlag)
+                    .map(x -> (FlagParameter<S>) x)
+                    .toList();
+            System.out.println("entering for loop");
+            for (final CommandParameter<S> param : parameters) {
                 if (args.isEmpty()) {
                     return List.of();
                 }
 
-                CommandInput currentArg = args.element();
-                final Matcher flagPatternMatcher = FLAG_PATTERN.matcher(currentArg.rawArg());
-                if (flagPatternMatcher.matches()) {
-                    args.remove();
-                    if (args.isEmpty()) {
-                        return suggestFor(context, param, args, currentArg.rawArg());
-                    }
+                CommandInput input = args.element();
+                final String rawInput = input.rawArg();
+                System.out.println(rawInput);
+                if (rawInput.startsWith("-")) {
+                    final Matcher flagPatternMatcher = FLAG_PATTERN.matcher(rawInput);
+                    if (flagPatternMatcher.matches()) {
+                        System.out.println("is flag");
+                        try {
+                            System.out.println("creating flag group");
+                            final FlagGroup<S> flagGroup = FlagGroup.parse(rawInput, flagPatternMatcher, parameters);
+                            System.out.println("done");
+                            args.remove();
+                            if (args.isEmpty()) {
+                                System.out.println("args.isEmpty");
+                                return suggestFor(context, flagGroup.iterator().next(), args, rawInput);
+                            }
+                        } catch (final CommandException ignored) {
+                            System.out.println("error creating flag groups");
+                        }
 
-                    currentArg = args.element();
+                        System.out.println("not empty");
+                        input = args.element();
+                    } else {
+                        System.out.println("starts with - but not a flag yet");
+                        if (!param.type().isSubtypeOf(Miscellaneous.numberType())) {
+                            System.out.println("param is not of type number");
+                            final List<String> flagOptions = new ArrayList<>();
+                            System.out.println("collecting all flags that don't have a value");
+                            for (final FlagParameter<S> flag : flags) {
+                                final Optional<Object> storedValue = context.find(flag.flagName());
+                                if (storedValue.isEmpty() || storedValue.map(Boolean.TYPE::cast).orElse(false)) {
+                                    flagOptions.addAll(collectFlagOptions(flag));
+                                }
+                            }
+
+                            System.out.println("returning flagOPtions");
+                            return flagOptions;
+                        }
+                    }
                 }
 
-                if (currentArg.rawArg().equals("") || args.size() < 2) {
-                    return suggestFor(context, param, argsCopy, currentArg.rawArg());
+                if (input instanceof BlankCommandInput || args.size() < 2) {
+                    System.out.println("blank input || args < 2");
+                    return suggestFor(context, param, argsCopy, "");
                 }
 
                 if (param.mapper().suggestionsNeedValidation()) {
@@ -179,6 +220,7 @@ final class CommandGraph<S> {
             return List.of();
 
         } else {
+            System.out.println("not present, returning children");
             return commandNode.children().stream()
                     .map(x -> {
                         final List<String> suggestions = new ArrayList<>();
@@ -195,15 +237,28 @@ final class CommandGraph<S> {
                                              final @NotNull CommandParameter<S> parameter,
                                              final @NotNull Deque<CommandInput> previousArgs,
                                              final @NotNull String currentArg) {
+        System.out.println("suggestFor");
+        System.out.println(context);
+        System.out.println(parameter);
+        System.out.println(previousArgs);
+        System.out.println("\"" + currentArg + "\"");
         if (parameter.isFlag() && !parameter.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
-            if (previousArgs.stream().anyMatch(arg -> arg.rawArg().equalsIgnoreCase(formatFlag(parameter.name())))) {
+            System.out.println("flag && !presence");
+            final FlagParameter<S> flag = (FlagParameter<S>) parameter;
+            if (previousArgs.stream().anyMatch(input -> Miscellaneous.containsIgnoreCase(input.rawArg(), collectFlagOptions(flag)))) {
                 return parameter.mapper().listSuggestions(context, currentArg, parameter.modifiers());
             }
 
-            return List.of(formatFlag(parameter.name()));
+            System.out.println("returnin formatted flag");
+            return collectFlagOptions(flag);
         }
 
+        System.out.println("returning regular suggestions");
         return parameter.mapper().listSuggestions(context, currentArg, parameter.modifiers());
+    }
+
+    private @NotNull List<String> collectFlagOptions(final @NotNull FlagParameter<S> flag) {
+        return List.of(Miscellaneous.formatFlag(flag.flagName()), Miscellaneous.formatFlag(String.valueOf(flag.shorthand())));
     }
 
     public @NotNull String generateSyntaxFor(final @NotNull String commandLine) {

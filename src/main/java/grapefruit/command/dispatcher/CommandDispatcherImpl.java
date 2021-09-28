@@ -504,19 +504,21 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             args.add(new BlankCommandInput(1)); // This is a bit hacky
         }
 
-        final String last = args.getLast().rawArg();
-        final CommandContext<S> context = new CommandContext<>(source, commandLine);
-        // TODO fix this
-        /*final CommandGraph.RouteResult<S> routeResult = this.commandGraph.routeCommand(args);
+        final String last = args.getLast().rawArg().trim();
+        /*
+         * Both routeCommand and processCommand remove elements from the queue
+         * but we need all elements for proper auto-completion
+         */
+        final Queue<CommandInput> argsCopy = new ArrayDeque<>(args);
+        final CommandGraph.RouteResult<S> routeResult = this.commandGraph.routeCommand(argsCopy);
         CommandContext<S> context = new CommandContext<>(source, commandLine);
 
         if (routeResult instanceof CommandGraph.RouteResult.Success<S> success) {
             final CommandRegistration<S> registration = success.registration();
             try {
-                context = processCommand(registration, commandLine, source, args);
+                context = processCommand(registration, commandLine, source, argsCopy);
             } catch (final CommandException ignored) {}
-
-        }*/
+        }
 
         return this.commandGraph.listSuggestions(context, args)
                 .stream()
