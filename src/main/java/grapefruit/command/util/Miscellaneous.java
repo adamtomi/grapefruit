@@ -2,6 +2,8 @@ package grapefruit.command.util;
 
 import com.google.common.reflect.TypeToken;
 import grapefruit.command.dispatcher.CommandAuthorizer;
+import grapefruit.command.parameter.CommandParameter;
+import grapefruit.command.parameter.FlagParameter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -126,5 +128,11 @@ public final class Miscellaneous {
 
     public static @NotNull TypeToken<Number> numberType() {
         return NUMBER_TYPE;
+    }
+
+    public static @NotNull String parameterName(final @NotNull CommandParameter<?> parameter) {
+        return parameter instanceof FlagParameter<?>
+                ? ((FlagParameter<?>) parameter).flagName()
+                : parameter.name();
     }
 }
