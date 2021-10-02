@@ -43,6 +43,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
@@ -336,7 +337,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                                       final @NotNull String commandLine,
                                                       final @NotNull S source,
                                                       final @NotNull Queue<CommandInput> args) throws CommandException {
-        final CommandContext<S> context = new CommandContext<>(source, commandLine);
+        final CommandContext<S> context = CommandContext.create(source, commandLine, registration.parameters());
         final List<CommandParameter<S>> parameters = registration.parameters();
         preprocessArguments(context, parameters);
 
@@ -349,16 +350,16 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     final Matcher matcher = FLAG_PATTERN.matcher(rawInput);
                     if (matcher.matches()) {
                         final FlagGroup<S> flags = FlagGroup.parse(rawInput, matcher, parameters);
-
                         for (final FlagParameter<S> flag : flags) {
                             consumeFlag(flag, context, args, input, rawInput);
                         }
 
+
                     } else {
                         consumeArgument(commandLine, parameters, context, args, parameterIndex);
-                        parameterIndex++;
                     }
 
+                    parameterIndex++;
                     if (!args.isEmpty()) {
                         args.element().markConsumed();
                     }
@@ -367,6 +368,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         args.remove();
                     }
                 }
+
             }
 
             return context;
@@ -424,7 +426,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             ));
         }
 
-        int actualIndex = parameterIndex;
         CommandParameter<S> parameter = parameters.get(parameterIndex);
         if (parameter.isFlag()) {
             final Optional<CommandParameter<S>> firstNonFlagParameter = parameters.stream()
@@ -437,11 +438,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             }
 
             parameter = firstNonFlagParameter.orElseThrow();
-            actualIndex = parameters.indexOf(parameter);
         }
 
         final Object parsedValue = mapParameter(parameter, context, args);
-        context.put(actualIndex, parsedValue);
+        context.put(parameter.name(), parsedValue);
     }
 
     private @Nullable Object mapParameter(final @NotNull CommandParameter<S> parameter,
@@ -463,14 +463,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private void preprocessArguments(final @NotNull CommandContext<S> context,
                                      final @NotNull Collection<CommandParameter<S>> parameters) {
         for (final CommandParameter<S> parameter : parameters) {
-            final String name = parameter.isFlag()
-                    ? ((FlagParameter<S>) parameter).flagName()
-                    : parameter.name();
+            final String name = Miscellaneous.parameterName(parameter);
             final Class<?> type = parameter.type().getRawType();
             final Object defaultValue = type.isPrimitive()
                     ? Miscellaneous.nullToPrimitive(type)
                     : null;
-            context.put(name, defaultValue);
+            context.putDefault(name, defaultValue);
         }
     }
 
@@ -478,9 +476,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                       final @NotNull List<CommandParameter<S>> parameters,
                                       final @NotNull String commandLine) throws CommandException {
         for (final CommandParameter<S> parameter : parameters) {
-            final String name = parameter.isFlag()
-                    ? ((FlagParameter<S>) parameter).flagName()
-                    : parameter.name();
+            final String name = Miscellaneous.parameterName(parameter);
             final Optional<Object> argument = context.find(name);
             if (!parameter.isOptional() && argument.isEmpty()) {
                 throw new CommandSyntaxException(Message.of(
@@ -511,7 +507,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
          */
         final Queue<CommandInput> argsCopy = new ArrayDeque<>(args);
         final CommandGraph.RouteResult<S> routeResult = this.commandGraph.routeCommand(argsCopy);
-        CommandContext<S> context = new CommandContext<>(source, commandLine);
+        CommandContext<S> context = CommandContext.create(source, commandLine, List.of());
 
         if (routeResult instanceof CommandGraph.RouteResult.Success<S> success) {
             final CommandRegistration<S> registration = success.registration();

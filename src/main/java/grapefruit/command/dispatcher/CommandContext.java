@@ -1,10 +1,15 @@
 package grapefruit.command.dispatcher;
 
+import grapefruit.command.parameter.CommandParameter;
+import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
-import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -14,14 +19,30 @@ import static java.util.Objects.requireNonNull;
 
 @SuppressWarnings("unchecked")
 public class CommandContext<S> {
+    private static final Comparator<Map.Entry<Integer, String>> SORT_BY_INDEX = Comparator.comparingInt(Map.Entry::getKey);
     private final S source;
     private final String commandLine;
-    private final Map<String, Object> arguments = new LinkedHashMap<>();
+    private final Map<Integer, String> indexStore;
+    private final Map<String, StoredValue> argumentStore = new HashMap<>();
 
-    public CommandContext(final @NotNull S source,
-                          final @NotNull String commandLine) {
+    @VisibleForTesting
+    protected CommandContext(final @NotNull S source,
+                             final @NotNull String commandLine,
+                             final @NotNull Map<Integer, String> indexStore) {
         this.source = requireNonNull(source, "source cannot be null");
         this.commandLine = requireNonNull(commandLine, "commandLine cannot be null");
+        this.indexStore = requireNonNull(indexStore, "indexStore cannot be null");
+    }
+
+    public static <S> @NotNull CommandContext<S> create(final @NotNull S source,
+                                                        final @NotNull String commandLine,
+                                                        final @NotNull List<CommandParameter<S>> params) {
+        final Map<Integer, String> indexStore = new HashMap<>();
+        for (int i = 0; i < params.size(); i++) {
+            indexStore.put(i, Miscellaneous.parameterName(params.get(i)));
+        }
+
+        return new CommandContext<>(source, commandLine, indexStore);
     }
 
     public @NotNull S source() {
@@ -32,40 +53,39 @@ public class CommandContext<S> {
         return this.commandLine;
     }
 
-    public void put(final @NotNull String name, final @Nullable Object value) {
-        this.arguments.put(name, value);
+    void putDefault(final @NotNull String name, final @Nullable Object value) {
+        this.argumentStore.put(name, new StoredValue(value, false));
     }
 
-    public void put(final int index, final @Nullable Object value) {
-        if (index < 0) {
-            throw new IllegalArgumentException("Index cannot be less than 0");
-        }
-
-        final int argCount = argCount();
-        if (index > argCount) {
-            throw new IllegalArgumentException(format("Index must not be greater than %s", argCount));
-        }
-
-        // Is there a better way of doing this? I really hope...
-        final Map.Entry<String, Object> entry = this.arguments.entrySet().stream()
-                .skip(index)
-                .findFirst()
-                .orElseThrow();
-        entry.setValue(value);
+    public void put(final @NotNull String name, final @Nullable Object value) {
+        this.argumentStore.put(name, new StoredValue(value, true));
     }
 
     public @NotNull Map<String, Object> asMap() {
-        // Map#copyOf doesn't allow null values... >:(
-        return Collections.unmodifiableMap(this.arguments);
+        final Map<String, Object> result = new LinkedHashMap<>(argCount());
+        this.indexStore.entrySet().stream()
+                .sorted(SORT_BY_INDEX)
+                .map(Map.Entry::getValue)
+                .forEach(name -> {
+                    if (!this.argumentStore.containsKey(name)) {
+                        throw new IllegalArgumentException(format("No value found for name '%s'", name));
+                    }
+
+                    result.put(name, this.argumentStore.get(name).value());
+                });
+
+        return result;
     }
 
     public int argCount() {
-        return this.arguments.size();
+        return this.argumentStore.size();
     }
 
     public <T> @NotNull Optional<T> find(final @NotNull String name) {
-        final @Nullable Object found = this.arguments.get(name);
-        return Optional.ofNullable((T) found);
+        final @Nullable StoredValue stored = this.argumentStore.get(name);
+        return (Optional<T>) Optional.ofNullable(stored)
+                .filter(StoredValue::isSet)
+                .map(StoredValue::value);
     }
 
     public <T> @NotNull T findUnchecked(final @NotNull String name) {
@@ -73,12 +93,15 @@ public class CommandContext<S> {
     }
 
     public <T> @NotNull Optional<T> findAt(final int index) {
-        try {
-            final @Nullable T result = (T) this.arguments.values().toArray(Object[]::new)[index];
-            return Optional.ofNullable(result);
-        } catch (final IndexOutOfBoundsException ex) {
+        final @Nullable String name = this.indexStore.get(index);
+        if (name == null) {
             return Optional.empty();
         }
+
+        final @Nullable StoredValue stored = this.argumentStore.get(name);
+        return (Optional<T>) Optional.ofNullable(stored)
+                .filter(StoredValue::isSet)
+                .map(StoredValue::value);
     }
 
     public <T> @NotNull T findAtUnchecked(final int index) {
@@ -90,7 +113,9 @@ public class CommandContext<S> {
         return "CommandContext[" +
                 "source=" + this.source + '\'' +
                 ", commandLine='" + this.commandLine + '\'' +
-                ", arguments=" + this.arguments +
+                ", arguments=" + this.argumentStore +
                 ']';
     }
+
+    private static final record StoredValue(@Nullable Object value, boolean isSet) {}
 }
