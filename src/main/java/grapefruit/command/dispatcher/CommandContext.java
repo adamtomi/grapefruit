@@ -41,8 +41,9 @@ public class CommandContext<S> {
             throw new IllegalArgumentException("Index cannot be less than 0");
         }
 
-        if (index >= argCount()) {
-            throw new IllegalArgumentException(format("Index must not be greater than or equal to %s", argCount()));
+        final int argCount = argCount();
+        if (index > argCount) {
+            throw new IllegalArgumentException(format("Index must not be greater than %s", argCount));
         }
 
         // Is there a better way of doing this? I really hope...
