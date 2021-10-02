@@ -27,7 +27,8 @@ public class CommandNode<S> {
         validate(primary);
         aliases.forEach(CommandNode::validate);
         this.primary = primary;
-        this.aliases = aliases;
+        // Create a mutable copy, so #mergeAliases doesn't fail
+        this.aliases = new HashSet<>(aliases);
         this.registration = registration;
     }
 
@@ -66,10 +67,6 @@ public class CommandNode<S> {
 
     public void addChild(final @NotNull CommandNode<S> child) {
         this.children.add(child);
-    }
-
-    public void removeChild(final @NotNull CommandNode<S> child) {
-        this.children.remove(child);
     }
 
     public @NotNull Set<CommandNode<S>> children() {
