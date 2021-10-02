@@ -23,26 +23,37 @@ public class CommandContext<S> {
     private final S source;
     private final String commandLine;
     private final Map<Integer, String> indexStore;
-    private final Map<String, StoredValue> argumentStore = new HashMap<>();
+    private final Map<String, StoredValue> argumentStore;
 
     @VisibleForTesting
     protected CommandContext(final @NotNull S source,
                              final @NotNull String commandLine,
-                             final @NotNull Map<Integer, String> indexStore) {
+                             final @NotNull Map<Integer, String> indexStore,
+                             final @NotNull Map<String, StoredValue> argumentStore) {
         this.source = requireNonNull(source, "source cannot be null");
         this.commandLine = requireNonNull(commandLine, "commandLine cannot be null");
         this.indexStore = requireNonNull(indexStore, "indexStore cannot be null");
+        this.argumentStore = requireNonNull(argumentStore, "argumentStore cannot be null");
     }
 
     public static <S> @NotNull CommandContext<S> create(final @NotNull S source,
                                                         final @NotNull String commandLine,
                                                         final @NotNull List<CommandParameter<S>> params) {
         final Map<Integer, String> indexStore = new HashMap<>();
+        final Map<String, StoredValue> defaults = new HashMap<>();
         for (int i = 0; i < params.size(); i++) {
             indexStore.put(i, Miscellaneous.parameterName(params.get(i)));
         }
 
-        return new CommandContext<>(source, commandLine, indexStore);
+        for (final CommandParameter<S> parameter : params) {
+            final String name = Miscellaneous.parameterName(parameter);
+            final Class<?> type = parameter.type().getRawType();
+            final Object defaultValue = type.isPrimitive()
+                    ? Miscellaneous.nullToPrimitive(type)
+                    : null;
+            defaults.put(name, new StoredValue(defaultValue, false));
+        }
+        return new CommandContext<>(source, commandLine, indexStore, defaults);
     }
 
     public @NotNull S source() {
@@ -51,10 +62,6 @@ public class CommandContext<S> {
 
     public @NotNull String commandLine() {
         return this.commandLine;
-    }
-
-    void putDefault(final @NotNull String name, final @Nullable Object value) {
-        this.argumentStore.put(name, new StoredValue(value, false));
     }
 
     public void put(final @NotNull String name, final @Nullable Object value) {

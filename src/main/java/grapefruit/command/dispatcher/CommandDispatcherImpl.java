@@ -339,7 +339,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                                       final @NotNull Queue<CommandInput> args) throws CommandException {
         final CommandContext<S> context = CommandContext.create(source, commandLine, registration.parameters());
         final List<CommandParameter<S>> parameters = registration.parameters();
-        preprocessArguments(context, parameters);
 
         try {
             int parameterIndex = 0;
@@ -457,18 +456,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             }
 
             throw ex;
-        }
-    }
-
-    private void preprocessArguments(final @NotNull CommandContext<S> context,
-                                     final @NotNull Collection<CommandParameter<S>> parameters) {
-        for (final CommandParameter<S> parameter : parameters) {
-            final String name = Miscellaneous.parameterName(parameter);
-            final Class<?> type = parameter.type().getRawType();
-            final Object defaultValue = type.isPrimitive()
-                    ? Miscellaneous.nullToPrimitive(type)
-                    : null;
-            context.putDefault(name, defaultValue);
         }
     }
 
