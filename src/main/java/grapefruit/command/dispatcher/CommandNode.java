@@ -9,8 +9,13 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static java.lang.String.format;
 
 public class CommandNode<S> {
+    private static final Pattern VALID_NAME_PATTERN = Pattern.compile("(\\w|-)+", Pattern.UNICODE_CHARACTER_CLASS);
     private final String primary;
     private final Set<String> aliases;
     private final Set<CommandNode<S>> children = new HashSet<>();
@@ -19,6 +24,8 @@ public class CommandNode<S> {
     public CommandNode(final @NotNull String primary,
                        final @NotNull Set<String> aliases,
                        final @Nullable CommandRegistration<S> registration) {
+        validate(primary);
+        aliases.forEach(CommandNode::validate);
         this.primary = primary;
         this.aliases = aliases;
         this.registration = registration;
@@ -28,6 +35,13 @@ public class CommandNode<S> {
                        final @NotNull String[] aliases,
                        final @Nullable CommandRegistration<S> registration) {
         this(primary, Miscellaneous.mutableCollectionOf(aliases, HashSet::new), registration);
+    }
+
+    private static void validate(final @NotNull String name) {
+        final Matcher matcher = VALID_NAME_PATTERN.matcher(name);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException(format("Name '%s' does not match '%s'", name, VALID_NAME_PATTERN));
+        }
     }
 
     public @NotNull String primary() {
