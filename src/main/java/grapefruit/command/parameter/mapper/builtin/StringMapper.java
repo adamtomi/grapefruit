@@ -56,7 +56,7 @@ public class StringMapper<S> extends AbstractParameterMapper<S, String> {
                     final String rawInput = arg.rawArg();
                     joiner.add(rawInput);
                     joinedCount++;
-                    if (!Miscellaneous.endsWith(rawInput, QUOTE_SIGN)) {
+                    if (Miscellaneous.endsWith(rawInput, QUOTE_SIGN)) {
                         break;
                     }
                 }
