@@ -90,7 +90,8 @@ public class StringMapper<S> extends AbstractParameterMapper<S, String> {
             final Regex regex = regexOpt.get();
             final int allowUnicode = regex.allowUnicode() ? Pattern.UNICODE_CHARACTER_CLASS : 0;
             final int caseInsensitive = regex.caseInsensitive() ? Pattern.CASE_INSENSITIVE : 0;
-            final Pattern pattern = Pattern.compile(regex.value(), allowUnicode & caseInsensitive);
+            final int flags = allowUnicode + caseInsensitive;
+            final Pattern pattern = Pattern.compile(regex.value(), flags);
             final Matcher matcher = pattern.matcher(parsedValue);
 
             if (!matcher.matches()) {
