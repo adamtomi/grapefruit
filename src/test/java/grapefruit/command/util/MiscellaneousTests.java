@@ -1,5 +1,15 @@
 package grapefruit.command.util;
 
+import com.google.common.reflect.TypeToken;
+import grapefruit.command.dispatcher.CommandContext;
+import grapefruit.command.dispatcher.CommandContextTests;
+import grapefruit.command.dispatcher.CommandInput;
+import grapefruit.command.parameter.CommandParameter;
+import grapefruit.command.parameter.FlagParameter;
+import grapefruit.command.parameter.PresenceFlagParameter;
+import grapefruit.command.parameter.StandardParameter;
+import grapefruit.command.parameter.mapper.AbstractParameterMapper;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -7,6 +17,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Queue;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -171,5 +182,40 @@ public class MiscellaneousTests {
         final Collection<String> strings = Set.of("first", "SECOND", "thIrD", "FouRtH");
         final boolean contains = Miscellaneous.containsIgnoreCase(element, strings);
         assertEquals(contains, shouldContain);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"parameter", "param", "name", "_my-name"})
+    public void parameterName_standardParameter(final String name) {
+        final CommandParameter<Object> param = new DummyParameter(name, 0);
+        final String result = Miscellaneous.parameterName(param);
+        assertEquals(name, result);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"flag", "other-flag", "_this-is-a-flag-too"})
+    public void parameterName_flagParameter(final String name) {
+        final FlagParameter<Object> param = new PresenceFlagParameter<>(name, ' ', "__dummy", 0, new AnnotationList());
+        final String result = Miscellaneous.parameterName(param);
+        assertEquals(name, result);
+    }
+
+    private static final class DummyParameter extends StandardParameter<Object> {
+        private DummyParameter(final String name, final int index) {
+            super(name, index, false, TypeToken.of(Object.class), new AnnotationList(), new DummyParameterMapper());
+        }
+    }
+
+    private static final class DummyParameterMapper extends AbstractParameterMapper<Object, String> {
+        private DummyParameterMapper() {
+            super(TypeToken.of(String.class));
+        }
+
+        @Override
+        public @NotNull String map(final @NotNull CommandContext<Object> context,
+                                   final @NotNull Queue<CommandInput> args,
+                                   final @NotNull AnnotationList modifiers) {
+            return "Hello there!";
+        }
     }
 }
