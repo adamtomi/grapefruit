@@ -1,35 +1,27 @@
 package grapefruit.command.dispatcher;
 
-import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.registration.CommandRegistration;
 import grapefruit.command.dispatcher.registration.RedirectingCommandRegistration;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.FlagParameter;
-import grapefruit.command.parameter.mapper.ParameterMappingException;
-import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.UnaryOperator;
-import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
-import static grapefruit.command.parameter.FlagParameter.FLAG_PATTERN;
 import static grapefruit.command.util.Miscellaneous.formatFlag;
 import static java.util.Objects.requireNonNull;
 
 final class CommandGraph<S> {
-    protected static final String ALIAS_SEPARATOR = "\\|";
+    static final String ALIAS_SEPARATOR = "\\|";
     private static final UnaryOperator<String> AS_REQUIRED = arg -> '<' + arg + '>';
     private static final UnaryOperator<String> AS_OPTIONAL = arg -> '[' + arg + ']';
     private final CommandNode<S> rootNode = new CommandNode<>("__ROOT__", Set.of(), null);
@@ -116,7 +108,45 @@ final class CommandGraph<S> {
         return RouteResult.failure(RouteResult.Failure.Reason.INVALID_SYNTAX);
     }
 
+    public @NotNull List<String> listSuggestions(final @NotNull Queue<CommandInput> args) {
+        CommandNode<S> commandNode = this.rootNode;
+        CommandInput part;
+        while ((part = args.peek()) != null) {
+            if (commandNode.registration().isPresent()) {
+                break;
+
+            } else {
+                final String rawArg = part.rawArg();
+                final Optional<CommandNode<S>> childNode = findChild(commandNode, rawArg);
+                if (childNode.isEmpty()) {
+                    break;
+                } else {
+                    commandNode = childNode.get();
+                }
+            }
+
+            args.remove();
+        }
+
+        final List<String> result = new ArrayList<>();
+        for (final CommandNode<S> child : commandNode.children()) {
+            result.add(child.primary());
+            result.addAll(child.aliases());
+        }
+
+        return result;
+    }
+
     public @NotNull List<String> listSuggestions(final @NotNull CommandContext<S> context,
+                                                 final @NotNull CommandRegistration<S> registration,
+                                                 final @NotNull Queue<CommandInput> args) {
+        final List<CommandParameter<S>> parameters = registration.parameters();
+        // TODO return the first non-flag parameter that is not present in context
+        // TODO also return all flags that aren't present in context
+
+    }
+
+    /*public @NotNull List<String> listSuggestions(final @NotNull CommandContext<S> context,
                                                  final @NotNull Deque<CommandInput> args) {
         System.out.println("listSuggestions");
         final S source = context.source();
@@ -259,7 +289,7 @@ final class CommandGraph<S> {
 
     private @NotNull List<String> collectFlagOptions(final @NotNull FlagParameter<S> flag) {
         return List.of(Miscellaneous.formatFlag(flag.flagName()), Miscellaneous.formatFlag(String.valueOf(flag.shorthand())));
-    }
+    }*/
 
     public @NotNull String generateSyntaxFor(final @NotNull String commandLine) {
         final String[] path = commandLine.split(" ");

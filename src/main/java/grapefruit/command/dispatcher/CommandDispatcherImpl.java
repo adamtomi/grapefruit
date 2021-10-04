@@ -39,6 +39,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
@@ -494,17 +495,19 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
          */
         final Queue<CommandInput> argsCopy = new ArrayDeque<>(args);
         final CommandGraph.RouteResult<S> routeResult = this.commandGraph.routeCommand(argsCopy);
-        CommandContext<S> context = CommandContext.create(source, commandLine, List.of());
+        final List<String> suggestions = new ArrayList<>();
 
         if (routeResult instanceof CommandGraph.RouteResult.Success<S> success) {
             final CommandRegistration<S> registration = success.registration();
             try {
-                context = processCommand(registration, commandLine, source, argsCopy);
+                final CommandContext<S> context = processCommand(registration, commandLine, source, argsCopy);
+                suggestions.addAll(this.commandGraph.listSuggestions(context, registration, args));
             } catch (final CommandException ignored) {}
+        } else {
+            suggestions.addAll(this.commandGraph.listSuggestions(args));
         }
 
-        return this.commandGraph.listSuggestions(context, args)
-                .stream()
+        return suggestions.stream()
                 .filter(x -> Miscellaneous.startsWithIgnoreCase(x, last))
                 .toList();
     }
