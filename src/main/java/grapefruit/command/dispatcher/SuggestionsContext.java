@@ -1,7 +1,14 @@
 package grapefruit.command.dispatcher;
 
-import java.util.Map;
 
-public class SuggestionsContext {
-    private final Map<String, Object>
+import org.jetbrains.annotations.NotNull;
+
+class SuggestionsContext {
+
+
+    public @NotNull String lastArgument() {
+        throw new UnsupportedOperationException();
+    }
+
+
 }

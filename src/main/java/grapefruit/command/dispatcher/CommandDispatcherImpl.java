@@ -494,17 +494,22 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
          * but we need all elements for proper auto-completion
          */
         final Queue<CommandInput> argsCopy = new ArrayDeque<>(args);
-        final CommandGraph.RouteResult<S> routeResult = this.commandGraph.routeCommand(argsCopy);
+        final CommandGraph.RouteResult<S> routeResult = this.commandGraph.routeCommand(args);
         final List<String> suggestions = new ArrayList<>();
 
         if (routeResult instanceof CommandGraph.RouteResult.Success<S> success) {
+            System.out.println("success");
             final CommandRegistration<S> registration = success.registration();
             try {
-                final CommandContext<S> context = processCommand(registration, commandLine, source, argsCopy);
-                suggestions.addAll(this.commandGraph.listSuggestions(context, registration, args));
-            } catch (final CommandException ignored) {}
+                System.out.println("try");
+                System.out.println("processing command");
+                final CommandContext<S> context = processCommand(registration, commandLine, source, args);
+                suggestions.addAll(this.commandGraph.listSuggestions(context, "", registration, args));
+            } catch (final CommandException ignored) {
+                System.out.println("failed");
+            }
         } else {
-            suggestions.addAll(this.commandGraph.listSuggestions(args));
+            suggestions.addAll(this.commandGraph.listSuggestions(argsCopy));
         }
 
         return suggestions.stream()

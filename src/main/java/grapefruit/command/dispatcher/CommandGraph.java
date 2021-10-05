@@ -4,10 +4,12 @@ import grapefruit.command.dispatcher.registration.CommandRegistration;
 import grapefruit.command.dispatcher.registration.RedirectingCommandRegistration;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.FlagParameter;
+import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -137,159 +139,39 @@ final class CommandGraph<S> {
         return result;
     }
 
-    public @NotNull List<String> listSuggestions(final @NotNull CommandContext<S> context,
+    public @NotNull List<String> listSuggestions(final @NotNull CommandContext<S> commandContext,
+                                                 final @NotNull String prevArg,
                                                  final @NotNull CommandRegistration<S> registration,
                                                  final @NotNull Queue<CommandInput> args) {
         final List<CommandParameter<S>> parameters = registration.parameters();
-        // TODO return the first non-flag parameter that is not present in context
-        // TODO also return all flags that aren't present in context
+        final String currentArg = args.remove().rawArg();
 
-    }
-
-    /*public @NotNull List<String> listSuggestions(final @NotNull CommandContext<S> context,
-                                                 final @NotNull Deque<CommandInput> args) {
-        System.out.println("listSuggestions");
-        final S source = context.source();
-        CommandNode<S> commandNode = this.rootNode;
-        CommandInput part;
-        System.out.println(context);
-        while ((part = args.peek()) != null) {
-            if (commandNode.registration().isPresent()) {
-                break;
-
-            } else {
-                final String rawArg = part.rawArg();
-                final Optional<CommandNode<S>> childNode = findChild(commandNode, rawArg);
-                if (childNode.isEmpty()) {
-                    break;
-                } else {
-                    commandNode = childNode.get();
-                }
-            }
-
-            args.remove();
-        }
-
-        final Optional<CommandRegistration<S>> registrationOpt = commandNode.registration();
-        final Deque<CommandInput> argsCopy = new ConcurrentLinkedDeque<>(args);
-        if (registrationOpt.isPresent()) {
-            System.out.println("registration is present");
-            final CommandRegistration<S> registration = registrationOpt.orElseThrow();
-            if (!Miscellaneous.checkAuthorized(source, registration.permission().orElse(null), this.authorizer)) {
-                return List.of();
-            }
-
-            final List<CommandParameter<S>> parameters = registration.parameters();
-            final List<FlagParameter<S>> flags = parameters.stream()
+        if (prevArg.startsWith("--")) {
+            // TODO cleanup
+            final Optional<FlagParameter<S>> flag = parameters.stream()
                     .filter(CommandParameter::isFlag)
-                    .map(x -> (FlagParameter<S>) x)
-                    .toList();
-            System.out.println("entering for loop");
-            for (final CommandParameter<S> param : parameters) {
-                if (args.isEmpty()) {
-                    return List.of();
-                }
-
-                CommandInput input = args.element();
-                final String rawInput = input.rawArg();
-                System.out.println(rawInput);
-                if (rawInput.startsWith("-")) {
-                    final Matcher flagPatternMatcher = FLAG_PATTERN.matcher(rawInput);
-                    if (flagPatternMatcher.matches()) {
-                        System.out.println("is flag");
-                        try {
-                            System.out.println("creating flag group");
-                            final FlagGroup<S> flagGroup = FlagGroup.parse(rawInput, flagPatternMatcher, parameters);
-                            System.out.println("done");
-                            args.remove();
-                            if (args.isEmpty()) {
-                                System.out.println("args.isEmpty");
-                                return suggestFor(context, flagGroup.iterator().next(), args, rawInput);
-                            }
-                        } catch (final CommandException ignored) {
-                            System.out.println("error creating flag groups");
-                        }
-
-                        System.out.println("not empty");
-                        input = args.element();
-                    } else {
-                        System.out.println("starts with - but not a flag yet");
-                        if (!param.type().isSubtypeOf(Miscellaneous.numberType())) {
-                            System.out.println("param is not of type number");
-                            final List<String> flagOptions = new ArrayList<>();
-                            System.out.println("collecting all flags that don't have a value");
-                            for (final FlagParameter<S> flag : flags) {
-                                final Optional<Object> storedValue = context.find(flag.flagName());
-                                if (storedValue.isEmpty() || storedValue.map(Boolean.TYPE::cast).orElse(false)) {
-                                    flagOptions.addAll(collectFlagOptions(flag));
-                                }
-                            }
-
-                            System.out.println("returning flagOPtions");
-                            return flagOptions;
-                        }
-                    }
-                }
-
-                if (input instanceof BlankCommandInput || args.size() < 2) {
-                    System.out.println("blank input || args < 2");
-                    return suggestFor(context, param, argsCopy, "");
-                }
-
-                if (param.mapper().suggestionsNeedValidation()) {
-                    try {
-                        param.mapper().map(context, args, param.modifiers());
-                    } catch (final ParameterMappingException ex) {
-                        return List.of();
-                    }
-                }
-
-                args.remove();
-            }
-
-            return List.of();
-
-        } else {
-            System.out.println("not present, returning children");
-            return commandNode.children().stream()
-                    .map(x -> {
-                        final List<String> suggestions = new ArrayList<>();
-                        suggestions.add(x.primary());
-                        suggestions.addAll(x.aliases());
-                        return suggestions;
-                    })
-                    .flatMap(Collection::stream)
-                    .collect(Collectors.toList());
-        }
-    }
-
-    private @NotNull List<String> suggestFor(final @NotNull CommandContext<S> context,
-                                             final @NotNull CommandParameter<S> parameter,
-                                             final @NotNull Deque<CommandInput> previousArgs,
-                                             final @NotNull String currentArg) {
-        System.out.println("suggestFor");
-        System.out.println(context);
-        System.out.println(parameter);
-        System.out.println(previousArgs);
-        System.out.println("\"" + currentArg + "\"");
-        if (parameter.isFlag() && !parameter.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
-            System.out.println("flag && !presence");
-            final FlagParameter<S> flag = (FlagParameter<S>) parameter;
-            if (previousArgs.stream().anyMatch(input -> Miscellaneous.containsIgnoreCase(input.rawArg(), collectFlagOptions(flag)))) {
-                return parameter.mapper().listSuggestions(context, currentArg, parameter.modifiers());
-            }
-
-            System.out.println("returnin formatted flag");
-            return collectFlagOptions(flag);
+                    .map(param -> (FlagParameter<S>) param)
+                    .filter(param -> param.flagName().equalsIgnoreCase(prevArg.substring(2)))
+                    .filter(param -> commandContext.find(param.flagName()).isEmpty())
+                    .findFirst();
+            return flag.map(param -> param.mapper().listSuggestions(commandContext, currentArg, param.modifiers()))
+                    .orElse(List.of());
         }
 
-        System.out.println("returning regular suggestions");
-        return parameter.mapper().listSuggestions(context, currentArg, parameter.modifiers());
+        final Optional<CommandParameter<S>> firstNonFlagParameter = parameters.stream()
+                .filter(param -> !param.isFlag())
+                .filter(param -> commandContext.find(param.name()).isEmpty())
+                .findFirst();
+        final List<CommandParameter<S>> flags = parameters.stream()
+                .filter(CommandParameter::isFlag)
+                .filter(param -> commandContext.find(Miscellaneous.parameterName(param)).isEmpty())
+                .toList();
+        firstNonFlagParameter.ifPresent(flags::add);
+        return flags.stream()
+                .map(param -> param.mapper().listSuggestions(commandContext, currentArg, param.modifiers()))
+                .flatMap(Collection::stream)
+                .toList();
     }
-
-    private @NotNull List<String> collectFlagOptions(final @NotNull FlagParameter<S> flag) {
-        return List.of(Miscellaneous.formatFlag(flag.flagName()), Miscellaneous.formatFlag(String.valueOf(flag.shorthand())));
-    }*/
 
     public @NotNull String generateSyntaxFor(final @NotNull String commandLine) {
         final String[] path = commandLine.split(" ");
