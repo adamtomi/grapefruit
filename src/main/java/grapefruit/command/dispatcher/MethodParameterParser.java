@@ -129,6 +129,14 @@ final class MethodParameterParser<S> {
                     final Flag flagDef = annotations.find(Flag.class).orElseThrow();
                     final String flagName = flagDef.value();
                     final char shorthand = flagDef.shorthand();
+                    final List<FlagParameter<S>> existingFlags = parameters.stream()
+                            .filter(CommandParameter::isFlag)
+                            .map(x -> (FlagParameter<S>) x)
+                            .toList();
+                    if (existingFlags.stream().anyMatch(x -> x.flagName().equalsIgnoreCase(flagName))) {
+                        throw new IllegalStateException(format("Flag with name '%s' already registerd", flagName));
+                    }
+
                     cmdParam = type.equals(FlagParameter.PRESENCE_FLAG_TYPE)
                             ? new PresenceFlagParameter<>(flagName, shorthand, paramName, i, annotations)
                             : new ValueFlagParameter<>(flagName, shorthand, paramName, i, type, annotations, mapper);
