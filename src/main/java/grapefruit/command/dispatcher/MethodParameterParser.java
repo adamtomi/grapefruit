@@ -133,7 +133,12 @@ final class MethodParameterParser<S> {
                             ? new PresenceFlagParameter<>(flagName, shorthand, paramName, i, annotations)
                             : new ValueFlagParameter<>(flagName, shorthand, paramName, i, type, annotations, mapper);
                 } else {
-                    cmdParam = new StandardParameter<>(paramName, i, isOptional, type, annotations, mapper);
+                    cmdParam = new StandardParameter<>(parameter.getName(), i, isOptional, type, annotations, mapper);
+                }
+
+                final String actualName = cmdParam.name();
+                if (parameters.stream().anyMatch(x -> x.name().equalsIgnoreCase(actualName))) {
+                    throw new IllegalStateException(format("Parameter with name '%s' already registerd", actualName));
                 }
 
                 parameters.add(cmdParam);
