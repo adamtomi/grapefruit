@@ -1,10 +1,12 @@
 package grapefruit.command.util;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
@@ -35,5 +37,18 @@ public final class AnnotationList {
     @Override
     public @NotNull String toString() {
         return "AnnotationList" + this.elements;
+    }
+
+    @Override
+    public boolean equals(final @Nullable Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final AnnotationList that = (AnnotationList) o;
+        return Objects.equals(this.elements, that.elements);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.elements);
     }
 }
