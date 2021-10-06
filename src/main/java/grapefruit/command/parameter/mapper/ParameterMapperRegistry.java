@@ -9,7 +9,6 @@ import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -52,15 +51,6 @@ public final class ParameterMapperRegistry<S> {
         }
     }
 
-    public void registerMappers(final @NotNull Collection<ParameterMapper<S, ?>> mappers) {
-        try {
-            this.lock.lock();
-            mappers.forEach(this::registerMapper0);
-        } finally {
-            this.lock.unlock();
-        }
-    }
-
     private void registerMapper0(final @NotNull ParameterMapper<S, ?> mapper) {
         requireNonNull(mapper, "mapper cannot be null");
         final TypeToken<?> type = mapper.type();
@@ -76,15 +66,6 @@ public final class ParameterMapperRegistry<S> {
         try {
             this.lock.lock();
             registerNamedMapper0(name, mapper);
-        } finally {
-            this.lock.unlock();
-        }
-    }
-
-    public void registerNamedMappers(final @NotNull Map<String, ParameterMapper<S, ?>> mappers) {
-        try {
-            this.lock.lock();
-            mappers.forEach(this::registerNamedMapper0);
         } finally {
             this.lock.unlock();
         }
