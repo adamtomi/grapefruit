@@ -29,7 +29,7 @@ public class PresenceFlagParameter<S> extends AbstractFlagParameter<S> {
                 true,
                 FlagParameter.PRESENCE_FLAG_TYPE,
                 modifiers,
-                new DummyParameterMapper<>(flagName)
+                DummyParameterMapper.get()
         );
     }
 
@@ -45,10 +45,13 @@ public class PresenceFlagParameter<S> extends AbstractFlagParameter<S> {
     }
 
     private static final class DummyParameterMapper<S> implements ParameterMapper<S, Void> {
-        private final String flagName;
+        private static final DummyParameterMapper<?> INSTANCE = new DummyParameterMapper<>();
 
-        private DummyParameterMapper(final @NotNull String flagName) {
-            this.flagName = requireNonNull(flagName, "flagName cannot be null");
+        private DummyParameterMapper() {}
+
+        @SuppressWarnings("unchecked")
+        static <S> @NotNull DummyParameterMapper<S> get() {
+            return (DummyParameterMapper<S>) INSTANCE;
         }
 
         @Override
@@ -67,7 +70,7 @@ public class PresenceFlagParameter<S> extends AbstractFlagParameter<S> {
         public @NotNull List<String> listSuggestions(final @NotNull CommandContext<S> context,
                                                      final @NotNull String currentArg,
                                                      final @NotNull AnnotationList modifiers) {
-            return List.of(Miscellaneous.formatFlag(this.flagName));
+            throw new UnsupportedOperationException();
         }
     }
 }
