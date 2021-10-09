@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -60,6 +61,7 @@ import static grapefruit.command.dispatcher.SuggestionHelper.SUGGEST_ME;
 import static grapefruit.command.parameter.FlagParameter.FLAG_PATTERN;
 import static java.lang.String.format;
 import static java.lang.System.Logger.Level.WARNING;
+import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 
 final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
@@ -342,6 +344,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                                       final boolean suggestions) throws CommandException {
         System.out.println("......................");
         System.out.println("processCommand");
+        System.out.println(args);
         final CommandContext<S> context = CommandContext.create(source, commandLine, registration.parameters());
         final List<CommandParameter<S>> parameters = registration.parameters();
         try {
@@ -382,14 +385,19 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         args.element().markConsumed();
                     }
                 } finally {
+                    final boolean shouldStop = suggestions && args.size() <= 1;
+                    System.out.println(shouldStop);
+                    if (shouldStop) {
+                        break;
+                    }
+
                     if (!args.isEmpty() && args.element().isConsumed()) {
                         args.remove();
                     }
                 }
 
             }
-
-            System.out.println("end of parameters");
+            System.out.println("end of while");
             System.out.println("......................");
 
             return context;
@@ -443,18 +451,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             }
 
             args.remove();
-            try {
-                System.out.println("parsing value");
-                final Object parsedValue = mapParameter(flag, context, args);
-                context.put(flagName, parsedValue);
-            } catch (final Throwable ex) {
-                System.out.println("error while parsing flag value...");
-                if (suggestions) {
-                    context.put(SUGGEST_ME, flag);
-                }
-
-                throw ex;
+            if (suggestions) {
+                context.put(SUGGEST_ME, flag);
             }
+
+            final Object parsedValue = mapParameter(flag, context, args);
+            context.put(flagName, parsedValue);
         }
     }
 
@@ -485,16 +487,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             parameter = firstNonFlagParameter.orElseThrow();
         }
 
-        try {
-            final Object parsedValue = mapParameter(parameter, context, args);
-            context.put(parameter.name(), parsedValue);
-        } catch (final Throwable ex) {
-            if (suggestions) {
-                context.put(SUGGEST_ME, parameter);
-            }
-
-            throw ex;
+        if (suggestions) {
+            context.put(SUGGEST_ME, parameter);
         }
+
+        final Object parsedValue = mapParameter(parameter, context, args);
+        context.put(parameter.name(), parsedValue);
     }
 
     private @Nullable Object mapParameter(final @NotNull CommandParameter<S> parameter,
@@ -563,6 +561,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 System.out.println("try");
                 System.out.println("processing command");
                 final CommandContext<S> context = processCommand(registration, commandLine, source, args, true);
+                System.out.println(context.argumentStore);
                 suggestions.addAll(this.suggestionHelper.listSuggestions(context, registration, args));
             } catch (final CommandException ignored) {
                 System.out.println("failed");
