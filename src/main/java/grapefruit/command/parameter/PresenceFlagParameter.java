@@ -6,13 +6,10 @@ import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.parameter.mapper.ParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.util.AnnotationList;
-import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Queue;
-
-import static java.util.Objects.requireNonNull;
 
 public class PresenceFlagParameter<S> extends AbstractFlagParameter<S> {
 

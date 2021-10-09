@@ -60,7 +60,6 @@ import static grapefruit.command.dispatcher.SuggestionHelper.SUGGEST_ME;
 import static grapefruit.command.parameter.FlagParameter.FLAG_PATTERN;
 import static java.lang.String.format;
 import static java.lang.System.Logger.Level.WARNING;
-import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 
 final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
