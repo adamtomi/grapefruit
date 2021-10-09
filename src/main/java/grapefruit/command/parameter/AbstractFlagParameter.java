@@ -17,12 +17,11 @@ public abstract class AbstractFlagParameter<S> extends AbstractCommandParameter<
     public AbstractFlagParameter(final @NotNull String flagName,
                                  final char shorthand,
                                  final @NotNull String name,
-                                 final int index,
                                  final boolean optional,
                                  final @NotNull TypeToken<?> type,
                                  final @NotNull AnnotationList modifiers,
                                  final @NotNull ParameterMapper<S, ?> mapper) {
-        super(name, index, optional, type, modifiers, mapper);
+        super(name, optional, type, modifiers, mapper);
         this.flagName = requireNonNull(flagName, "flagName cannot be null");
         this.shorthand = shorthand;
     }
@@ -47,8 +46,7 @@ public abstract class AbstractFlagParameter<S> extends AbstractCommandParameter<
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final AbstractFlagParameter<?> that = (AbstractFlagParameter<?>) o;
-        return this.index() == that.index()
-                && this.isOptional() == that.isOptional()
+        return this.isOptional() == that.isOptional()
                 && this.shorthand() == that.shorthand()
                 && Objects.equals(this.flagName(), that.flagName())
                 && Objects.equals(this.name(), that.name())
@@ -59,7 +57,7 @@ public abstract class AbstractFlagParameter<S> extends AbstractCommandParameter<
 
     @Override
     public int hashCode() {
-        return Objects.hash(flagName(), shorthand(), name(), index(), isOptional(), type(), modifiers(), mapper());
+        return Objects.hash(flagName(), shorthand(), name(), isOptional(), type(), modifiers(), mapper());
     }
 
     @Override

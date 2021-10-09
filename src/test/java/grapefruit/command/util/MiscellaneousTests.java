@@ -187,7 +187,7 @@ public class MiscellaneousTests {
     @ParameterizedTest
     @ValueSource(strings = {"parameter", "param", "name", "_my-name"})
     public void parameterName_standardParameter(final String name) {
-        final CommandParameter<Object> param = new DummyParameter(name, 0);
+        final CommandParameter<Object> param = new DummyParameter(name);
         final String result = Miscellaneous.parameterName(param);
         assertEquals(name, result);
     }
@@ -195,14 +195,14 @@ public class MiscellaneousTests {
     @ParameterizedTest
     @ValueSource(strings = {"flag", "other-flag", "_this-is-a-flag-too"})
     public void parameterName_flagParameter(final String name) {
-        final FlagParameter<Object> param = new PresenceFlagParameter<>(name, ' ', "__dummy", 0, new AnnotationList());
+        final FlagParameter<Object> param = new PresenceFlagParameter<>(name, ' ', "__dummy", new AnnotationList());
         final String result = Miscellaneous.parameterName(param);
         assertEquals(name, result);
     }
 
     private static final class DummyParameter extends StandardParameter<Object> {
-        private DummyParameter(final String name, final int index) {
-            super(name, index, false, TypeToken.of(Object.class), new AnnotationList(), new DummyParameterMapper());
+        private DummyParameter(final String name) {
+            super(name, false, TypeToken.of(Object.class), new AnnotationList(), new DummyParameterMapper());
         }
     }
 

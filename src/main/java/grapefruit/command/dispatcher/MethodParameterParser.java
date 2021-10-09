@@ -98,8 +98,7 @@ final class MethodParameterParser<S> {
 
     @NotNull List<CommandParameter<S>> collectParameters(final @NotNull Method method) throws RuleViolationException {
         final List<CommandParameter<S>> parameters = new ArrayList<>();
-        for (int i = 0; i < method.getParameters().length; i++) {
-            final Parameter parameter = method.getParameters()[i];
+        for (final Parameter parameter : method.getParameters()) {
             final AnnotationList annotations = new AnnotationList(parameter.getAnnotations());
 
             for (final Rule rule : this.rules) {
@@ -138,10 +137,10 @@ final class MethodParameterParser<S> {
                     }
 
                     cmdParam = type.equals(FlagParameter.PRESENCE_FLAG_TYPE)
-                            ? new PresenceFlagParameter<>(flagName, shorthand, paramName, i, annotations)
-                            : new ValueFlagParameter<>(flagName, shorthand, paramName, i, type, annotations, mapper);
+                            ? new PresenceFlagParameter<>(flagName, shorthand, paramName, annotations)
+                            : new ValueFlagParameter<>(flagName, shorthand, paramName, type, annotations, mapper);
                 } else {
-                    cmdParam = new StandardParameter<>(parameter.getName(), i, isOptional, type, annotations, mapper);
+                    cmdParam = new StandardParameter<>(parameter.getName(), isOptional, type, annotations, mapper);
                 }
 
                 final String actualName = cmdParam.name();

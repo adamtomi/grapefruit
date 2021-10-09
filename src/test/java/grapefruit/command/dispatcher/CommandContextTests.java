@@ -122,9 +122,9 @@ public class CommandContextTests {
     @Test
     public void asMap_sizeEquals() {
         final List<CommandParameter<Object>> params = List.of(
-                new DummyParameter("first", 0),
-                new DummyParameter("second", 1),
-                new DummyParameter("third", 2)
+                new DummyParameter("first"),
+                new DummyParameter("second"),
+                new DummyParameter("third")
         );
         final CommandContext<Object> context = CommandContext.create(new Object(), "", params);
         assertEquals(3, context.asMap().size());
@@ -133,9 +133,9 @@ public class CommandContextTests {
     @Test
     public void asMap_contentEquals() {
         final List<CommandParameter<Object>> params = List.of(
-                new DummyParameter("first", 0),
-                new DummyParameter("second", 1),
-                new DummyParameter("third", 2)
+                new DummyParameter("first"),
+                new DummyParameter("second"),
+                new DummyParameter("third")
         );
         final CommandContext<Object> context = CommandContext.create(new Object(), "", params);
         final Map<String, Object> values = new LinkedHashMap<>();
@@ -147,8 +147,8 @@ public class CommandContextTests {
     }
 
     private static final class DummyParameter extends StandardParameter<Object> {
-        private DummyParameter(final String name, final int index) {
-            super(name, index, false, TypeToken.of(Object.class), new AnnotationList(), new DummyParameterMapper());
+        private DummyParameter(final String name) {
+            super(name, false, TypeToken.of(Object.class), new AnnotationList(), new DummyParameterMapper());
         }
     }
 

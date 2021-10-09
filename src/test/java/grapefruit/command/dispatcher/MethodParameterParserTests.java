@@ -144,15 +144,15 @@ public class MethodParameterParserTests {
         final Flag flagAnnot = params[2].getAnnotation(Flag.class);
         final List<CommandParameter<Object>> expected = List.of(
                 new StandardParameter<>(
-                        "arg0", 0, false, TypeToken.of(String.class), new AnnotationList(),
+                        "arg0", false, TypeToken.of(String.class), new AnnotationList(),
                         registry.findMapper(TypeToken.of(String.class)).orElseThrow()
                 ),
                 new StandardParameter<>(
-                        "arg1", 1, true, TypeToken.of(Integer.TYPE), new AnnotationList(optParamAnnot),
+                        "arg1", true, TypeToken.of(Integer.TYPE), new AnnotationList(optParamAnnot),
                         registry.findMapper(TypeToken.of(Integer.class)).orElseThrow()
                 ),
                 new ValueFlagParameter<>(
-                        "flag", 'f', "arg2", 2, TypeToken.of(Short.TYPE), new AnnotationList(flagAnnot),
+                        "flag", 'f', "arg2", TypeToken.of(Short.TYPE), new AnnotationList(flagAnnot),
                         registry.findMapper(TypeToken.of(Short.class)).orElseThrow()
                 )
         );
@@ -169,8 +169,8 @@ public class MethodParameterParserTests {
         final Flag flagAnnot = params[1].getAnnotation(Flag.class);
         final Range rangeAnnot = params[2].getAnnotation(Range.class);
         final List<CommandParameter<Object>> expected = List.of(
-                new PresenceFlagParameter<>("test", ' ', "arg1", 1, new AnnotationList(flagAnnot)),
-                new StandardParameter<>("arg2", 2, false, TypeToken.of(Long.TYPE), new AnnotationList(rangeAnnot),
+                new PresenceFlagParameter<>("test", ' ', "arg1", new AnnotationList(flagAnnot)),
+                new StandardParameter<>("arg2", false, TypeToken.of(Long.TYPE), new AnnotationList(rangeAnnot),
                         registry.findMapper(TypeToken.of(Long.class)).orElseThrow())
         );
 
@@ -188,18 +188,18 @@ public class MethodParameterParserTests {
         final Flag flag3Annot = params[7].getAnnotation(Flag.class);
         final Range rangeAnnot = params[6].getAnnotation(Range.class);
         final List<CommandParameter<Object>> expected = List.of(
-                new PresenceFlagParameter<>("flag", ' ', "arg1", 1, new AnnotationList(flagAnnot)),
-                new StandardParameter<>("arg2", 2, false, TypeToken.of(Byte.TYPE), new AnnotationList(),
+                new PresenceFlagParameter<>("flag", ' ', "arg1", new AnnotationList(flagAnnot)),
+                new StandardParameter<>("arg2", false, TypeToken.of(Byte.TYPE), new AnnotationList(),
                         registry.findMapper(TypeToken.of(Byte.class)).orElseThrow()),
-                new StandardParameter<>("arg3", 3, false, TypeToken.of(Short.TYPE), new AnnotationList(),
+                new StandardParameter<>("arg3", false, TypeToken.of(Short.TYPE), new AnnotationList(),
                         registry.findMapper(TypeToken.of(Short.class)).orElseThrow()),
-                new ValueFlagParameter<>("flag-2", ' ', "arg4", 4, TypeToken.of(Integer.TYPE),
+                new ValueFlagParameter<>("flag-2", ' ', "arg4", TypeToken.of(Integer.TYPE),
                         new AnnotationList(flag2Annot), registry.findMapper(TypeToken.of(Integer.class)).orElseThrow()),
-                new StandardParameter<>("arg5", 5, false, TypeToken.of(Float.TYPE), new AnnotationList(),
+                new StandardParameter<>("arg5", false, TypeToken.of(Float.TYPE), new AnnotationList(),
                         registry.findMapper(TypeToken.of(Float.class)).orElseThrow()),
-                new StandardParameter<>("arg6", 6, false, TypeToken.of(Double.TYPE), new AnnotationList(rangeAnnot),
+                new StandardParameter<>("arg6", false, TypeToken.of(Double.TYPE), new AnnotationList(rangeAnnot),
                         registry.findMapper(TypeToken.of(Double.class)).orElseThrow()),
-                new ValueFlagParameter<>("flag-3", ' ', "arg7", 7, TypeToken.of(Character.TYPE),
+                new ValueFlagParameter<>("flag-3", ' ', "arg7", TypeToken.of(Character.TYPE),
                         new AnnotationList(flag3Annot), registry.findMapper(TypeToken.of(Character.class)).orElseThrow())
         );
 

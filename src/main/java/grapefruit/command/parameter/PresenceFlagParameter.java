@@ -19,13 +19,11 @@ public class PresenceFlagParameter<S> extends AbstractFlagParameter<S> {
     public PresenceFlagParameter(final @NotNull String flagName,
                                  final char shorthand,
                                  final @NotNull String name,
-                                 final int index,
                                  final @NotNull AnnotationList modifiers) {
         super(
                 flagName,
                 shorthand,
                 name,
-                index,
                 true,
                 FlagParameter.PRESENCE_FLAG_TYPE,
                 modifiers,
@@ -38,7 +36,6 @@ public class PresenceFlagParameter<S> extends AbstractFlagParameter<S> {
         return "PresenceFlagParameter[" +
                 "name='" + flagName() + '\'' +
                 ", shorthand='" + shorthand() + '\'' +
-                ", index=" + index() +
                 ", modifiers=" + modifiers() +
                 ", mapper=" + mapper().getClass().getName() +
                 ']';

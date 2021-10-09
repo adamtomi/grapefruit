@@ -9,8 +9,6 @@ public interface CommandParameter<S> {
 
     @NotNull String name();
 
-    int index();
-
     boolean isFlag();
 
     boolean isOptional();

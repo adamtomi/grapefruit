@@ -28,9 +28,9 @@ public class FlagGroupTests {
     @ValueSource(strings = {"flag", "other-flag", "another-flag"})
     public void parse_flagNames(final String flag) throws CommandException {
         final List<CommandParameter<Object>> parameters = List.of(
-                new PresenceFlagParameter<>(flag, ' ', "arg0", 0, new AnnotationList()),
-                new DummyParameter("dummy-0", 1),
-                new DummyParameter("dummy-1", 2)
+                new PresenceFlagParameter<>(flag, ' ', "arg0", new AnnotationList()),
+                new DummyParameter("dummy-0"),
+                new DummyParameter("dummy-1")
         );
         final String rawInput = Miscellaneous.formatFlag(flag);
         final Matcher matcher = FlagParameter.FLAG_PATTERN.matcher(rawInput);
@@ -50,9 +50,9 @@ public class FlagGroupTests {
     @ValueSource(chars = {'a', 'b', 'c', 'd'})
     public void parse_shorthands(final char shorthand) throws CommandException {
         final List<CommandParameter<Object>> parameters = List.of(
-                new PresenceFlagParameter<>("flag", shorthand, "arg0", 0, new AnnotationList()),
-                new DummyParameter("dummy-0", 1),
-                new DummyParameter("dummy-1", 2)
+                new PresenceFlagParameter<>("flag", shorthand, "arg0", new AnnotationList()),
+                new DummyParameter("dummy-0"),
+                new DummyParameter("dummy-1")
         );
         final String rawInput = Miscellaneous.formatFlag(String.valueOf(shorthand));
         final Matcher matcher = FlagParameter.FLAG_PATTERN.matcher(rawInput);
@@ -72,9 +72,9 @@ public class FlagGroupTests {
     @ValueSource(strings = {"first", "second", "third"})
     public void parse_unrecognizedFlags(final String flagName) {
         final List<CommandParameter<Object>> parameters = List.of(
-                new PresenceFlagParameter<>("flag", ' ', "arg0", 0, new AnnotationList()),
-                new DummyParameter("dummy-0", 1),
-                new DummyParameter("dummy-1", 2)
+                new PresenceFlagParameter<>("flag", ' ', "arg0", new AnnotationList()),
+                new DummyParameter("dummy-0"),
+                new DummyParameter("dummy-1")
         );
 
         final String rawInput = Miscellaneous.formatFlag(flagName);
@@ -88,12 +88,12 @@ public class FlagGroupTests {
     @Test
     public void parse_shorthandGroups() throws CommandException {
         final List<CommandParameter<Object>> parameters = List.of(
-                new PresenceFlagParameter<>("flag", 'c', "arg0", 0, new AnnotationList()),
-                new DummyParameter("dummy-0", 1),
-                new DummyParameter("dummy-1", 2),
-                new PresenceFlagParameter<>("flag", 'e', "arg0", 0, new AnnotationList()),
-                new DummyParameter("dummy-1", 4),
-                new PresenceFlagParameter<>("flag", 'x', "arg0", 0, new AnnotationList())
+                new PresenceFlagParameter<>("flag", 'c', "arg0", new AnnotationList()),
+                new DummyParameter("dummy-0"),
+                new DummyParameter("dummy-1"),
+                new PresenceFlagParameter<>("flag", 'e', "arg0", new AnnotationList()),
+                new DummyParameter("dummy-1"),
+                new PresenceFlagParameter<>("flag", 'x', "arg0", new AnnotationList())
         );
         final String rawInput = "-xce";
         final Matcher matcher = FlagParameter.FLAG_PATTERN.matcher(rawInput);
@@ -113,12 +113,12 @@ public class FlagGroupTests {
     @ValueSource(strings = {"-xed", "-abc", "-asd", "-other"})
     public void parse_shorthandGroups_unrecognizedFlags(final String groupString) {
         final List<CommandParameter<Object>> parameters = List.of(
-                new PresenceFlagParameter<>("flag", 'c', "arg0", 0, new AnnotationList()),
-                new DummyParameter("dummy-0", 1),
-                new DummyParameter("dummy-1", 2),
-                new PresenceFlagParameter<>("flag", 'e', "arg0", 0, new AnnotationList()),
-                new DummyParameter("dummy-1", 4),
-                new PresenceFlagParameter<>("flag", 'x', "arg0", 0, new AnnotationList())
+                new PresenceFlagParameter<>("flag", 'c', "arg0", new AnnotationList()),
+                new DummyParameter("dummy-0"),
+                new DummyParameter("dummy-1"),
+                new PresenceFlagParameter<>("flag", 'e', "arg0", new AnnotationList()),
+                new DummyParameter("dummy-1"),
+                new PresenceFlagParameter<>("flag", 'x', "arg0", new AnnotationList())
         );
 
         final Matcher matcher = FlagParameter.FLAG_PATTERN.matcher(groupString);
@@ -129,8 +129,8 @@ public class FlagGroupTests {
     }
 
     private static final class DummyParameter extends StandardParameter<Object> {
-        private DummyParameter(final String name, final int index) {
-            super(name, index, false, TypeToken.of(Object.class), new AnnotationList(), new DummyParameterMapper());
+        private DummyParameter(final String name) {
+            super(name, false, TypeToken.of(Object.class), new AnnotationList(), new DummyParameterMapper());
         }
     }
 
