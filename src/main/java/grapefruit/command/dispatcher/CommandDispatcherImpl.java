@@ -56,6 +56,7 @@ import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import static grapefruit.command.dispatcher.CommandGraph.ALIAS_SEPARATOR;
+import static grapefruit.command.dispatcher.SuggestionHelper.SUGGEST_ME;
 import static grapefruit.command.parameter.FlagParameter.FLAG_PATTERN;
 import static java.lang.String.format;
 import static java.lang.System.Logger.Level.WARNING;
@@ -70,9 +71,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final Queue<PostDispatchListener<S>> postDispatchListeners = new ConcurrentLinkedQueue<>();
     private final CommandInputTokenizer inputTokenizer = new CommandInputTokenizer();
     private final CommandGraph<S> commandGraph = new CommandGraph<>();
+    private final SuggestionHelper<S> suggestionHelper = new SuggestionHelper<>();
     private final TypeToken<S> commandSourceType;
     private final CommandAuthorizer<S> commandAuthorizer;
-    private final SuggestionHelper<S> suggestionHelper;
     private final Executor directExecutor = Runnable::run;
     private final Executor asyncExecutor;
     private final MessageProvider messageProvider;
@@ -88,7 +89,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         this.commandSourceType = requireNonNull(commandSourceType, "commandSourceType cannot be null");
         this.commandAuthorizer = requireNonNull(commandAuthorizer, "commandAuthorizer cannot be null");
         this.asyncExecutor = requireNonNull(asyncExecutor, "asyncExecutor cannot be null");
-        this.suggestionHelper = new SuggestionHelper<>(this.commandAuthorizer);
         this.messageProvider = requireNonNull(messageProvider, "messageProvider cannot be null");
         this.registrationHandler = requireNonNull(registrationHandler, "registrationHandler cannot be null");
         this.messenger = requireNonNull(messenger, "messenger cannot be null");
@@ -289,7 +289,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         : this.directExecutor;
                 executor.execute(() -> {
                     try {
-                        final CommandContext<S> context = processCommand(reg, commandLine, source, args);
+                        final CommandContext<S> context = processCommand(reg, commandLine, source, args, false);
                         postprocessArguments(context, reg.parameters(), commandLine);
                         dispatchCommand(commandLine, reg, source, context.asMap().values());
                         invokePostDispatchListeners(context);
@@ -338,26 +338,43 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private @NotNull CommandContext<S> processCommand(final @NotNull CommandRegistration<S> registration,
                                                       final @NotNull String commandLine,
                                                       final @NotNull S source,
-                                                      final @NotNull Queue<CommandInput> args) throws CommandException {
+                                                      final @NotNull Queue<CommandInput> args,
+                                                      final boolean suggestions) throws CommandException {
+        System.out.println("......................");
+        System.out.println("processCommand");
         final CommandContext<S> context = CommandContext.create(source, commandLine, registration.parameters());
         final List<CommandParameter<S>> parameters = registration.parameters();
-
         try {
             int parameterIndex = 0;
             CommandInput input;
+            System.out.println("entering while");
             while ((input = args.peek()) != null) {
                 try {
                     final String rawInput = input.rawArg();
+                    System.out.println(rawInput);
                     final Matcher matcher = FLAG_PATTERN.matcher(rawInput);
                     if (matcher.matches()) {
-                        final FlagGroup<S> flags = FlagGroup.parse(rawInput, matcher, parameters);
-                        for (final FlagParameter<S> flag : flags) {
-                            consumeFlag(flag, context, args, input, rawInput);
+                        System.out.println("flag");
+                        final FlagGroup<S> flags;
+                        try {
+                            System.out.println("parsing flag group");
+                            flags = FlagGroup.parse(rawInput, matcher, parameters);
+                        } catch (final CommandException ex) {
+                            System.out.println("error while parsing flag group");
+                            final Optional<CommandParameter<S>> firstFlag = parameters.stream()
+                                    .filter(CommandParameter::isFlag)
+                                    .findFirst();
+                            firstFlag.ifPresent(x -> context.put(SUGGEST_ME, x));
+                            return context;
                         }
 
+                        for (final FlagParameter<S> flag : flags) {
+                            consumeFlag(flag, context, args, input, rawInput, suggestions);
+                        }
 
                     } else {
-                        consumeArgument(commandLine, parameters, context, args, parameterIndex);
+                        System.out.println("not a flag");
+                        consumeArgument(commandLine, parameters, context, args, parameterIndex, suggestions);
                     }
 
                     parameterIndex++;
@@ -372,8 +389,17 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
             }
 
+            System.out.println("end of parameters");
+            System.out.println("......................");
+
             return context;
         } catch (final Throwable ex) {
+            if (suggestions) {
+                System.out.println("catched an error, returning");
+                System.out.println("......................");
+                return context;
+            }
+
             if (ex instanceof CommandException) {
                 throw (CommandException) ex;
             }
@@ -386,17 +412,23 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                              final @NotNull CommandContext<S> context,
                              final @NotNull Queue<CommandInput> args,
                              final @NotNull CommandInput input,
-                             final @NotNull String rawInput) throws CommandException {
+                             final @NotNull String rawInput,
+                             final boolean suggestions) throws CommandException {
+        System.out.println("consume flag");
         input.markConsumed();
         final String flagName = flag.flagName();
+        System.out.println(flagName);
         final Optional<Object> stored = context.find(flagName);
         if (flag.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
+            System.out.println("presence flag");
             if (stored.map(Boolean.TYPE::cast).orElse(false)) {
+                System.out.println("duplicate");
                 throw new FlagDuplicateException(flagName);
             }
 
             context.put(flagName, true);
         } else {
+            System.out.println("value flag");
             if (args.isEmpty()) {
                 // This means that there aren't any values for this flag
                 throw new CommandSyntaxException(Message.of(
@@ -406,12 +438,23 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             }
 
             if (stored.isPresent()) {
+                System.out.println("duplicate");
                 throw new FlagDuplicateException(flagName);
             }
 
             args.remove();
-            final Object parsedValue = mapParameter(flag, context, args);
-            context.put(flagName, parsedValue);
+            try {
+                System.out.println("parsing value");
+                final Object parsedValue = mapParameter(flag, context, args);
+                context.put(flagName, parsedValue);
+            } catch (final Throwable ex) {
+                System.out.println("error while parsing flag value...");
+                if (suggestions) {
+                    context.put(SUGGEST_ME, flag);
+                }
+
+                throw ex;
+            }
         }
     }
 
@@ -419,7 +462,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                  final @NotNull List<CommandParameter<S>> parameters,
                                  final @NotNull CommandContext<S> context,
                                  final @NotNull Queue<CommandInput> args,
-                                 final int parameterIndex) throws CommandException {
+                                 final int parameterIndex,
+                                 final boolean suggestions) throws CommandException {
         if (parameterIndex >= parameters.size()) {
             throw new CommandSyntaxException(Message.of(
                     MessageKeys.TOO_MANY_ARGUMENTS,
@@ -441,8 +485,16 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             parameter = firstNonFlagParameter.orElseThrow();
         }
 
-        final Object parsedValue = mapParameter(parameter, context, args);
-        context.put(parameter.name(), parsedValue);
+        try {
+            final Object parsedValue = mapParameter(parameter, context, args);
+            context.put(parameter.name(), parsedValue);
+        } catch (final Throwable ex) {
+            if (suggestions) {
+                context.put(SUGGEST_ME, parameter);
+            }
+
+            throw ex;
+        }
     }
 
     private @Nullable Object mapParameter(final @NotNull CommandParameter<S> parameter,
@@ -480,8 +532,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     public @NotNull List<String> listSuggestions(final @NotNull S source,
                                                  final @NotNull String commandLine) {
         requireNonNull(source, "source cannot be null");
+        System.out.println("listSuggestions");
         final Deque<CommandInput> args = new ArrayDeque<>(this.inputTokenizer.tokenizeInput(commandLine));
         if (args.size() == 0) {
+            System.out.println("empty");
             return List.of();
         }
 
@@ -501,21 +555,27 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         if (routeResult instanceof CommandGraph.RouteResult.Success<S> success) {
             System.out.println("success");
             final CommandRegistration<S> registration = success.registration();
+            if (!Miscellaneous.checkAuthorized(source, registration.permission().orElse(null), this.commandAuthorizer)) {
+                return List.of();
+            }
+
             try {
                 System.out.println("try");
                 System.out.println("processing command");
-                final CommandContext<S> context = processCommand(registration, commandLine, source, args);
-                suggestions.addAll(this.suggestionHelper.listSuggestions(context, "", registration, args));
+                final CommandContext<S> context = processCommand(registration, commandLine, source, args, true);
+                suggestions.addAll(this.suggestionHelper.listSuggestions(context, registration, args));
             } catch (final CommandException ignored) {
                 System.out.println("failed");
             }
         } else {
+            System.out.println("failedresult");
             suggestions.addAll(this.commandGraph.listSuggestions(argsCopy));
         }
 
         return suggestions.stream()
                 .filter(x -> Miscellaneous.startsWithIgnoreCase(x, last))
                 .toList();
+        //return suggestions;
     }
 
     private void handleCommandException(final @NotNull S source, final @NotNull CommandException ex) {

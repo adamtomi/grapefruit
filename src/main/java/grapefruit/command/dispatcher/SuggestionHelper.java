@@ -43,12 +43,17 @@ class SuggestionHelper<S> {
         final Optional<CommandParameter<S>> parameterOpt = commandContext.find(SUGGEST_ME);
         System.out.println(parameterOpt);
         if (parameterOpt.isEmpty()) {
+            System.out.println("empty optional or empty args");
             return List.of();
         }
 
         final CommandParameter<S> parameter = parameterOpt.orElseThrow();
-        final String currentArg = args.element().rawArg();
-        final List<String> suggestions = parameter.mapper().listSuggestions(commandContext, currentArg, parameter.modifiers());
+        final String currentArg = args.isEmpty() ? "" : args.element().rawArg().trim();
+        System.out.println("'" + currentArg + "'");
+        final List<String> suggestions = new ArrayList<>(parameter.mapper().listSuggestions(commandContext, currentArg, parameter.modifiers()));
+        System.out.println("-----------------");
+        System.out.println(suggestions);
+        System.out.println("-----------------");
         final Matcher matcher = FlagParameter.FLAG_PATTERN.matcher(currentArg);
 
         if (matcher.matches()) {
@@ -66,42 +71,7 @@ class SuggestionHelper<S> {
                 flagSuggestions.add(Miscellaneous.formatFlag(each.flagName()));
                 flagSuggestions.add(Miscellaneous.formatFlag(String.valueOf(each.shorthand())));
             }
-            /*for (final CommandParameter<S> each : allFlags) {
-                if (!each.isFlag()) {
-                    continue;
-                }
 
-                final boolean shorthandOnly = matcher.group(1).isEmpty();
-                final String nameFragment = matcher.group(2);
-                final boolean suggestAllFlags = nameFragment.isEmpty();
-                final List<FlagParameter<S>> possibleFlags = allFlags.stream()
-                        .filter(CommandParameter::isFlag)
-                        .map(x -> (FlagParameter<S>) x)
-                        .filter(x -> commandContext.find(x.flagName()).isEmpty())
-                        .toList();
-
-                if (shorthandOnly) {
-                    if (suggestAllFlags) {
-                        possibleFlags.forEach(x -> {
-                            flagSuggestions.add(x.flagName());
-                            final char shorthand = x.shorthand();
-                            if (shorthandNotEmpty(shorthand)) {
-                                flagSuggestions.add(String.valueOf(shorthand));
-                            }
-                        });
-                    } else {
-                        possibleFlags.forEach(x -> {
-                            final char shorthand = x.shorthand();
-                            if (shorthandNotEmpty(shorthand) && ) {
-
-                            }
-                        });
-                    }
-                }
-                // shorthandonly -> flag names, flag shorthands, flag groups
-                // !shorthandonly -> flag names
-                suggestions.addAll(flagSuggestions);
-            }*/
             suggestions.addAll(flagSuggestions);
         }
 

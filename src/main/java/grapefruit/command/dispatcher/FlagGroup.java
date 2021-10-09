@@ -27,7 +27,12 @@ public class FlagGroup<S> implements Iterable<FlagParameter<S>> {
         final Set<FlagParameter<S>> flags = new LinkedHashSet<>();
         // This means that flags are grouped together (like -abc)
         if (matcher.group(1).isEmpty()) {
-            for (final char shorthand : matcher.group(2).toCharArray()) {
+            final String group = matcher.group(2);
+            if (group == null) {
+                throw new UnrecognizedFlagException("' '");
+            }
+
+            for (final char shorthand : group.toCharArray()) {
                 final FlagParameter<S> flag = parameters.stream()
                         .filter(CommandParameter::isFlag)
                         .map(x -> (FlagParameter<S>) x)
