@@ -53,7 +53,7 @@ class SuggestionHelper<S> {
             }
         }
 
-        final String currentArg = args.remove().rawArg().trim();
+        final String currentArg = args.isEmpty() ? "" : args.remove().rawArg().trim();
         System.out.println("'" + currentArg + "'");
         final List<String> suggestions = new ArrayList<>(parameter.mapper().listSuggestions(commandContext, currentArg, parameter.modifiers()));
         System.out.println("-----------------");

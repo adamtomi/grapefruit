@@ -23,7 +23,7 @@ public class CommandContext<S> {
     private final S source;
     private final String commandLine;
     private final Map<Integer, String> indexStore;
-    private final Map<String, StoredValue> argumentStore;
+    protected final Map<String, StoredValue> argumentStore;
 
     @VisibleForTesting
     protected CommandContext(final @NotNull S source,
