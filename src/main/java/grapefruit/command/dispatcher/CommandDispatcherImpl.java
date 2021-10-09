@@ -69,9 +69,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final Queue<PreDispatchListener<S>> preDispatchListeners = new ConcurrentLinkedQueue<>();
     private final Queue<PostDispatchListener<S>> postDispatchListeners = new ConcurrentLinkedQueue<>();
     private final CommandInputTokenizer inputTokenizer = new CommandInputTokenizer();
+    private final CommandGraph<S> commandGraph = new CommandGraph<>();
     private final TypeToken<S> commandSourceType;
     private final CommandAuthorizer<S> commandAuthorizer;
-    private final CommandGraph<S> commandGraph;
+    private final SuggestionHelper<S> suggestionHelper;
     private final Executor directExecutor = Runnable::run;
     private final Executor asyncExecutor;
     private final MessageProvider messageProvider;
@@ -87,7 +88,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         this.commandSourceType = requireNonNull(commandSourceType, "commandSourceType cannot be null");
         this.commandAuthorizer = requireNonNull(commandAuthorizer, "commandAuthorizer cannot be null");
         this.asyncExecutor = requireNonNull(asyncExecutor, "asyncExecutor cannot be null");
-        this.commandGraph = new CommandGraph<>(this.commandAuthorizer);
+        this.suggestionHelper = new SuggestionHelper<>(this.commandAuthorizer);
         this.messageProvider = requireNonNull(messageProvider, "messageProvider cannot be null");
         this.registrationHandler = requireNonNull(registrationHandler, "registrationHandler cannot be null");
         this.messenger = requireNonNull(messenger, "messenger cannot be null");
@@ -504,7 +505,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 System.out.println("try");
                 System.out.println("processing command");
                 final CommandContext<S> context = processCommand(registration, commandLine, source, args);
-                suggestions.addAll(this.commandGraph.listSuggestions(context, "", registration, args));
+                suggestions.addAll(this.suggestionHelper.listSuggestions(context, "", registration, args));
             } catch (final CommandException ignored) {
                 System.out.println("failed");
             }

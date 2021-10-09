@@ -4,12 +4,10 @@ import grapefruit.command.dispatcher.registration.CommandRegistration;
 import grapefruit.command.dispatcher.registration.RedirectingCommandRegistration;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.FlagParameter;
-import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -20,18 +18,14 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static grapefruit.command.util.Miscellaneous.formatFlag;
-import static java.util.Objects.requireNonNull;
 
 final class CommandGraph<S> {
     static final String ALIAS_SEPARATOR = "\\|";
     private static final UnaryOperator<String> AS_REQUIRED = arg -> '<' + arg + '>';
     private static final UnaryOperator<String> AS_OPTIONAL = arg -> '[' + arg + ']';
     private final CommandNode<S> rootNode = new CommandNode<>("__ROOT__", Set.of(), null);
-    private final CommandAuthorizer<S> authorizer;
 
-    CommandGraph(final @NotNull CommandAuthorizer<S> authorizer) {
-        this.authorizer = requireNonNull(authorizer, "authorizer cannot be null");
-    }
+    CommandGraph() {}
 
     public void registerCommand(final @NotNull String route, final @NotNull CommandRegistration<S> reg) {
         final List<RouteFragment> parts = Arrays.stream(route.split(" "))
@@ -139,44 +133,14 @@ final class CommandGraph<S> {
         return result;
     }
 
-    public @NotNull List<String> listSuggestions(final @NotNull CommandContext<S> commandContext,
-                                                 final @NotNull String prevArg,
-                                                 final @NotNull CommandRegistration<S> registration,
-                                                 final @NotNull Queue<CommandInput> args) {
-        final List<CommandParameter<S>> parameters = registration.parameters();
-        final String currentArg = args.remove().rawArg();
-
-        if (prevArg.startsWith("--")) {
-            // TODO cleanup
-            final Optional<FlagParameter<S>> flag = parameters.stream()
-                    .filter(CommandParameter::isFlag)
-                    .map(param -> (FlagParameter<S>) param)
-                    .filter(param -> param.flagName().equalsIgnoreCase(prevArg.substring(2)))
-                    .filter(param -> commandContext.find(param.flagName()).isEmpty())
-                    .findFirst();
-            return flag.map(param -> param.mapper().listSuggestions(commandContext, currentArg, param.modifiers()))
-                    .orElse(List.of());
+    public @NotNull String generateSyntaxFor(final @NotNull String commandLine) {
+        CommandNode<S> node = this.rootNode;
+        if (node.children().isEmpty()) {
+            throw new IllegalStateException("Cannot generate syntax for empty command tree");
         }
 
-        final Optional<CommandParameter<S>> firstNonFlagParameter = parameters.stream()
-                .filter(param -> !param.isFlag())
-                .filter(param -> commandContext.find(param.name()).isEmpty())
-                .findFirst();
-        final List<CommandParameter<S>> flags = parameters.stream()
-                .filter(CommandParameter::isFlag)
-                .filter(param -> commandContext.find(Miscellaneous.parameterName(param)).isEmpty())
-                .toList();
-        firstNonFlagParameter.ifPresent(flags::add);
-        return flags.stream()
-                .map(param -> param.mapper().listSuggestions(commandContext, currentArg, param.modifiers()))
-                .flatMap(Collection::stream)
-                .toList();
-    }
-
-    public @NotNull String generateSyntaxFor(final @NotNull String commandLine) {
         final String[] path = commandLine.split(" ");
         final StringJoiner joiner = new StringJoiner(" ");
-        CommandNode<S> node = this.rootNode;
 
         for (final String pathPart : path) {
             final Optional<CommandNode<S>> child = findChild(node, pathPart);
