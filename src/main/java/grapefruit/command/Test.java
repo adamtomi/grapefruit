@@ -14,15 +14,15 @@ public class Test {
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.builder(TypeToken.of(Object.class))
                 .build();
         dispatcher.registerCommands(new Commands());
-        //final List<String> sugg0 = dispatcher.listSuggestions(source, "test -");
+        final List<String> sugg0 = dispatcher.listSuggestions(source, "test -");
         final List<String> sugg1 = dispatcher.listSuggestions(source, "test -f");
-        //final List<String> sugg2 = dispatcher.listSuggestions(source, "test --flag 1");
-        //final List<String> sugg3 = dispatcher.listSuggestions(source, "test 45.3D -opf ");
+        final List<String> sugg2 = dispatcher.listSuggestions(source, "test --flag 1");
+        final List<String> sugg3 = dispatcher.listSuggestions(source, "test 45.3D -opf ");
         System.out.println("=======================");
-        //System.out.println(sugg0);
+        System.out.println(sugg0);
         System.out.println(sugg1);
-        //System.out.println(sugg2);
-        //System.out.println(sugg3);
+        System.out.println(sugg2);
+        System.out.println(sugg3);
     }
 
     public static final class Commands implements CommandContainer {
