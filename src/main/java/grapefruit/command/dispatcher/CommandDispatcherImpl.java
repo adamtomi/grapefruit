@@ -55,6 +55,7 @@ import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import static grapefruit.command.dispatcher.CommandGraph.ALIAS_SEPARATOR;
+import static grapefruit.command.dispatcher.SuggestionHelper.LAST_INPUT;
 import static grapefruit.command.dispatcher.SuggestionHelper.SUGGEST_ME;
 import static grapefruit.command.parameter.FlagParameter.FLAG_PATTERN;
 import static java.lang.String.format;
@@ -335,7 +336,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
-    @SuppressWarnings("all")
     private @NotNull CommandContext<S> processCommand(final @NotNull CommandRegistration<S> registration,
                                                       final @NotNull String commandLine,
                                                       final @NotNull S source,
@@ -348,6 +348,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             CommandInput input;
             while ((input = args.peek()) != null) {
                 try {
+                    if (suggestions) {
+                        context.put(LAST_INPUT, input);
+                    }
+
                     final String rawInput = input.rawArg();
                     final Matcher matcher = FLAG_PATTERN.matcher(rawInput);
                     if (matcher.matches()) {
@@ -375,11 +379,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         args.element().markConsumed();
                     }
                 } finally {
-                    final boolean shouldStop = suggestions && args.size() <= 1;
-                    if (shouldStop) {
-                        break;
-                    }
-
                     if (!args.isEmpty() && args.element().isConsumed()) {
                         args.remove();
                     }
@@ -436,6 +435,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
             final Object parsedValue = mapParameter(flag, context, args);
             context.put(flagName, parsedValue);
+            if (suggestions) {
+                context.put(LAST_INPUT, args.element());
+            }
         }
     }
 
@@ -452,20 +454,16 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             ));
         }
 
-        CommandParameter<S> parameter = parameters.get(parameterIndex);
-        if (parameter.isFlag()) {
-            final Optional<CommandParameter<S>> firstNonFlagParameter = parameters.stream()
-                    .filter(x -> !x.isFlag())
-                    .filter(x -> context.find(x.name()).isEmpty())
-                    .findFirst();
-            if (firstNonFlagParameter.isEmpty()) {
-                throw new CommandSyntaxException(Message.of(MessageKeys.MISSING_FLAG,
-                        Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))));
-            }
-
-            parameter = firstNonFlagParameter.orElseThrow();
+        final Optional<CommandParameter<S>> firstNonFlagParameter = parameters.stream()
+                .filter(x -> !x.isFlag())
+                .filter(x -> context.find(x.name()).isEmpty())
+                .findFirst();
+        if (firstNonFlagParameter.isEmpty()) {
+            throw new CommandSyntaxException(Message.of(MessageKeys.MISSING_FLAG,
+                    Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))));
         }
 
+        final CommandParameter<S> parameter = firstNonFlagParameter.orElseThrow();
         if (suggestions) {
             context.put(SUGGEST_ME, parameter);
         }

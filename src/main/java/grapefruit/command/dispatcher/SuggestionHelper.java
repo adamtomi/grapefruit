@@ -15,6 +15,7 @@ import java.util.regex.Matcher;
 
 class SuggestionHelper<S> {
     static final String SUGGEST_ME = "__SUGGEST_ME__";
+    static final String LAST_INPUT = "__LAST_INPUT__";
 
     SuggestionHelper() {}
 
@@ -22,31 +23,15 @@ class SuggestionHelper<S> {
                                                  final @NotNull CommandRegistration<S> registration,
                                                  final @NotNull Queue<CommandInput> args) throws CommandException {
         final Optional<CommandParameter<S>> parameterOpt = commandContext.find(SUGGEST_ME);
-        if (parameterOpt.isEmpty()) {
+        final Optional<CommandInput> lastInputOpt = commandContext.find(LAST_INPUT);
+        if (parameterOpt.isEmpty() && lastInputOpt.isEmpty()) {
             return List.of();
         }
 
         final List<CommandParameter<S>> parameters = registration.parameters();
         final CommandParameter<S> parameter = parameterOpt.orElseThrow();
-        if (args.isEmpty()) {
-            if (parameter.isFlag()) {
-                final FlagParameter<S> flag = (FlagParameter<S>) parameter;
-                final List<FlagParameter<S>> possibleFlags = parameters.stream()
-                        .filter(CommandParameter::isFlag)
-                        .map(x -> (FlagParameter<S>) x)
-                        .filter(x -> commandContext.find(x.flagName()).isEmpty())
-                        .filter(x -> !x.equals(parameter))
-                        .filter(x -> x.shorthand() != ' ')
-                        .toList();
-
-                return possibleFlags.stream()
-                        .map(FlagParameter::shorthand)
-                        .map(x -> Miscellaneous.formatFlag(String.valueOf(flag.shorthand())) + x)
-                        .toList();
-            }
-        }
-
-        final String currentArg = args.isEmpty() ? "" : args.remove().rawArg().trim();
+        final boolean empty = args.isEmpty();
+        final String currentArg = empty ? lastInputOpt.orElseThrow().rawArg() : args.remove().rawArg().trim();
         final List<String> suggestions = new ArrayList<>(parameter.mapper().listSuggestions(commandContext, currentArg, parameter.modifiers()));
         final Matcher matcher = FlagParameter.FLAG_PATTERN.matcher(currentArg);
 

@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -39,8 +40,8 @@ public class CommandContext<S> {
     public static <S> @NotNull CommandContext<S> create(final @NotNull S source,
                                                         final @NotNull String commandLine,
                                                         final @NotNull List<CommandParameter<S>> params) {
-        final Map<Integer, String> indexStore = new HashMap<>();
-        final Map<String, StoredValue> defaults = new HashMap<>();
+        final Map<Integer, String> indexStore = new ConcurrentHashMap<>();
+        final Map<String, StoredValue> defaults = new ConcurrentHashMap<>();
         for (int i = 0; i < params.size(); i++) {
             indexStore.put(i, Miscellaneous.parameterName(params.get(i)));
         }
