@@ -13,24 +13,6 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.regex.Matcher;
 
-// string(asd) string(test0) string(test1) boolean-flag(b) value-flag(d) value-flag(c)
-// input: asd -bcd 100 $
-// \_ sugg(d)
-
-// input: asd test0 -b test1 -c 45 $
-// \_ sugg(d)
-
-// input: asd -$
-// \_ test0 is string -> sugg(-b, -c, -d) # if test0 is number -> sugg(numbers)
-
-// input: asd -b$
-// \_ sugg(-bc, -bd)
-
-// input: asd -cd$
-// \_ sugg(-cdb)
-
-// input: asd -cd $
-// \_ sugg(c) cache(sugg(d))
 class SuggestionHelper<S> {
     static final String SUGGEST_ME = "__SUGGEST_ME__";
 
