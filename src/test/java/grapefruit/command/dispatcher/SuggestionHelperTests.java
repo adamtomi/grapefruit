@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.stream.Collectors;
 
+import static grapefruit.command.dispatcher.SuggestionHelper.FLAG_NAME_CONSUMED;
 import static grapefruit.command.dispatcher.SuggestionHelper.LAST_INPUT;
 import static grapefruit.command.dispatcher.SuggestionHelper.SUGGEST_ME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -199,6 +200,7 @@ public class SuggestionHelperTests {
         final CommandContext<Object> context = context(reg);
 
         context.put(SUGGEST_ME, flag);
+        context.put(FLAG_NAME_CONSUMED, true);
         context.put(LAST_INPUT, new BlankCommandInput(1));
         final SuggestionHelper<Object> suggestionHelper = new SuggestionHelper<>();
         final List<String> suggestions = suggestionHelper.listSuggestions(context, reg, new PriorityQueue<>());
@@ -218,7 +220,7 @@ public class SuggestionHelperTests {
         context.put(SUGGEST_ME, firstFlag);
         context.put(LAST_INPUT, new StringCommandInput("-"));
         final List<String> expected = List.of(
-                "-f", "-a", "-o", "--flag", "--other", "--another", "-fa", "-fo"
+                "-f", "-a", "-o", "--flag", "--other", "--another"
         );
         final SuggestionHelper<Object> suggestionHelper = new SuggestionHelper<>();
         final List<String> suggestions = suggestionHelper.listSuggestions(context, reg, new PriorityQueue<>());
@@ -239,6 +241,7 @@ public class SuggestionHelperTests {
         ));
         final CommandContext<Object> context = context(reg);
         context.put(SUGGEST_ME, firstFlag);
+        context.put(FLAG_NAME_CONSUMED, true);
         context.put(LAST_INPUT, new BlankCommandInput(1));
         final SuggestionHelper<Object> suggestionHelper = new SuggestionHelper<>();
         final List<String> suggestions = suggestionHelper.listSuggestions(context, reg, new PriorityQueue<>());
@@ -259,6 +262,7 @@ public class SuggestionHelperTests {
         final CommandContext<Object> context = context(reg);
         context.put(SUGGEST_ME, flag);
         context.put(LAST_INPUT, new BlankCommandInput(1));
+        context.put(FLAG_NAME_CONSUMED, true);
         final SuggestionHelper<Object> suggestionHelper = new SuggestionHelper<>();
         final List<String> suggestions = suggestionHelper.listSuggestions(context, reg, new PriorityQueue<>());
         assertTrue(contentEquals(BOOLEAN_OPTIONS, suggestions));
