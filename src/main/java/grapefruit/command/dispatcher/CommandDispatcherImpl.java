@@ -358,11 +358,15 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         try {
                             flags = FlagGroup.parse(rawInput, matcher, parameters);
                         } catch (final CommandException ex) {
-                            final Optional<CommandParameter<S>> firstFlag = parameters.stream()
-                                    .filter(CommandParameter::isFlag)
-                                    .findFirst();
-                            firstFlag.ifPresent(x -> context.put(SUGGEST_ME, x));
-                            return context;
+                            if (suggestions) {
+                                final Optional<CommandParameter<S>> firstFlag = parameters.stream()
+                                        .filter(CommandParameter::isFlag)
+                                        .findFirst();
+                                firstFlag.ifPresent(x -> context.put(SUGGEST_ME, x));
+                                return context;
+                            } else {
+                                throw ex;
+                            }
                         }
 
                         for (final FlagParameter<S> flag : flags) {
