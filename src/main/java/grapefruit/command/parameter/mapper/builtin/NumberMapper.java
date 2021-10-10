@@ -91,7 +91,7 @@ public class NumberMapper<S, N extends Number> extends AbstractParameterMapper<S
     public @NotNull List<String> listSuggestions(final @NotNull CommandContext<S> context,
                                                  final @NotNull String currentArg,
                                                  final @NotNull AnnotationList modifiers) {
-        if (currentArg.isEmpty()) {
+        if (currentArg.isEmpty() || currentArg.equals("-")) {
             return PREFIXES;
         } else {
             if (Miscellaneous.isNumber(currentArg)) {

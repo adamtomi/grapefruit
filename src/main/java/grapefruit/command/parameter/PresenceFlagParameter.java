@@ -64,7 +64,7 @@ public class PresenceFlagParameter<S> extends AbstractFlagParameter<S> {
         public @NotNull List<String> listSuggestions(final @NotNull CommandContext<S> context,
                                                      final @NotNull String currentArg,
                                                      final @NotNull AnnotationList modifiers) {
-            throw new UnsupportedOperationException();
+            return List.of();
         }
     }
 }

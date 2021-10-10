@@ -412,11 +412,14 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         input.markConsumed();
         final String flagName = flag.flagName();
         final Optional<Object> stored = context.find(flagName);
-        if (flag.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
-            if (stored.map(Boolean.TYPE::cast).orElse(false)) {
-                throw new FlagDuplicateException(flagName);
-            }
+        if (stored.isPresent()) {
+            throw new FlagDuplicateException(flagName);
+        }
+        if (suggestions) {
+            context.put(SUGGEST_ME, flag);
+        }
 
+        if (flag.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
             context.put(flagName, true);
         } else {
             if (args.isEmpty()) {
@@ -427,15 +430,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 ));
             }
 
-            if (stored.isPresent()) {
-                throw new FlagDuplicateException(flagName);
-            }
-
             args.remove();
-            if (suggestions) {
-                context.put(SUGGEST_ME, flag);
-            }
-
             final Object parsedValue = mapParameter(flag, context, args);
             context.put(flagName, parsedValue);
             if (suggestions) {
@@ -537,8 +532,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             try {
                 final CommandContext<S> context = processCommand(registration, commandLine, source, args, true);
                 suggestions.addAll(this.suggestionHelper.listSuggestions(context, registration, args));
-            } catch (final CommandException ignored) {
-            }
+            } catch (final CommandException ignored) {}
         } else {
             suggestions.addAll(this.commandGraph.listSuggestions(argsCopy));
         }
