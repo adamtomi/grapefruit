@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 
+import static java.lang.String.format;
 import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Objects.requireNonNull;
 
@@ -71,7 +72,7 @@ public class CommandDispatcherBuilder<S> {
 
         final MessageProvider messageProvider;
         if (this.messageProvider == null) {
-            LOGGER.log(WARNING, "No MessageProvider specified, defaulting to %s", DefaultMessageProvider.class.getName());
+            LOGGER.log(WARNING, format("No MessageProvider specified, defaulting to %s", DefaultMessageProvider.class.getName()));
             messageProvider = new DefaultMessageProvider();
         } else {
             messageProvider = this.messageProvider;
@@ -88,7 +89,7 @@ public class CommandDispatcherBuilder<S> {
         final Messenger<S> messenger;
         if (this.messenger == null) {
             messenger = Messenger.builtin();
-            LOGGER.log(WARNING, "No Messenger specified, defaulting to %s", messenger.getClass().getName());
+            LOGGER.log(WARNING, format("No Messenger specified, defaulting to %s", messenger.getClass().getName()));
         } else {
             messenger = this.messenger;
         }
