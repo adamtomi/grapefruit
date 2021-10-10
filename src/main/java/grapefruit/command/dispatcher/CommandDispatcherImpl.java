@@ -55,6 +55,7 @@ import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import static grapefruit.command.dispatcher.CommandGraph.ALIAS_SEPARATOR;
+import static grapefruit.command.dispatcher.SuggestionHelper.FLAG_NAME_CONSUMED;
 import static grapefruit.command.dispatcher.SuggestionHelper.LAST_INPUT;
 import static grapefruit.command.dispatcher.SuggestionHelper.SUGGEST_ME;
 import static grapefruit.command.parameter.FlagParameter.FLAG_PATTERN;
@@ -349,6 +350,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 try {
                     if (suggestions) {
                         context.put(LAST_INPUT, input);
+                        context.put(FLAG_NAME_CONSUMED, null);
                     }
 
                     final String rawInput = input.rawArg();
@@ -359,8 +361,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                             flags = FlagGroup.parse(rawInput, matcher, parameters);
                         } catch (final CommandException ex) {
                             if (suggestions) {
-                                final Optional<CommandParameter<S>> firstFlag = parameters.stream()
+                                final Optional<FlagParameter<S>> firstFlag = parameters.stream()
                                         .filter(CommandParameter::isFlag)
+                                        .map(x -> (FlagParameter<S>) x)
+                                        .filter(x -> context.find(x.flagName()).isEmpty())
                                         .findFirst();
                                 firstFlag.ifPresent(x -> context.put(SUGGEST_ME, x));
                                 return context;
@@ -417,6 +421,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
         if (suggestions) {
             context.put(SUGGEST_ME, flag);
+            context.put(FLAG_NAME_CONSUMED, true);
         }
 
         if (flag.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
