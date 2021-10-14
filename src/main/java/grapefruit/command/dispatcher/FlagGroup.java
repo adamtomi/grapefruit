@@ -28,10 +28,6 @@ public class FlagGroup<S> implements Iterable<FlagParameter<S>> {
         // This means that flags are grouped together (like -abc)
         if (matcher.group(1).isEmpty()) {
             final String group = matcher.group(2);
-            if (group == null) {
-                throw new UnrecognizedFlagException("' '");
-            }
-
             for (final char shorthand : group.toCharArray()) {
                 final FlagParameter<S> flag = parameters.stream()
                         .filter(CommandParameter::isFlag)

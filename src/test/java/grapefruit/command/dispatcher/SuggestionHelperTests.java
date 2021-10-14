@@ -11,6 +11,7 @@ import grapefruit.command.parameter.mapper.ParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMapperRegistry;
 import grapefruit.command.util.AnnotationList;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
@@ -26,6 +27,7 @@ import static grapefruit.command.dispatcher.SuggestionHelper.SUGGEST_ME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Disabled
 public class SuggestionHelperTests {
     private static final List<String> PREFIXES;
     private static final List<String> NUMBER_OPTIONS;
