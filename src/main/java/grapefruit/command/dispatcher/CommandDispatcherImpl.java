@@ -286,7 +286,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         : this.directExecutor;
                 executor.execute(() -> {
                     try {
-                        final CommandContext<S> context = processCommand(reg, commandLine, source, args);
+                        final CommandContext<S> context = processCommand(reg, commandLine, source, args, false);
                         postprocessArguments(context, reg.parameters(), commandLine);
                         dispatchCommand(commandLine, reg, source, context.asMap().values());
                         invokePostDispatchListeners(context);
@@ -335,52 +335,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private @NotNull CommandContext<S> processCommand(final @NotNull CommandRegistration<S> registration,
                                                       final @NotNull String commandLine,
                                                       final @NotNull S source,
-                                                      final Queue<CommandInput> args) throws CommandException {
-        final List<CommandParameter<S>> parameters = registration.parameters();
-        final CommandContext<S> context = CommandContext.create(source, commandLine, parameters);
-        try {
-            int parameterIndex = 0;
-            CommandInput input;
-            while ((input = args.peek()) != null) {
-                try {
-                    final String rawInput = input.rawArg();
-                    final Matcher matcher = FlagGroup.VALID_PATTERN.matcher(rawInput);
-                    if (matcher.matches()) {
-                        final FlagGroup<S> flags = FlagGroup.parse(rawInput, matcher, parameters);
-                        for (final FlagParameter<S> flag : flags) {
-                            consumeFlag(flag, context, args, input, rawInput, false);
-                        }
-
-                    } else {
-                        consumeArgument(commandLine, parameters, context, args, parameterIndex, false);
-                    }
-
-                    parameterIndex++;
-                    if (!args.isEmpty()) {
-                        args.element().markConsumed();
-                    }
-                } finally {
-                    if (!args.isEmpty() && args.element().isConsumed()) {
-                        args.remove();
-                    }
-                }
-
-            }
-
-            return context;
-        } catch (final Throwable ex) {
-            if (ex instanceof CommandException) {
-                throw (CommandException) ex;
-            }
-
-            throw new CommandInvocationException(ex, commandLine);
-        }
-    }
-
-    private @NotNull CommandContext<S> processSuggestions(final @NotNull CommandRegistration<S> registration,
-                                                        final @NotNull String commandLine,
-                                                        final @NotNull S source,
-                                                        final Queue<CommandInput> args) {
+                                                      final Queue<CommandInput> args,
+                                                      final boolean suggestions) throws CommandException {
         final List<CommandParameter<S>> parameters = registration.parameters();
         final CommandContext<S> context = CommandContext.create(source, commandLine, parameters);
         final SuggestionContext<S> suggestionContext = context.suggestions();
@@ -397,11 +353,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     if (matcher.matches()) {
                         final FlagGroup<S> flags = FlagGroup.parse(rawInput, matcher, parameters);
                         for (final FlagParameter<S> flag : flags) {
-                            consumeFlag(flag, context, args, input, rawInput, true);
+                            consumeFlag(flag, context, args, input, rawInput);
                         }
 
                     } else {
-                        consumeArgument(commandLine, parameters, context, args, parameterIndex, true);
+                        consumeArgument(commandLine, parameters, context, args, parameterIndex);
                     }
 
                     parameterIndex++;
@@ -418,16 +374,23 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
             return context;
         } catch (final Throwable ex) {
-            return context;
+            if (suggestions) {
+                return context;
+            }
+
+            if (ex instanceof CommandException) {
+                throw (CommandException) ex;
+            }
+
+            throw new CommandInvocationException(ex, commandLine);
         }
     }
 
-    void consumeFlag(final @NotNull FlagParameter<S> flag,
-                     final @NotNull CommandContext<S> context,
-                     final @NotNull Queue<CommandInput> args,
-                     final @NotNull CommandInput input,
-                     final @NotNull String rawInput,
-                     final boolean suggestions) throws CommandException {
+    private void consumeFlag(final @NotNull FlagParameter<S> flag,
+                             final @NotNull CommandContext<S> context,
+                             final @NotNull Queue<CommandInput> args,
+                             final @NotNull CommandInput input,
+                             final @NotNull String rawInput) throws CommandException {
         input.markConsumed();
         final String flagName = flag.flagName();
         final Optional<Object> stored = context.find(flagName);
@@ -457,12 +420,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
-    void consumeArgument(final @NotNull String commandLine,
-                         final @NotNull List<CommandParameter<S>> parameters,
-                         final @NotNull CommandContext<S> context,
-                         final @NotNull Queue<CommandInput> args,
-                         final int parameterIndex,
-                         final boolean suggestions) throws CommandException {
+    private void consumeArgument(final @NotNull String commandLine,
+                                 final @NotNull List<CommandParameter<S>> parameters,
+                                 final @NotNull CommandContext<S> context,
+                                 final @NotNull Queue<CommandInput> args,
+                                 final int parameterIndex) throws CommandException {
         if (parameterIndex >= parameters.size()) {
             throw new CommandSyntaxException(Message.of(
                     MessageKeys.TOO_MANY_ARGUMENTS,
@@ -546,8 +508,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 return List.of();
             }
 
-            final CommandContext<S> context = processSuggestions(registration, commandLine, source, args);;
-            suggestions.addAll(this.suggestionHelper.listSuggestions(context, registration, args));
+            try {
+                final CommandContext<S> context = processCommand(registration, commandLine, source, args, true);
+                suggestions.addAll(this.suggestionHelper.listSuggestions(context, registration, args));
+            } catch (final CommandException ignored) {}
         } else {
             suggestions.addAll(this.commandGraph.listSuggestions(argsCopy));
         }
