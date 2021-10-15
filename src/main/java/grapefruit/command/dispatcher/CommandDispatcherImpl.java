@@ -55,9 +55,6 @@ import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import static grapefruit.command.dispatcher.CommandGraph.ALIAS_SEPARATOR;
-import static grapefruit.command.dispatcher.SuggestionHelper.FLAG_NAME_CONSUMED;
-import static grapefruit.command.dispatcher.SuggestionHelper.LAST_INPUT;
-import static grapefruit.command.dispatcher.SuggestionHelper.SUGGEST_ME;
 import static java.lang.String.format;
 import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Objects.requireNonNull;
@@ -387,12 +384,16 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         System.out.println("processSuggestions");
         final List<CommandParameter<S>> parameters = registration.parameters();
         final CommandContext<S> context = CommandContext.create(source, commandLine, parameters);
+        final SuggestionContext<S> suggestionContext = context.suggestions();
         try {
             int parameterIndex = 0;
             CommandInput input;
             while ((input = args.peek()) != null) {
-                context.put(LAST_INPUT, input);
-                context.put(FLAG_NAME_CONSUMED, null);
+                /*context.put(LAST_INPUT, input);
+                context.put(FLAG_NAME_CONSUMED, null);*/
+                suggestionContext.reset();
+                suggestionContext.input(input);
+
                 try {
                     final String rawInput = input.rawArg();
                     final Matcher matcher = FlagGroup.VALID_PATTERN.matcher(rawInput);
@@ -436,10 +437,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         if (stored.isPresent()) {
             throw new FlagDuplicateException(flagName);
         }
-        if (suggestions) {
-            context.put(SUGGEST_ME, flag);
-            context.put(FLAG_NAME_CONSUMED, true);
-        }
+
+        final SuggestionContext<S> suggestionContext = context.suggestions();
+        suggestionContext.parameter(flag);
+        suggestionContext.flagNameConsumed(true);
 
         if (flag.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
             context.put(flagName, true);
@@ -455,9 +456,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
             final Object parsedValue = mapParameter(flag, context, args);
             context.put(flagName, parsedValue);
-            if (suggestions) {
-                context.put(LAST_INPUT, args.element());
-            }
+            suggestionContext.input(args.element());
         }
     }
 
@@ -476,22 +475,24 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             ));
         }
 
+        final SuggestionContext<S> suggestionContext = context.suggestions();
         final Optional<CommandParameter<S>> firstNonFlagParameter = parameters.stream()
                 .filter(x -> !x.isFlag())
                 .filter(x -> context.find(x.name()).isEmpty())
                 .findFirst();
         if (firstNonFlagParameter.isEmpty()) {
             System.out.println("no first non-flag param");
-            context.put(SUGGEST_ME, null);
+            //context.put(SUGGEST_ME, null);
+            suggestionContext.parameter(null);
             throw new CommandSyntaxException(Message.of(MessageKeys.MISSING_FLAG,
                     Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))));
         }
 
         final CommandParameter<S> parameter = firstNonFlagParameter.orElseThrow();
-        if (suggestions) {
+        /*if (suggestions) {
             context.put(SUGGEST_ME, parameter);
-        }
-
+        }*/
+        suggestionContext.parameter(parameter);
         final Object parsedValue = mapParameter(parameter, context, args);
         context.put(parameter.name(), parsedValue);
     }

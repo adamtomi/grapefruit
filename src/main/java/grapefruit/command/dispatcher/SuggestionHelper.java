@@ -31,10 +31,11 @@ class SuggestionHelper<S> {
                                                  final @NotNull CommandRegistration<S> registration,
                                                  final @NotNull Queue<CommandInput> args) {
         System.out.println("SuggestionHelper#listSuggestions");
+        final SuggestionContext<S> suggestionContext = context.suggestions();
         final List<CommandParameter<S>> parameters = registration.parameters();
-        final Optional<CommandParameter<S>> parameterOpt = context.<CommandParameter<S>>find(SUGGEST_ME)
+        final Optional<CommandParameter<S>> parameterOpt = suggestionContext.parameter()
                 .or(() -> findFirstUnseenParameter(parameters, context));
-        final Optional<CommandInput> lastInputOpt = context.find(LAST_INPUT);
+        final Optional<CommandInput> lastInputOpt = suggestionContext.input();
         System.out.println(parameterOpt);
         System.out.println(lastInputOpt);
         if (parameterOpt.isEmpty() || lastInputOpt.isEmpty()) {
@@ -42,7 +43,7 @@ class SuggestionHelper<S> {
         }
 
         final CommandParameter<S> parameter = parameterOpt.orElseThrow();
-        final boolean flagNameConsumed = context.find(FLAG_NAME_CONSUMED).isPresent();
+        final boolean flagNameConsumed = suggestionContext.flagNameConsumed();
         final boolean isFlag = parameter.isFlag();
         final String currentArg = args.isEmpty()
                 ? lastInputOpt.orElseThrow().rawArg().trim()
@@ -50,6 +51,8 @@ class SuggestionHelper<S> {
 
         final ParameterMapper<S, ?> mapper = parameter.mapper();
         final AnnotationList modifiers = parameter.modifiers();
+        // Lists returned by ParameterMappers may be immutable, so we need to
+        // create a mutable copy of the received list
         final List<String> suggestions = new ArrayList<>((isFlag && !flagNameConsumed)
                 ? List.of()
                 : mapper.listSuggestions(context, currentArg, modifiers));

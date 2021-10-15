@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 @SuppressWarnings("unchecked")
 public class CommandContext<S> {
     private static final Comparator<Map.Entry<Integer, String>> SORT_BY_INDEX = Comparator.comparingInt(Map.Entry::getKey);
+    private final SuggestionContext<S> suggestions = new SuggestionContext<>();
     private final S source;
     private final String commandLine;
     private final Map<Integer, String> indexStore;
@@ -54,6 +55,10 @@ public class CommandContext<S> {
             defaults.put(name, new StoredValue(defaultValue, false));
         }
         return new CommandContext<>(source, commandLine, indexStore, defaults);
+    }
+
+    @NotNull SuggestionContext<S> suggestions() {
+        return this.suggestions;
     }
 
     public @NotNull S source() {
@@ -121,6 +126,7 @@ public class CommandContext<S> {
                 "source=" + this.source + '\'' +
                 ", commandLine='" + this.commandLine + '\'' +
                 ", arguments=" + this.argumentStore +
+                ", suggestions=" + this.suggestions +
                 ']';
     }
 
