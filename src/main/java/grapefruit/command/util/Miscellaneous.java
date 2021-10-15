@@ -1,6 +1,5 @@
 package grapefruit.command.util;
 
-import com.google.common.reflect.TypeToken;
 import grapefruit.command.dispatcher.CommandAuthorizer;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.FlagParameter;
@@ -17,7 +16,6 @@ import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 public final class Miscellaneous {
-    private static final TypeToken<Number> NUMBER_TYPE = TypeToken.of(Number.class);
     private static final Map<Class<?>, Class<?>> BOX_MAP = Map.of(
             Boolean.TYPE, Boolean.class,
             Byte.TYPE, Byte.class,
@@ -128,10 +126,6 @@ public final class Miscellaneous {
         requireNonNull(element, "element cannot be null");
         requireNonNull(elements, "elements cannot be null");
         return elements.stream().anyMatch(element::equalsIgnoreCase);
-    }
-
-    public static @NotNull TypeToken<Number> numberType() {
-        return NUMBER_TYPE;
     }
 
     public static @NotNull String parameterName(final @NotNull CommandParameter<?> parameter) {
