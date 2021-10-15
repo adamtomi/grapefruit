@@ -381,7 +381,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                                         final @NotNull String commandLine,
                                                         final @NotNull S source,
                                                         final Queue<CommandInput> args) {
-        System.out.println("processSuggestions");
         final List<CommandParameter<S>> parameters = registration.parameters();
         final CommandContext<S> context = CommandContext.create(source, commandLine, parameters);
         final SuggestionContext<S> suggestionContext = context.suggestions();
@@ -464,9 +463,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                          final @NotNull Queue<CommandInput> args,
                          final int parameterIndex,
                          final boolean suggestions) throws CommandException {
-        System.out.println("consume argument");
         if (parameterIndex >= parameters.size()) {
-            System.out.println("index is fucked up");
             throw new CommandSyntaxException(Message.of(
                     MessageKeys.TOO_MANY_ARGUMENTS,
                     Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))
@@ -479,7 +476,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 .filter(x -> context.find(x.name()).isEmpty())
                 .findFirst();
         if (firstNonFlagParameter.isEmpty()) {
-            System.out.println("no first non-flag param");
             suggestionContext.parameter(null);
             throw new CommandSyntaxException(Message.of(MessageKeys.MISSING_FLAG,
                     Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))));
@@ -550,10 +546,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 return List.of();
             }
 
-            System.out.println("processs cmd");
-            final CommandContext<S> context = processSuggestions(registration, commandLine, source, args);
-            System.out.println(context);
-            System.out.println("helper");
+            final CommandContext<S> context = processSuggestions(registration, commandLine, source, args);;
             suggestions.addAll(this.suggestionHelper.listSuggestions(context, registration, args));
         } else {
             suggestions.addAll(this.commandGraph.listSuggestions(argsCopy));

@@ -13,16 +13,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static grapefruit.command.util.Miscellaneous.formatFlag;
 
 class SuggestionHelper<S> {
-    static final String SUGGEST_ME = "__SUGGEST_ME__";
-    static final String LAST_INPUT = "__LAST_INPUT__";
-    static final String FLAG_NAME_CONSUMED = "__FLAG_NAME_CONSUMED__";
     private static final Pattern FLAG_GROUP_PATTERN = Pattern.compile("^-([a-zA-Z]+)$");
 
     SuggestionHelper() {}
@@ -30,14 +26,11 @@ class SuggestionHelper<S> {
     public @NotNull List<String> listSuggestions(final @NotNull CommandContext<S> context,
                                                  final @NotNull CommandRegistration<S> registration,
                                                  final @NotNull Queue<CommandInput> args) {
-        System.out.println("SuggestionHelper#listSuggestions");
         final SuggestionContext<S> suggestionContext = context.suggestions();
         final List<CommandParameter<S>> parameters = registration.parameters();
         final Optional<CommandParameter<S>> parameterOpt = suggestionContext.parameter()
                 .or(() -> findFirstUnseenParameter(parameters, context));
         final Optional<CommandInput> lastInputOpt = suggestionContext.input();
-        System.out.println(parameterOpt);
-        System.out.println(lastInputOpt);
         if (parameterOpt.isEmpty() || lastInputOpt.isEmpty()) {
             return List.of();
         }
@@ -57,26 +50,19 @@ class SuggestionHelper<S> {
                 ? List.of()
                 : mapper.listSuggestions(context, currentArg, modifiers));
 
-        System.out.println("suggestions so far:");
-        System.out.println(suggestions);
         if (!isFlag) {
-            System.out.println("not a flag");
             if (currentArg.startsWith("-")) {
-                System.out.println("starts with -, adding flags");
                 suggestions.addAll(collectUnseenFlagSuggestions(parameters, context));
             }
         } else {
             if (!flagNameConsumed) {
-                System.out.println("flag, but the name is not consumed yet");
                 // We don't have a valid flag name at this point, so just return all possible flags
                 suggestions.addAll(collectUnseenFlagSuggestions(parameters, context));
             } else {
-                System.out.println("flag && flagNameConsumed, do something here!");
                 final Matcher matcher = FLAG_GROUP_PATTERN.matcher(currentArg);
                 if (matcher.matches()) {
                     // So we have a flag group (like -abc). Add all shorthands (if there are any)
                     // The result looks like: [-abcd, -abce]
-                    System.out.println("looks like this could be a flag group");
                     final List<FlagParameter<S>> unseenFlags = collectUnseenFlags(parameters, context);
                     for (final FlagParameter<S> flag : unseenFlags) {
                         final char shorthand = flag.shorthand();
@@ -89,10 +75,6 @@ class SuggestionHelper<S> {
         }
 
         Collections.sort(suggestions);
-        System.out.println("returning:");
-        System.out.println(".........................");
-        System.out.println(suggestions);
-        System.out.println(".........................");
         return suggestions;
     }
 
@@ -101,6 +83,7 @@ class SuggestionHelper<S> {
         return parameters.stream()
                 .filter(CommandParameter::isFlag)
                 .map(x -> (FlagParameter<S>) x)
+                .filter(x -> context.find(x.flagName()).isEmpty())
                 .toList();
     }
 
