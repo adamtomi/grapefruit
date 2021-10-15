@@ -11,7 +11,6 @@ import grapefruit.command.parameter.mapper.ParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMapperRegistry;
 import grapefruit.command.util.AnnotationList;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
@@ -27,7 +26,6 @@ import static grapefruit.command.dispatcher.SuggestionHelper.SUGGEST_ME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Disabled
 public class SuggestionHelperTests {
     private static final List<String> PREFIXES;
     private static final List<String> NUMBER_OPTIONS;
@@ -102,7 +100,7 @@ public class SuggestionHelperTests {
         context.put(LAST_INPUT, new StringCommandInput(""));
         final SuggestionHelper<Object> suggestionHelper = new SuggestionHelper<>();
         final List<String> suggetsions = suggestionHelper.listSuggestions(context, reg, new PriorityQueue<>());
-        assertEquals(PREFIXES, suggetsions);
+        assertTrue(contentEquals(PREFIXES, suggetsions));
     }
 
     @Test
@@ -123,7 +121,7 @@ public class SuggestionHelperTests {
                 .map(num -> "5" + num)
                 .toList();
         final List<String> suggetsions = suggestionHelper.listSuggestions(context, reg, new PriorityQueue<>());
-        assertEquals(expected, suggetsions);
+        assertTrue(contentEquals(expected, suggetsions));
     }
 
     @Test
@@ -146,7 +144,7 @@ public class SuggestionHelperTests {
         );
         final SuggestionHelper<Object> suggestionHelper = new SuggestionHelper<>();
         final List<String> suggestions = suggestionHelper.listSuggestions(context, reg, new PriorityQueue<>());
-        assertEquals(expected, suggestions);
+        assertTrue(contentEquals(expected, suggestions));
     }
 
     @Test
@@ -168,7 +166,7 @@ public class SuggestionHelperTests {
         );
         final SuggestionHelper<Object> suggestionHelper = new SuggestionHelper<>();
         final List<String> suggestions = suggestionHelper.listSuggestions(context, reg, new PriorityQueue<>());
-        assertEquals(expected, suggestions);
+        assertTrue(contentEquals(expected, suggestions));
     }
 
     @Test
@@ -188,7 +186,7 @@ public class SuggestionHelperTests {
         );
         final SuggestionHelper<Object> suggestionHelper = new SuggestionHelper<>();
         final List<String> suggestions = suggestionHelper.listSuggestions(context, reg, new PriorityQueue<>());
-        assertEquals(expected, suggestions);
+        assertTrue(contentEquals(expected, suggestions));
     }
 
     @Test
@@ -206,7 +204,7 @@ public class SuggestionHelperTests {
         context.put(LAST_INPUT, new BlankCommandInput(1));
         final SuggestionHelper<Object> suggestionHelper = new SuggestionHelper<>();
         final List<String> suggestions = suggestionHelper.listSuggestions(context, reg, new PriorityQueue<>());
-        assertEquals(PREFIXES, suggestions);
+        assertTrue(contentEquals(PREFIXES, suggestions));
     }
 
     @Test
@@ -247,7 +245,7 @@ public class SuggestionHelperTests {
         context.put(LAST_INPUT, new BlankCommandInput(1));
         final SuggestionHelper<Object> suggestionHelper = new SuggestionHelper<>();
         final List<String> suggestions = suggestionHelper.listSuggestions(context, reg, new PriorityQueue<>());
-        assertEquals(PREFIXES, suggestions);
+        assertTrue(contentEquals(PREFIXES, suggestions));
     }
 
     @Test

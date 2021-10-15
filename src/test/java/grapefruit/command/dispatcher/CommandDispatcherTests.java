@@ -231,7 +231,6 @@ public class CommandDispatcherTests {
         assertFalse(container.status);
     }
 
-    @Disabled
     @ParameterizedTest
     @CsvSource({
             "roo,root",
@@ -242,13 +241,13 @@ public class CommandDispatcherTests {
             "root method01 Hello --flag 34 -,-9|-8|-7|-6|-5|-4|-3|-2|-1|--other-flag",
             "root method01 -,--flag|--other-flag",
             "root method01 --,--flag|--other-flag",
-            "root method01 --f,flag",
+            "root method01 --f,--flag",
             "root method01 --flag 4 --other-flag 444444 str 5,50|51|52|53|54|55|56|57|58|59",
             "root method02 -f,-fa|-fo",
             "'root method02 -fao b ',-9|-8|-7|-6|-5|-4|-3|-2|-1|1|2|3|4|5|6|7|8|9",
             "root method02 Hey_there! -,-9|-8|-7|-6|-5|-4|-3|-2|-1|-f|-o|-a|--flag|--other-flag|--another-flag",
             "root method02 Hey_there! -3,-30|-31|-32|-33|-34|-35|-36|-37|-38|-39",
-            "root method02 hello -345 -a,-af|-ao|-a",
+            "root method02 hello -345 -a,-af|-ao",
             "root method02 -f hello -345 -a c -,-o|--other-flag"
     })
     public void listSuggestions_validInput(final String commandLine, final String expectedString) {
@@ -257,8 +256,6 @@ public class CommandDispatcherTests {
         dispatcher.registerCommands(new ContainerWithComplexCommands());
         final List<String> expected = Arrays.asList(expectedString.split("\\|"));
         final List<String> result = dispatcher.listSuggestions(new Object(), commandLine);
-        System.out.println(expected);
-        System.out.println(result);
         assertTrue(contentEquals(expected, result));
     }
 
