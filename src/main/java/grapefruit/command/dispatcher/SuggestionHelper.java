@@ -4,8 +4,8 @@ import grapefruit.command.dispatcher.registration.CommandRegistration;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.FlagParameter;
 import grapefruit.command.parameter.mapper.ParameterMapper;
-import grapefruit.command.parameter.modifier.Flag;
 import grapefruit.command.util.AnnotationList;
+import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -27,8 +27,13 @@ class SuggestionHelper<S> {
     public @NotNull List<String> listSuggestions(final @NotNull CommandContext<S> context,
                                                  final @NotNull CommandRegistration<S> registration,
                                                  final @NotNull Queue<CommandInput> args) {
-        final Optional<CommandParameter<S>> parameterOpt = context.find(SUGGEST_ME);
+        System.out.println("SuggestionHelper#listSuggestions");
+        final List<CommandParameter<S>> parameters = registration.parameters();
+        final Optional<CommandParameter<S>> parameterOpt = context.<CommandParameter<S>>find(SUGGEST_ME)
+                .or(() -> findFirstUnseenParameter(parameters, context));
         final Optional<CommandInput> lastInputOpt = context.find(LAST_INPUT);
+        System.out.println(parameterOpt);
+        System.out.println(lastInputOpt);
         if (parameterOpt.isEmpty() || lastInputOpt.isEmpty()) {
             return List.of();
         }
@@ -36,7 +41,6 @@ class SuggestionHelper<S> {
         final CommandParameter<S> parameter = parameterOpt.orElseThrow();
         final boolean flagNameConsumed = context.find(FLAG_NAME_CONSUMED).isPresent();
         final boolean isFlag = parameter.isFlag();
-        final List<CommandParameter<S>> parameters = registration.parameters();
         final String currentArg = args.isEmpty()
                 ? lastInputOpt.orElseThrow().rawArg().trim()
                 : args.remove().rawArg().trim();
@@ -68,6 +72,7 @@ class SuggestionHelper<S> {
             }
         }
 
+        Collections.sort(suggestions);
         System.out.println("returning:");
         System.out.println(".........................");
         System.out.println(suggestions);
@@ -105,73 +110,15 @@ class SuggestionHelper<S> {
         return result;
     }
 
-    public @NotNull List<String> listSuggestions0(final @NotNull CommandContext<S> commandContext,
-                                                 final @NotNull CommandRegistration<S> registration,
-                                                 final @NotNull Queue<CommandInput> args) {
-        final Optional<CommandParameter<S>> parameterOpt = commandContext.find(SUGGEST_ME);
-        final Optional<CommandInput> lastInputOpt = commandContext.find(LAST_INPUT);
-        if (parameterOpt.isEmpty() || lastInputOpt.isEmpty()) {
-            return List.of();
-        }
-
-        final List<CommandParameter<S>> parameters = registration.parameters();
-        final CommandParameter<S> parameter = parameterOpt.orElseThrow();
-        final String currentArg = args.isEmpty()
-                ? lastInputOpt.orElseThrow().rawArg().trim()
-                : args.remove().rawArg().trim();
-
-        final ParameterMapper<S, ?> mapper = parameter.mapper();
-        final AnnotationList modifiers = parameter.modifiers();
-        final List<String> suggestions = new ArrayList<>((parameter.isFlag() && commandContext.find(FLAG_NAME_CONSUMED).isEmpty())
-                ? List.of()
-                : mapper.listSuggestions(commandContext, currentArg, modifiers));
-
-        if (parameter.isFlag()) {
-            final FlagParameter<S> flag = (FlagParameter<S>) parameter;
-            final char shorthand = flag.shorthand();
-            final List<String> flagSuggestions = new ArrayList<>();
-            final List<FlagParameter<S>> allFlags = parameters.stream()
-                    .filter(CommandParameter::isFlag)
-                    .map(x -> (FlagParameter<S>) x)
-                    .toList();
-
-            final boolean flagConsumed = commandContext.find(FLAG_NAME_CONSUMED).isPresent();
-            for (final FlagParameter<S> each : allFlags) {
-                if (commandContext.find(each.flagName()).isPresent()) {
-                    continue;
-                }
-
-                flagSuggestions.add(formatFlag(each.flagName()));
-                final char currentShorthand = each.shorthand();
-                if (currentShorthand != ' ') {
-                    flagSuggestions.add(formatFlag(String.valueOf(currentShorthand)));
-                    if (currentShorthand != shorthand && flagConsumed) {
-                        flagSuggestions.add(formatFlag(String.valueOf(shorthand)) + currentShorthand);
-                    }
-                }
+    private @NotNull Optional<CommandParameter<S>> findFirstUnseenParameter(final @NotNull List<CommandParameter<S>> parameters,
+                                                                            final @NotNull CommandContext<S> context) {
+        for (final CommandParameter<S> parameter : parameters) {
+            final String name = Miscellaneous.parameterName(parameter);
+            if (context.find(name).isEmpty()) {
+                return Optional.of(parameter);
             }
-
-            suggestions.addAll(flagSuggestions);
-        } else if (currentArg.startsWith("-")) {
-            final List<FlagParameter<S>> possibleFlags = parameters.stream()
-                    .filter(CommandParameter::isFlag)
-                    .filter(x -> commandContext.find(x.name()).isEmpty())
-                    .map(x -> (FlagParameter<S>) x)
-                    .toList();
-            possibleFlags.forEach(flag -> {
-                suggestions.add(formatFlag(flag.flagName()));
-                final char shorthand = flag.shorthand();
-                if (shorthand != ' ') {
-                    suggestions.add(formatFlag(String.valueOf(shorthand)));
-                }
-            });
         }
 
-        System.out.println("returning:");
-        System.out.println("-----------------------");
-        System.out.println(suggestions);
-        System.out.println("-----------------------");
-        Collections.sort(suggestions);
-        return suggestions;
+        return Optional.empty();
     }
 }
