@@ -58,7 +58,6 @@ import static grapefruit.command.dispatcher.CommandGraph.ALIAS_SEPARATOR;
 import static grapefruit.command.dispatcher.SuggestionHelper.FLAG_NAME_CONSUMED;
 import static grapefruit.command.dispatcher.SuggestionHelper.LAST_INPUT;
 import static grapefruit.command.dispatcher.SuggestionHelper.SUGGEST_ME;
-import static grapefruit.command.parameter.FlagParameter.FLAG_PATTERN;
 import static java.lang.String.format;
 import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Objects.requireNonNull;
@@ -340,20 +339,15 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                                       final @NotNull String commandLine,
                                                       final @NotNull S source,
                                                       final Queue<CommandInput> args) throws CommandException {
-        final CommandContext<S> context = CommandContext.create(source, commandLine, registration.parameters());
         final List<CommandParameter<S>> parameters = registration.parameters();
+        final CommandContext<S> context = CommandContext.create(source, commandLine, parameters);
         try {
             int parameterIndex = 0;
             CommandInput input;
             while ((input = args.peek()) != null) {
-                /*if (suggestions) {
-                    context.put(LAST_INPUT, input);
-                    context.put(FLAG_NAME_CONSUMED, null);
-                }*/
-
                 try {
                     final String rawInput = input.rawArg();
-                    final Matcher matcher = FLAG_PATTERN.matcher(rawInput);
+                    final Matcher matcher = FlagGroup.VALID_PATTERN.matcher(rawInput);
                     if (matcher.matches()) {
                         final FlagGroup<S> flags = FlagGroup.parse(rawInput, matcher, parameters);
                         for (final FlagParameter<S> flag : flags) {
@@ -390,8 +384,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                                      final @NotNull String commandLine,
                                                      final @NotNull S source,
                                                      final Queue<CommandInput> args) {
-        final CommandContext<S> context = CommandContext.create(source, commandLine, registration.parameters());
+        System.out.println("processSuggestions");
         final List<CommandParameter<S>> parameters = registration.parameters();
+        final CommandContext<S> context = CommandContext.create(source, commandLine, parameters);
         try {
             int parameterIndex = 0;
             CommandInput input;
@@ -400,7 +395,17 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 context.put(FLAG_NAME_CONSUMED, null);
                 try {
                     final String rawInput = input.rawArg();
-                    final Matcher matcher = FLAG_PATTERN.matcher(rawInput);
+                    /*if (rawInput.equals("--")) {
+                        final Optional<FlagParameter<S>> firstFlagParameter = parameters.stream()
+                                .filter(CommandParameter::isFlag)
+                                .map(x -> (FlagParameter<S>) x)
+                                .filter(x -> context.find(x.flagName()).isEmpty())
+                                .findFirst();
+                        firstFlagParameter.ifPresent(x -> context.put(SUGGEST_ME, x));
+                        return context;
+                    }*/
+
+                    final Matcher matcher = FlagGroup.VALID_PATTERN.matcher(rawInput);
                     if (matcher.matches()) {
                         final FlagGroup<S> flags = FlagGroup.parse(rawInput, matcher, parameters);
                         for (final FlagParameter<S> flag : flags) {
@@ -429,12 +434,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
-    private void consumeFlag(final @NotNull FlagParameter<S> flag,
-                             final @NotNull CommandContext<S> context,
-                             final @NotNull Queue<CommandInput> args,
-                             final @NotNull CommandInput input,
-                             final @NotNull String rawInput,
-                             final boolean suggestions) throws CommandException {
+    void consumeFlag(final @NotNull FlagParameter<S> flag,
+                     final @NotNull CommandContext<S> context,
+                     final @NotNull Queue<CommandInput> args,
+                     final @NotNull CommandInput input,
+                     final @NotNull String rawInput,
+                     final boolean suggestions) throws CommandException {
         input.markConsumed();
         final String flagName = flag.flagName();
         final Optional<Object> stored = context.find(flagName);
@@ -466,12 +471,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
-    private void consumeArgument(final @NotNull String commandLine,
-                                 final @NotNull List<CommandParameter<S>> parameters,
-                                 final @NotNull CommandContext<S> context,
-                                 final @NotNull Queue<CommandInput> args,
-                                 final int parameterIndex,
-                                 final boolean suggestions) throws CommandException {
+    void consumeArgument(final @NotNull String commandLine,
+                         final @NotNull List<CommandParameter<S>> parameters,
+                         final @NotNull CommandContext<S> context,
+                         final @NotNull Queue<CommandInput> args,
+                         final int parameterIndex,
+                         final boolean suggestions) throws CommandException {
         if (parameterIndex >= parameters.size()) {
             throw new CommandSyntaxException(Message.of(
                     MessageKeys.TOO_MANY_ARGUMENTS,
@@ -481,6 +486,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
         final Optional<CommandParameter<S>> firstNonFlagParameter = parameters.stream()
                 .filter(x -> !x.isFlag())
+                .peek(x -> System.out.println(context.find(x.name())))
                 .filter(x -> context.find(x.name()).isEmpty())
                 .findFirst();
         if (firstNonFlagParameter.isEmpty()) {

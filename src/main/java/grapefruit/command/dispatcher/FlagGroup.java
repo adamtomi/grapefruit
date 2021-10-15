@@ -11,10 +11,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static java.util.Objects.requireNonNull;
 
 public class FlagGroup<S> implements Iterable<FlagParameter<S>> {
+    protected static final Pattern VALID_PATTERN = Pattern.compile("^-(-?)([a-zA-Z]\\S*)$");
     private final Set<FlagParameter<S>> flags;
 
     private FlagGroup(final @NotNull Set<FlagParameter<S>> flags) {

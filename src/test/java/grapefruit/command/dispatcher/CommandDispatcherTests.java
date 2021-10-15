@@ -231,6 +231,7 @@ public class CommandDispatcherTests {
         assertFalse(container.status);
     }
 
+    @Disabled
     @ParameterizedTest
     @CsvSource({
             "roo,root",
@@ -238,8 +239,10 @@ public class CommandDispatcherTests {
             "'root method01 --flag ',-9|-8|-7|-6|-5|-4|-3|-2|-1|1|2|3|4|5|6|7|8|9",
             "root method01 --flag 1,10|11|12|13|14|15|16|17|18|19",
             "root method01 Hello -,-9|-8|-7|-6|-5|-4|-3|-2|-1|--flag|--other-flag",
-            //"root method01 Hello 5 --flag 34 -,-9|-8|-7|-6|-5|-4|-3|-2|-1|--other-flag",
+            "root method01 Hello --flag 34 -,-9|-8|-7|-6|-5|-4|-3|-2|-1|--other-flag",
             "root method01 -,--flag|--other-flag",
+            "root method01 --,--flag|--other-flag",
+            "root method01 --f,flag",
             "root method01 --flag 4 --other-flag 444444 str 5,50|51|52|53|54|55|56|57|58|59",
             "root method02 -f,-fa|-fo",
             "'root method02 -fao b ',-9|-8|-7|-6|-5|-4|-3|-2|-1|1|2|3|4|5|6|7|8|9",

@@ -8,6 +8,7 @@ import grapefruit.command.parameter.FlagParameter;
 import grapefruit.command.parameter.PresenceFlagParameter;
 import grapefruit.command.parameter.StandardParameter;
 import grapefruit.command.parameter.mapper.AbstractParameterMapper;
+import grapefruit.command.parameter.modifier.Flag;
 import grapefruit.command.util.AnnotationList;
 import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +34,7 @@ public class FlagGroupTests {
                 new DummyParameter("dummy-1")
         );
         final String rawInput = Miscellaneous.formatFlag(flag);
-        final Matcher matcher = FlagParameter.FLAG_PATTERN.matcher(rawInput);
+        final Matcher matcher = FlagGroup.VALID_PATTERN.matcher(rawInput);
         final boolean mathches = matcher.matches();
         assert mathches;
 
@@ -55,7 +56,7 @@ public class FlagGroupTests {
                 new DummyParameter("dummy-1")
         );
         final String rawInput = Miscellaneous.formatFlag(String.valueOf(shorthand));
-        final Matcher matcher = FlagParameter.FLAG_PATTERN.matcher(rawInput);
+        final Matcher matcher = FlagGroup.VALID_PATTERN.matcher(rawInput);
         final boolean mathches = matcher.matches();
         assert mathches;
 
@@ -78,7 +79,7 @@ public class FlagGroupTests {
         );
 
         final String rawInput = Miscellaneous.formatFlag(flagName);
-        final Matcher matcher = FlagParameter.FLAG_PATTERN.matcher(rawInput);
+        final Matcher matcher = FlagGroup.VALID_PATTERN.matcher(rawInput);
         final boolean mathches = matcher.matches();
         assert mathches;
 
@@ -96,7 +97,7 @@ public class FlagGroupTests {
                 new PresenceFlagParameter<>("flag", 'x', "arg0", new AnnotationList())
         );
         final String rawInput = "-xce";
-        final Matcher matcher = FlagParameter.FLAG_PATTERN.matcher(rawInput);
+        final Matcher matcher = FlagGroup.VALID_PATTERN.matcher(rawInput);
         final boolean mathches = matcher.matches();
         assert mathches;
 
@@ -121,7 +122,7 @@ public class FlagGroupTests {
                 new PresenceFlagParameter<>("flag", 'x', "arg0", new AnnotationList())
         );
 
-        final Matcher matcher = FlagParameter.FLAG_PATTERN.matcher(groupString);
+        final Matcher matcher = FlagGroup.VALID_PATTERN.matcher(groupString);
         final boolean mathches = matcher.matches();
         assert mathches;
 

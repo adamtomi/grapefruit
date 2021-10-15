@@ -85,6 +85,10 @@ public final class Miscellaneous {
         throw new IllegalArgumentException(format("Class %s is not primitive", clazz));
     }
 
+    public static @NotNull String formatFlag(final char shorthand) {
+        return formatFlag(String.valueOf(shorthand));
+    }
+
     public static @NotNull String formatFlag(final @NotNull String flagName) {
         requireNonNull(flagName, "flagName cannot be null");
         if (flagName.isBlank()) {
