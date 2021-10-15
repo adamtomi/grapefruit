@@ -389,8 +389,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             int parameterIndex = 0;
             CommandInput input;
             while ((input = args.peek()) != null) {
-                /*context.put(LAST_INPUT, input);
-                context.put(FLAG_NAME_CONSUMED, null);*/
                 suggestionContext.reset();
                 suggestionContext.input(input);
 
@@ -482,16 +480,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 .findFirst();
         if (firstNonFlagParameter.isEmpty()) {
             System.out.println("no first non-flag param");
-            //context.put(SUGGEST_ME, null);
             suggestionContext.parameter(null);
             throw new CommandSyntaxException(Message.of(MessageKeys.MISSING_FLAG,
                     Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))));
         }
 
         final CommandParameter<S> parameter = firstNonFlagParameter.orElseThrow();
-        /*if (suggestions) {
-            context.put(SUGGEST_ME, parameter);
-        }*/
         suggestionContext.parameter(parameter);
         final Object parsedValue = mapParameter(parameter, context, args);
         context.put(parameter.name(), parsedValue);
