@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static grapefruit.command.util.Miscellaneous.formatFlag;
 
@@ -21,6 +23,7 @@ class SuggestionHelper<S> {
     static final String SUGGEST_ME = "__SUGGEST_ME__";
     static final String LAST_INPUT = "__LAST_INPUT__";
     static final String FLAG_NAME_CONSUMED = "__FLAG_NAME_CONSUMED__";
+    private static final Pattern FLAG_GROUP_PATTERN = Pattern.compile("^-([a-zA-Z]+)$");
 
     SuggestionHelper() {}
 
@@ -60,15 +63,25 @@ class SuggestionHelper<S> {
                 suggestions.addAll(collectUnseenFlagSuggestions(parameters, context));
             }
         } else {
-            // Could be that the input is just - or --, in that case our current parameter is the first
-            // non-consumed flag
             if (!flagNameConsumed) {
                 System.out.println("flag, but the name is not consumed yet");
+                // We don't have a valid flag name at this point, so just return all possible flags
                 suggestions.addAll(collectUnseenFlagSuggestions(parameters, context));
             } else {
-                final FlagParameter<S> flag = (FlagParameter<S>) parameter;
                 System.out.println("flag && flagNameConsumed, do something here!");
-
+                final Matcher matcher = FLAG_GROUP_PATTERN.matcher(currentArg);
+                if (matcher.matches()) {
+                    // So we have a flag group (like -abc). Add all shorthands (if there are any)
+                    // The result looks like: [-abcd, -abce]
+                    System.out.println("looks like this could be a flag group");
+                    final List<FlagParameter<S>> unseenFlags = collectUnseenFlags(parameters, context);
+                    for (final FlagParameter<S> flag : unseenFlags) {
+                        final char shorthand = flag.shorthand();
+                        if (shorthandNotEmpty(shorthand) && !currentArg.contains(String.valueOf(shorthand))) {
+                            suggestions.add(currentArg + shorthand);
+                        }
+                    }
+                }
             }
         }
 
@@ -80,19 +93,17 @@ class SuggestionHelper<S> {
         return suggestions;
     }
 
-    private @NotNull List<String> collectUnseenFlagSuggestions(final @NotNull List<CommandParameter<S>> parameters,
+    private @NotNull List<FlagParameter<S>> collectUnseenFlags(final @NotNull List<CommandParameter<S>> parameters,
                                                                final @NotNull CommandContext<S> context) {
-        return collectUnseenFlagSuggestions(parameters, context, flag -> true);
+        return parameters.stream()
+                .filter(CommandParameter::isFlag)
+                .map(x -> (FlagParameter<S>) x)
+                .toList();
     }
 
     private @NotNull List<String> collectUnseenFlagSuggestions(final @NotNull List<CommandParameter<S>> parameters,
-                                                               final @NotNull CommandContext<S> context,
-                                                               final @NotNull Predicate<FlagParameter<S>> condition) {
-        final List<FlagParameter<S>> allFlags = parameters.stream()
-                .filter(CommandParameter::isFlag)
-                .map(x -> (FlagParameter<S>) x)
-                .filter(condition)
-                .toList();
+                                                               final @NotNull CommandContext<S> context) {
+        final List<FlagParameter<S>> allFlags = collectUnseenFlags(parameters, context);
         final List<String> result = new ArrayList<>();
         for (final FlagParameter<S> flag : allFlags) {
             final String name = flag.flagName();
@@ -102,7 +113,7 @@ class SuggestionHelper<S> {
 
             final char shorthand = flag.shorthand();
             result.add(formatFlag(name));
-            if (shorthand != ' ') {
+            if (shorthandNotEmpty(shorthand)) {
                 result.add(formatFlag(shorthand));
             }
         }
@@ -120,5 +131,9 @@ class SuggestionHelper<S> {
         }
 
         return Optional.empty();
+    }
+
+    private boolean shorthandNotEmpty(final char shorthand) {
+        return shorthand != ' ';
     }
 }
