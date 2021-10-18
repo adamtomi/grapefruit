@@ -18,13 +18,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
+import java.util.stream.IntStream;
 
 import static java.util.Objects.requireNonNull;
 
 public class NumberMapper<S, N extends Number> extends AbstractParameterMapper<S, N> {
     private static final List<String> PREFIXES;
-    private static final List<String> NUMBER_OPTIONS;
     private final Function<String, N> converter;
 
     static {
@@ -38,15 +38,7 @@ public class NumberMapper<S, N extends Number> extends AbstractParameterMapper<S
 
         PREFIXES = prefixes.stream()
                 .map(String::valueOf)
-                .collect(Collectors.toList());
-        final List<Integer> numberOptions = new ArrayList<>();
-        for (int i = 0; i <= 9; i++) {
-            numberOptions.add(i);
-        }
-
-        NUMBER_OPTIONS = numberOptions.stream()
-                .map(String::valueOf)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public NumberMapper(final @NotNull TypeToken<N> type, final @NotNull Function<String, N> converter) {
@@ -95,9 +87,28 @@ public class NumberMapper<S, N extends Number> extends AbstractParameterMapper<S
             return PREFIXES;
         } else {
             if (Miscellaneous.isNumber(currentArg)) {
+                final double number = Double.parseDouble(currentArg);
+                final Optional<Range> rangeOpt = modifiers.find(Range.class);
+                final Predicate<Double> isInRange = x -> rangeOpt
+                        .map(range -> range.min() <= x && range.max() >= x)
+                        .orElse(true);
+                if (!isInRange.test(number)) {
+                    return List.of();
+                }
+
                 final List<String> result = new ArrayList<>();
-                for (final String number : NUMBER_OPTIONS) {
-                    result.add(currentArg + number);
+                final double multipliedBy10 = number * 10;
+                if (!isInRange.test(multipliedBy10)) {
+                    return List.of();
+                }
+
+                for (int i = 0; i < 9; i++) {
+                    final double option = multipliedBy10 + i;
+                    if (!isInRange.test(option)) {
+                        break;
+                    }
+
+                    result.add(String.valueOf(option));
                 }
 
                 return result;
