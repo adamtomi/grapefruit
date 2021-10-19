@@ -3,6 +3,8 @@ package grapefruit.command.dispatcher;
 import com.google.common.reflect.TypeToken;
 import grapefruit.command.CommandContainer;
 import grapefruit.command.CommandDefinition;
+import grapefruit.command.dispatcher.listener.PreDispatchListener;
+import grapefruit.command.dispatcher.listener.PreProcessLitener;
 import grapefruit.command.parameter.modifier.Flag;
 import grapefruit.command.parameter.modifier.OptParam;
 import grapefruit.command.parameter.modifier.Source;
@@ -89,7 +91,7 @@ public class CommandDispatcherTests {
                 .build();
         final StatusAwareContainer container = new ContainerWithASingleCommand();
         dispatcher.registerCommands(container);
-        dispatcher.registerListener((source, commandLine) -> false);
+        dispatcher.registerListener((PreProcessLitener<Object>) (source, commandLine) -> false);
         dispatcher.dispatchCommand(new Object(), "test");
         assertFalse(container.status);
     }
@@ -100,7 +102,7 @@ public class CommandDispatcherTests {
                 .build();
         final StatusAwareContainer container = new ContainerWithASingleCommand();
         dispatcher.registerCommands(container);
-        dispatcher.registerListener((source, commandLine, registration) -> false);
+        dispatcher.registerListener((PreDispatchListener<Object>) (context, registration) -> false);
         dispatcher.dispatchCommand(new Object(), "test");
         assertFalse(container.status);
     }

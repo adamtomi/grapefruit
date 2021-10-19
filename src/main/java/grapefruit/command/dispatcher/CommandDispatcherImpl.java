@@ -217,12 +217,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         );
     }
 
-    private boolean invokePreDispatchListeners(final @NotNull S source,
-                                               final @NotNull String commandLine,
+    private boolean invokePreDispatchListeners(final @NotNull CommandContext<S> context,
                                                final @NotNull CommandRegistration<S> registration) {
         return invokeListeners(
                 () -> this.preDispatchListeners,
-                x -> x.onPreDispatch(source, commandLine, registration),
+                x -> x.onPreDispatch(context, registration),
                 (x, ex) -> {
                     LOGGER.log(WARNING, format("PreDispatchListener %s threw an exception", x.getClass().getName()));
                     ex.printStackTrace();
@@ -277,10 +276,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     }
                 }
 
-                if (!invokePreDispatchListeners(source, commandLine, reg)) {
-                    return;
-                }
-
                 final Executor executor = reg.runAsync()
                         ? this.asyncExecutor
                         : this.directExecutor;
@@ -288,6 +283,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     try {
                         final CommandContext<S> context = processCommand(reg, commandLine, source, args, false);
                         postprocessArguments(context, reg.parameters(), commandLine);
+                        if (!invokePreDispatchListeners(context, reg)) {
+                            return;
+                        }
+
                         dispatchCommand(commandLine, reg, source, context.asMap().values());
                         invokePostDispatchListeners(context);
                     } catch (final CommandException ex) {
