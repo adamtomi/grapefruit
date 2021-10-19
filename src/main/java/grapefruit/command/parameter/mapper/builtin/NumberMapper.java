@@ -19,7 +19,6 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.IntStream;
 
 import static java.util.Objects.requireNonNull;
 
