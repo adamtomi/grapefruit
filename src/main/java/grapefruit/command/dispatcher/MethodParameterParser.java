@@ -133,7 +133,11 @@ final class MethodParameterParser<S> {
                             .map(x -> (FlagParameter<S>) x)
                             .toList();
                     if (existingFlags.stream().anyMatch(x -> x.flagName().equalsIgnoreCase(flagName))) {
-                        throw new IllegalStateException(format("Flag with name '%s' already registerd", flagName));
+                        throw new IllegalStateException(format("Flag with name '%s' already registered", flagName));
+                    }
+
+                    if (existingFlags.stream().anyMatch(x -> x.shorthand() == shorthand)) {
+                        throw new IllegalStateException(format("Flag with shorthand '%s' already registered", shorthand));
                     }
 
                     cmdParam = type.equals(FlagParameter.PRESENCE_FLAG_TYPE)
