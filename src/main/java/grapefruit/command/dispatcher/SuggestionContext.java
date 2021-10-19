@@ -10,6 +10,7 @@ class SuggestionContext<S> {
     private @Nullable CommandParameter<S> parameter;
     private @Nullable CommandInput input;
     private boolean flagNameConsumed;
+    private boolean suggestNext;
 
     public @NotNull Optional<CommandParameter<S>> parameter() {
         return Optional.ofNullable(this.parameter);
@@ -35,6 +36,14 @@ class SuggestionContext<S> {
         this.flagNameConsumed = flagNameConsumed;
     }
 
+    public boolean suggestNext() {
+        return this.suggestNext;
+    }
+
+    public void suggestNext(boolean suggestNext) {
+        this.suggestNext = suggestNext;
+    }
+
     public void reset() {
         this.parameter = null;
         this.input = null;
@@ -47,6 +56,7 @@ class SuggestionContext<S> {
                 "parameter=" + this.parameter +
                 ", input=" + this.input +
                 ", flagNameConsumed=" + this.flagNameConsumed +
+                ", suggestNext=" + this.suggestNext +
                 ']';
     }
 }

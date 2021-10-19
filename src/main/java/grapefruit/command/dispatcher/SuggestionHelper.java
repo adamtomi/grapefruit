@@ -30,7 +30,10 @@ class SuggestionHelper<S> {
         final List<CommandParameter<S>> parameters = registration.parameters();
         final Optional<CommandParameter<S>> parameterOpt = suggestionContext.parameter()
                 .or(() -> findFirstUnseenParameter(parameters, context));
-        final Optional<CommandInput> lastInputOpt = suggestionContext.input();
+        final Optional<CommandInput> lastInputOpt = suggestionContext.suggestNext()
+                ? Optional.of(new BlankCommandInput(1))
+                : suggestionContext.input();
+
         if (parameterOpt.isEmpty() || lastInputOpt.isEmpty()) {
             return List.of();
         }

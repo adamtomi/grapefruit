@@ -489,11 +489,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             return List.of();
         }
 
-        if (commandLine.charAt(commandLine.length() - 1) == ' ') {
-            args.add(new BlankCommandInput(1)); // This is a bit hacky
-        }
-
-        final String last = args.getLast().rawArg().trim();
+        final boolean suggestNext = commandLine.charAt(commandLine.length() - 1) == ' ';
+        final String last = suggestNext ? "" : args.getLast().rawArg().trim();
         /*
          * Both routeCommand and processCommand remove elements from the queue
          * but we need all elements for proper auto-completion
@@ -510,6 +507,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
             try {
                 final CommandContext<S> context = processCommand(registration, commandLine, source, args, true);
+                if (suggestNext) {
+                    context.suggestions().suggestNext(true);
+                }
+
                 suggestions.addAll(this.suggestionHelper.listSuggestions(context, registration, args));
             } catch (final CommandException ignored) {}
         } else {
