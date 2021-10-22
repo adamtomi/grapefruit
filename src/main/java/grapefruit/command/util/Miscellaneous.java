@@ -31,6 +31,11 @@ public final class Miscellaneous {
         throw new UnsupportedOperationException("No instances for you :(");
     }
 
+    public static boolean shorthandNotEmpty(final @NotNull FlagParameter<?> flag) {
+        requireNonNull(flag, "flag cannot be null");
+        return flag.shorthand() != ' ';
+    }
+
     @SuppressWarnings("SuspiciousMethodCalls")
     public static @NotNull Class<?> box(final @NotNull Type type) {
         final @Nullable Class<?> boxed = BOX_MAP.get(type);

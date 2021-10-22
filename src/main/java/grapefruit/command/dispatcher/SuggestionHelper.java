@@ -17,6 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static grapefruit.command.util.Miscellaneous.formatFlag;
+import static grapefruit.command.util.Miscellaneous.shorthandNotEmpty;
 
 class SuggestionHelper<S> {
     private static final Pattern FLAG_GROUP_PATTERN = Pattern.compile("^-([a-zA-Z]+)$");
@@ -69,7 +70,7 @@ class SuggestionHelper<S> {
                     final List<FlagParameter<S>> unseenFlags = collectUnseenFlags(parameters, context);
                     for (final FlagParameter<S> flag : unseenFlags) {
                         final char shorthand = flag.shorthand();
-                        if (shorthandNotEmpty(shorthand) && !currentArg.contains(String.valueOf(shorthand))) {
+                        if (shorthandNotEmpty(flag) && !currentArg.contains(String.valueOf(shorthand))) {
                             suggestions.add(currentArg + shorthand);
                         }
                     }
@@ -100,9 +101,9 @@ class SuggestionHelper<S> {
                 continue;
             }
 
-            final char shorthand = flag.shorthand();
             result.add(formatFlag(name));
-            if (shorthandNotEmpty(shorthand)) {
+            if (shorthandNotEmpty(flag)) {
+                final char shorthand = flag.shorthand();
                 result.add(formatFlag(shorthand));
             }
         }
@@ -120,9 +121,5 @@ class SuggestionHelper<S> {
         }
 
         return Optional.empty();
-    }
-
-    private boolean shorthandNotEmpty(final char shorthand) {
-        return shorthand != ' ';
     }
 }

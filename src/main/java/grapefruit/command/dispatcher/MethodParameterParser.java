@@ -136,7 +136,8 @@ final class MethodParameterParser<S> {
                         throw new IllegalStateException(format("Flag with name '%s' already registered", flagName));
                     }
 
-                    if (existingFlags.stream().anyMatch(x -> x.shorthand() == shorthand)) {
+                    if (existingFlags.stream().filter(Miscellaneous::shorthandNotEmpty)
+                            .anyMatch(x -> x.shorthand() == shorthand)) {
                         throw new IllegalStateException(format("Flag with shorthand '%s' already registered", shorthand));
                     }
 
