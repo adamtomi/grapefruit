@@ -501,18 +501,23 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
         if (routeResult instanceof CommandGraph.RouteResult.Success<S> success) {
             final CommandRegistration<S> registration = success.registration();
-            if (!Miscellaneous.checkAuthorized(source, registration.permission().orElse(null), this.commandAuthorizer)) {
-                return List.of();
-            }
-
-            try {
-                final CommandContext<S> context = processCommand(registration, commandLine, source, args, true);
-                if (suggestNext) {
-                    context.suggestions().suggestNext(true);
+            // Ignore redirect registrations
+            if (registration instanceof RedirectingCommandRegistration<S>) {
+                suggestions.addAll(this.commandGraph.listSuggestions(argsCopy));
+            } else {
+                if (!Miscellaneous.checkAuthorized(source, registration.permission().orElse(null), this.commandAuthorizer)) {
+                    return List.of();
                 }
 
-                suggestions.addAll(this.suggestionHelper.listSuggestions(context, registration, args));
-            } catch (final CommandException ignored) {}
+                try {
+                    final CommandContext<S> context = processCommand(registration, commandLine, source, args, true);
+                    if (suggestNext) {
+                        context.suggestions().suggestNext(true);
+                    }
+
+                    suggestions.addAll(this.suggestionHelper.listSuggestions(context, registration, args));
+                } catch (final CommandException ignored) {}
+            }
         } else {
             suggestions.addAll(this.commandGraph.listSuggestions(argsCopy));
         }

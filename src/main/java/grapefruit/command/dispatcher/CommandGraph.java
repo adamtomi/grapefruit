@@ -108,7 +108,10 @@ final class CommandGraph<S> {
         CommandNode<S> commandNode = this.rootNode;
         CommandInput part;
         while ((part = args.peek()) != null) {
-            if (commandNode.registration().isPresent()) {
+            final Optional<CommandRegistration<S>> registrationOpt = commandNode.registration();
+            final boolean shouldStop = registrationOpt.isPresent()
+                    && !(registrationOpt.orElseThrow() instanceof RedirectingCommandRegistration<S>); // Ignore redirect registrations
+            if (shouldStop) {
                 break;
 
             } else {
@@ -153,30 +156,36 @@ final class CommandGraph<S> {
             }
         }
 
-        final Optional<CommandRegistration<S>> registration = node.registration();
-        if (registration.isPresent()) {
-            for (final CommandParameter<S> parameter : registration.get().parameters()) {
-                final String syntaxPart;
-                if (parameter.isFlag()) {
-                    final FlagParameter<?> flag = (FlagParameter<?>) parameter;
-                    if (flag.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
-                        syntaxPart = formatFlag(flag.flagName());
+        final Optional<CommandRegistration<S>> registrationOpt = node.registration();
+        if (registrationOpt.isPresent()) {
+            final CommandRegistration<S> registration = registrationOpt.orElseThrow();
+            // Ignore redirect registrations
+            if (!(registration instanceof RedirectingCommandRegistration<S>)) {
+                for (final CommandParameter<S> parameter : registration.parameters()) {
+                    final String syntaxPart;
+                    if (parameter.isFlag()) {
+                        final FlagParameter<?> flag = (FlagParameter<?>) parameter;
+                        if (flag.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
+                            syntaxPart = formatFlag(flag.flagName());
+                        } else {
+                            syntaxPart = formatFlag(flag.flagName()) + " " + flag.name();
+                        }
                     } else {
-                        syntaxPart = formatFlag(flag.flagName()) + " " + flag.name();
+                        syntaxPart = parameter.name();
                     }
-                } else {
-                    syntaxPart = parameter.name();
+
+                    joiner.add(parameter.isOptional() ? AS_OPTIONAL.apply(syntaxPart) : AS_REQUIRED.apply(syntaxPart));
                 }
 
-                joiner.add(parameter.isOptional() ? AS_OPTIONAL.apply(syntaxPart) : AS_REQUIRED.apply(syntaxPart));
+                return joiner.toString();
             }
-
-        } else {
-            final String children = node.children().stream()
-                    .map(CommandNode::primary)
-                    .collect(Collectors.joining("|"));
-            joiner.add(AS_REQUIRED.apply(children));
         }
+
+        final String children = node.children().stream()
+                .map(CommandNode::primary)
+                .sorted()
+                .collect(Collectors.joining("|"));
+        joiner.add(AS_REQUIRED.apply(children));
 
         return joiner.toString();
     }
