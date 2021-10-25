@@ -483,12 +483,13 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     public @NotNull List<String> listSuggestions(final @NotNull S source,
                                                  final @NotNull String commandLine) {
         requireNonNull(source, "source cannot be null");
+        requireNonNull(commandLine, "commandLine cannot be null");
         final Deque<CommandInput> args = new ArrayDeque<>(this.inputTokenizer.tokenizeInput(commandLine));
         if (args.size() == 0) {
             return List.of();
         }
 
-        final boolean suggestNext = commandLine.charAt(commandLine.length() - 1) == ' ';
+        final boolean suggestNext = Miscellaneous.endsWith(commandLine, ' ');
         final String last = suggestNext ? "" : args.getLast().rawArg().trim();
         /*
          * Both routeCommand and processCommand remove elements from the queue
