@@ -87,7 +87,7 @@ public final class ParameterMapperRegistry<S> {
         try {
             this.lock.lock();
             final @Nullable ParameterMapper<S, T> mapper = (ParameterMapper<S, T>) this.defaultMappers.get(
-                    TypeToken.of(Miscellaneous.box(type.getRawType()))
+                    Miscellaneous.box(type)
             );
             return Optional.ofNullable(mapper);
         } finally {

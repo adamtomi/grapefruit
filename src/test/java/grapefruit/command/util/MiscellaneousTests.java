@@ -40,9 +40,25 @@ public class MiscellaneousTests {
 
     @ParameterizedTest
     @ValueSource(classes = {Object.class, String.class, CharSequence.class})
-    public void box_nonPrimitiveInput(final Class<?> clazz) {
+    public void box_objectInput(final Class<?> clazz) {
         final Class<?> boxed = Miscellaneous.box(clazz);
         assertEquals(clazz, boxed);
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {int.class, boolean.class, long.class})
+    public void box_typeToken_primitiveInput(final Class<?> clazz) {
+        final TypeToken<?> type = TypeToken.of(clazz);
+        final TypeToken<?> boxed = Miscellaneous.box(type);
+        assertNotEquals(type, boxed);
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {Object.class, String.class, CharSequence.class})
+    public void box_typeToken_objectInput(final Class<?> clazz) {
+        final TypeToken<?> type = TypeToken.of(clazz);
+        final TypeToken<?> boxed = Miscellaneous.box(type);
+        assertEquals(type, boxed);
     }
 
     @ParameterizedTest

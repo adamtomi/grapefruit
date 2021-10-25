@@ -1,5 +1,6 @@
 package grapefruit.command.util;
 
+import com.google.common.reflect.TypeToken;
 import grapefruit.command.dispatcher.CommandAuthorizer;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.FlagParameter;
@@ -40,6 +41,12 @@ public final class Miscellaneous {
     public static @NotNull Class<?> box(final @NotNull Type type) {
         final @Nullable Class<?> boxed = BOX_MAP.get(type);
         return boxed == null ? (Class<?>) type : boxed;
+    }
+
+    public static @NotNull TypeToken<?> box(final @NotNull TypeToken<?> type) {
+        final Class<?> rawType = type.getRawType();
+        final @Nullable Class<?> boxed = BOX_MAP.get(rawType);
+        return boxed == null ? type : TypeToken.of(boxed);
     }
 
     public static @Nullable String emptyToNull(final @NotNull String value) {
