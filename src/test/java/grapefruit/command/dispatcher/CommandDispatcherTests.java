@@ -5,9 +5,13 @@ import grapefruit.command.CommandContainer;
 import grapefruit.command.CommandDefinition;
 import grapefruit.command.dispatcher.listener.PreDispatchListener;
 import grapefruit.command.dispatcher.listener.PreProcessLitener;
+import grapefruit.command.parameter.mapper.AbstractParameterMapper;
+import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.parameter.modifier.Flag;
 import grapefruit.command.parameter.modifier.OptParam;
 import grapefruit.command.parameter.modifier.Source;
+import grapefruit.command.util.AnnotationList;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -15,6 +19,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -235,7 +240,7 @@ public class CommandDispatcherTests {
     @ParameterizedTest
     @CsvSource({
             "roo,root",
-            "'root ',method01|method02",
+            "'root ',method01|method02|method03",
             "'root method01 --flag ',-9|-8|-7|-6|-5|-4|-3|-2|-1|1|2|3|4|5|6|7|8|9",
             "root method01 --flag 1,10|11|12|13|14|15|16|17|18|19",
             "root method01 Hello -,-9|-8|-7|-6|-5|-4|-3|-2|-1|--flag|--other-flag",
@@ -250,11 +255,13 @@ public class CommandDispatcherTests {
             "root method02 Hey_there! -3,-30|-31|-32|-33|-34|-35|-36|-37|-38|-39",
             "root method02 hello -345 -a,-af|-ao",
             "root method02 -f hello -345 -a c -,-o|--other-flag",
-            "'root method02 -ao ',"
+            "'root method02 -ao ',",
+            "root method03 -foa 1,10|11|12|13|14|15|16|17|18|19"
     })
     public void listSuggestions_validInput(final String commandLine, final String expectedString) {
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.builder(TypeToken.of(Object.class))
                 .build();
+        dispatcher.mappers().registerMapper(new DummyParameterMapper());
         dispatcher.registerCommands(new ContainerWithComplexCommands());
         final List<String> expected = expectedString == null ? List.of() : Arrays.asList(expectedString.split("\\|"));
         final List<String> result = dispatcher.listSuggestions(new Object(), commandLine);
@@ -360,6 +367,14 @@ public class CommandDispatcherTests {
                              final @Flag(value = "another-flag", shorthand = 'a') char c) {
             this.status = true;
         }
+
+        @CommandDefinition(route = "root method03")
+        public void method03(final String str,
+                             final @Flag(value = "flag", shorthand = 'f') int i,
+                             final @Flag(value = "other-flag", shorthand = 'o') Object o,
+                             final @Flag(value = "another-flag", shorthand = 'a') String s) {
+            this.status = true;
+        }
     }
 
     /* Command source classes */
@@ -371,5 +386,26 @@ public class CommandDispatcherTests {
 
     private static final class GeneralCommandSource implements CommandSource {
         public  GeneralCommandSource() {}
+    }
+
+    private static final class DummyParameterMapper extends AbstractParameterMapper<Object, Object> {
+
+        private DummyParameterMapper() {
+            super(TypeToken.of(Object.class));
+        }
+
+        @Override
+        public @NotNull Object map(final @NotNull CommandContext<Object> context,
+                                   final @NotNull Queue<CommandInput> args,
+                                   final @NotNull AnnotationList modifiers) throws ParameterMappingException {
+            return new Object();
+        }
+
+        @Override
+        public @NotNull List<String> listSuggestions(final @NotNull CommandContext<Object> context,
+                                                     final @NotNull String currentArg,
+                                                     final @NotNull AnnotationList modifiers) {
+            return Arrays.asList("First", "Second", "Third");
+        }
     }
 }
