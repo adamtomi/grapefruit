@@ -25,6 +25,7 @@ import grapefruit.command.message.Messenger;
 import grapefruit.command.message.Template;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.FlagParameter;
+import grapefruit.command.parameter.ValueFlagParameter;
 import grapefruit.command.parameter.mapper.ParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMapperRegistry;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
@@ -281,7 +282,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         : this.directExecutor;
                 executor.execute(() -> {
                     try {
-                        final CommandContext<S> context = processCommand(reg, commandLine, source, args, false, false);
+                        final CommandContext<S> context = processCommand(reg, commandLine, source, args);
                         postprocessArguments(context, reg.parameters(), commandLine);
                         if (!invokePreDispatchListeners(context, reg)) {
                             return;
@@ -334,38 +335,23 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private @NotNull CommandContext<S> processCommand(final @NotNull CommandRegistration<S> registration,
                                                       final @NotNull String commandLine,
                                                       final @NotNull S source,
-                                                      final Queue<CommandInput> args,
-                                                      final boolean suggestions,
-                                                      final boolean suggestNext) throws CommandException {
-        System.out.println("processCommand");
-        System.out.println("'" + commandLine + "'");
+                                                      final @NotNull Queue<CommandInput> args) throws CommandException {
         final List<CommandParameter<S>> parameters = registration.parameters();
         final CommandContext<S> context = CommandContext.create(source, commandLine, parameters);
-        final SuggestionContext<S> suggestionContext = context.suggestions();
-        suggestionContext.suggestNext(suggestNext);
-        System.out.println("entering try");
         try {
             int parameterIndex = 0;
             CommandInput input;
-            System.out.println("entering while");
             while ((input = args.peek()) != null) {
-                suggestionContext.reset();
-                suggestionContext.input(input);
-                System.out.println(input);
-                System.out.println(parameterIndex);
-
                 try {
                     final String rawInput = input.rawArg();
                     final Matcher matcher = FlagGroup.VALID_PATTERN.matcher(rawInput);
                     if (matcher.matches()) {
-                        System.out.println("flag");
                         final FlagGroup<S> flags = FlagGroup.parse(rawInput, matcher, parameters);
                         for (final FlagParameter<S> flag : flags) {
                             consumeFlag(flag, context, args, input, rawInput);
                         }
 
                     } else {
-                        System.out.println("standard");
                         consumeArgument(commandLine, parameters, context, args, parameterIndex);
                     }
 
@@ -374,27 +360,15 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         args.element().markConsumed();
                     }
 
-                    if (suggestNext) {
-                        suggestionContext.parameter(null);
-                    }
                 } finally {
                     if (!args.isEmpty() && args.element().isConsumed()) {
                         args.remove();
                     }
                 }
-
             }
 
-            System.out.println("done, returning context");
-            System.out.println(context);
             return context;
         } catch (final Throwable ex) {
-            System.out.println("error");
-            if (suggestions) {
-                System.out.println("returning context");
-                return context;
-            }
-
             if (ex instanceof CommandException) {
                 throw (CommandException) ex;
             }
@@ -403,33 +377,109 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
+    private @NotNull CommandContext<S> processForSuggestions(final @NotNull CommandRegistration<S> registration,
+                                                             final @NotNull String commandLine,
+                                                             final @NotNull S source,
+                                                             final @NotNull Queue<CommandInput> args,
+                                                             final boolean suggestNext) {
+        System.out.println("---------------------");
+        final List<CommandParameter<S>> parameters = registration.parameters();
+        final CommandContext<S> context = CommandContext.create(source, commandLine, parameters);
+        final SuggestionContext<S> suggestionContext = context.suggestions();
+        suggestionContext.suggestNext(suggestNext);
+
+        try {
+            int parameterIndex = 0;
+            CommandInput input;
+            while ((input = args.peek()) != null) {
+                suggestionContext.input(input);
+                /*
+                 * "Reset" the suggestion context. If we get to this
+                 * point, that means that the parameter has been parsed
+                 * successfully, so we don't need them anymore for suggestions
+                 */
+                suggestionContext.flagNameConsumed(false);
+                suggestionContext.parameter(null);
+
+                try {
+                    final String rawInput = input.rawArg();
+                    final Matcher matcher = FlagGroup.VALID_PATTERN.matcher(rawInput);
+                    if (matcher.matches()) {
+                        final FlagGroup<S> flags = FlagGroup.parse(rawInput, matcher, parameters);
+                        for (final FlagParameter<S> flag : flags) {
+                            final boolean isValueFlag = flag instanceof ValueFlagParameter<S>;
+                            // This means that the only argument in the queue is the flag itself
+                            // The only thing to decide is when to leave the loop.
+                            final boolean exitLoop = isValueFlag && args.size() <= 1 && flags.count() > 1;
+                            if (exitLoop && !suggestNext) {
+                                break;
+                            }
+
+                            suggestionContext.flagNameConsumed(true);
+                            suggestionContext.parameter(flag);
+
+                            /*if (exitLoop) {
+                                break;
+                            }*/
+
+                            consumeFlag(flag, context, args, input, rawInput);
+                            /*
+                             * For instance this is the flag: --some-flag 10
+                             * The cached input currently is --some-flag, but
+                             * it should be next parameter, since that's what
+                             * should be used for suggestions
+                             */
+                            if (isValueFlag) {
+                                suggestionContext.input(args.element());
+                            }
+                        }
+
+                    } else {
+                        System.out.println("standard parameter");
+                        final CommandParameter<S> parameter = nextParameter(commandLine, parameters, context, parameterIndex);
+                        System.out.println("next param is");
+                        System.out.println(parameter.name());
+                        suggestionContext.parameter(parameter);
+                        System.out.println("updated sugg context, about to consume");
+                        consumeArgument(parameter, context, args);
+                    }
+
+                    parameterIndex++;
+                    if (!args.isEmpty()) {
+                        args.element().markConsumed();
+                    }
+
+                } finally {
+                    if (!args.isEmpty() && args.element().isConsumed()) {
+                        args.remove();
+                    }
+                }
+            }
+        } catch (final CommandException ignored) {}
+
+        System.out.println(context);
+        System.out.println("---------------------");
+        return context;
+    }
+
+
     private void consumeFlag(final @NotNull FlagParameter<S> flag,
                              final @NotNull CommandContext<S> context,
                              final @NotNull Queue<CommandInput> args,
                              final @NotNull CommandInput input,
                              final @NotNull String rawInput) throws CommandException {
-        System.out.println("consumeFlag");
-        System.out.println("-- [" + flag.flagName() + "] --");
         input.markConsumed();
         final String flagName = flag.flagName();
         final Optional<Object> stored = context.find(flagName);
         if (stored.isPresent()) {
-            System.out.println("duplicate");
             throw new FlagDuplicateException(flagName);
         }
 
-        final SuggestionContext<S> suggestionContext = context.suggestions();
-        suggestionContext.parameter(flag);
-        suggestionContext.flagNameConsumed(true);
-
         if (flag.type().equals(FlagParameter.PRESENCE_FLAG_TYPE)) {
-            System.out.println("presence flag");
             context.put(flagName, true);
         } else {
-            System.out.println("value flag");
             args.remove();
             if (args.isEmpty()) {
-                System.out.println("no arguments");
                 // This means that there aren't any values for this flag
                 throw new CommandSyntaxException(Message.of(
                         MessageKeys.MISSING_FLAG_VALUE,
@@ -437,16 +487,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 ));
             }
 
-            System.out.println("parsing");
             final Object parsedValue = mapParameter(flag, context, args);
-            System.out.println("done");
-            System.out.println(parsedValue);
             context.put(flagName, parsedValue);
-            suggestionContext.input(args.element());
-        }
-
-        if (suggestionContext.suggestNext()) {
-            suggestionContext.flagNameConsumed(false);
         }
     }
 
@@ -455,35 +497,43 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                  final @NotNull CommandContext<S> context,
                                  final @NotNull Queue<CommandInput> args,
                                  final int parameterIndex) throws CommandException {
-        System.out.println("consumeArgument");
+        final CommandParameter<S> parameter = nextParameter(commandLine, parameters, context, parameterIndex);
+        consumeArgument(parameter, context, args);
+    }
+
+    private void consumeArgument(final @NotNull CommandParameter<S> parameter,
+                                 final @NotNull CommandContext<S> context,
+                                 final @NotNull Queue<CommandInput> args) throws CommandException {
+        System.out.println("consuming argument...");
+        final Object parsedValue = mapParameter(parameter, context, args);
+        System.out.println("done, ");
+        System.out.println(parameter);
+        System.out.println("update context");
+        context.put(parameter.name(), parsedValue);
+        System.out.println("updated context");
+    }
+
+    private @NotNull CommandParameter<S> nextParameter(final @NotNull String commandLine,
+                                                       final @NotNull List<CommandParameter<S>> parameters,
+                                                       final @NotNull CommandContext<S> context,
+                                                       final int parameterIndex) throws CommandException {
         if (parameterIndex >= parameters.size()) {
-            System.out.println("invalid index");
             throw new CommandSyntaxException(Message.of(
                     MessageKeys.TOO_MANY_ARGUMENTS,
                     Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))
             ));
         }
 
-        final SuggestionContext<S> suggestionContext = context.suggestions();
         final Optional<CommandParameter<S>> firstNonFlagParameter = parameters.stream()
                 .filter(x -> !x.isFlag())
                 .filter(x -> context.find(x.name()).isEmpty())
                 .findFirst();
         if (firstNonFlagParameter.isEmpty()) {
-            System.out.println("first non flag is empty");
-            suggestionContext.parameter(null);
             throw new CommandSyntaxException(Message.of(MessageKeys.MISSING_FLAG,
                     Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))));
         }
 
-        System.out.println("we have a parameter");
-        final CommandParameter<S> parameter = firstNonFlagParameter.orElseThrow();
-        System.out.println(parameterIndex);
-        suggestionContext.parameter(parameter);
-        System.out.println("about parse");
-        final Object parsedValue = mapParameter(parameter, context, args);
-        System.out.println("done");
-        context.put(parameter.name(), parsedValue);
+        return firstNonFlagParameter.orElseThrow();
     }
 
     private @Nullable Object mapParameter(final @NotNull CommandParameter<S> parameter,
@@ -547,20 +597,13 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     return List.of();
                 }
 
-                try {
-                    System.out.println("================================");
-                    if (suggestNext) {
-                        System.out.println("suggestNext");
-                    }
-                    final CommandContext<S> context = processCommand(registration, commandLine, source, args, true, suggestNext);
-                    suggestions.addAll(this.suggestionHelper.listSuggestions(context, registration, args));
-                } catch (final CommandException ignored) {}
+                final CommandContext<S> context = processForSuggestions(registration, commandLine, source, args, suggestNext);
+                suggestions.addAll(this.suggestionHelper.listSuggestions(context, registration, args));
             }
         } else {
             suggestions.addAll(this.commandGraph.listSuggestions(argsCopy));
         }
 
-        System.out.println("================================");
         return suggestions.stream()
                 .filter(x -> Miscellaneous.startsWithIgnoreCase(x, last))
                 .toList();

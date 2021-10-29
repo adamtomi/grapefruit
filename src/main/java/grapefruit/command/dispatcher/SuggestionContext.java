@@ -44,12 +44,6 @@ class SuggestionContext<S> {
         this.suggestNext = suggestNext;
     }
 
-    public void reset() {
-        this.parameter = null;
-        this.input = null;
-        this.flagNameConsumed = false;
-    }
-
     @Override
     public String toString() {
         return "SuggestionContext[" +

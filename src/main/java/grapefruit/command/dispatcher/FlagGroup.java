@@ -54,6 +54,10 @@ public class FlagGroup<S> implements Iterable<FlagParameter<S>> {
         return new FlagGroup<>(flags);
     }
 
+    public int count() {
+        return this.flags.size();
+    }
+
     @Override
     public @NotNull Iterator<FlagParameter<S>> iterator() {
         return this.flags.iterator();

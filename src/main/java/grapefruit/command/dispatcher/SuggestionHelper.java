@@ -27,7 +27,6 @@ class SuggestionHelper<S> {
     public @NotNull List<String> listSuggestions(final @NotNull CommandContext<S> context,
                                                  final @NotNull CommandRegistration<S> registration,
                                                  final @NotNull Queue<CommandInput> args) {
-        System.out.println("helper");
         final SuggestionContext<S> suggestionContext = context.suggestions();
         final List<CommandParameter<S>> parameters = registration.parameters();
         final Optional<CommandParameter<S>> parameterOpt = suggestionContext.parameter()
@@ -36,6 +35,7 @@ class SuggestionHelper<S> {
                 ? Optional.of(new BlankCommandInput(1))
                 : suggestionContext.input();
 
+        System.out.println(suggestionContext);
         System.out.println(parameterOpt);
         System.out.println(lastInputOpt);
         if (parameterOpt.isEmpty() || lastInputOpt.isEmpty()) {
@@ -51,13 +51,6 @@ class SuggestionHelper<S> {
 
         final ParameterMapper<S, ?> mapper = parameter.mapper();
         final AnnotationList modifiers = parameter.modifiers();
-        System.out.println(suggestionContext);
-        System.out.println(parameterOpt);
-        System.out.println("...");
-        System.out.println(lastInputOpt);
-        System.out.println("...");
-        System.out.println(parameter);
-        System.out.println(currentArg);
         // Lists returned by ParameterMappers may be immutable, so we need to
         // create a mutable copy of the received list
         final List<String> suggestions = new ArrayList<>((isFlag && !flagNameConsumed)
@@ -89,10 +82,6 @@ class SuggestionHelper<S> {
         }
 
         Collections.sort(suggestions);
-        System.out.println("done with sorting...");
-        System.out.println(".......");
-        System.out.println(suggestions);
-        System.out.println(".......");
         return suggestions;
     }
 

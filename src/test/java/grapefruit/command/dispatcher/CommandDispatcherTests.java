@@ -205,6 +205,7 @@ public class CommandDispatcherTests {
     public void dispatchCommand_complex_validInput(final String commandLine) {
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.builder(TypeToken.of(Object.class))
                 .build();
+        dispatcher.mappers().registerMapper(new DummyParameterMapper());
         final StatusAwareContainer container = new ContainerWithComplexCommands();
         dispatcher.registerCommands(container);
         dispatcher.dispatchCommand(new Object(), commandLine);
@@ -231,6 +232,7 @@ public class CommandDispatcherTests {
     public void dispatchCommand_complex_invalidInput(final String commandLine) {
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.builder(TypeToken.of(Object.class))
                 .build();
+        dispatcher.mappers().registerMapper(new DummyParameterMapper());
         final StatusAwareContainer container = new ContainerWithComplexCommands();
         dispatcher.registerCommands(container);
         dispatcher.dispatchCommand(new Object(), commandLine);
@@ -240,7 +242,7 @@ public class CommandDispatcherTests {
     @ParameterizedTest
     @CsvSource({
             "roo,root",
-            "'root ',method01|method02|method03",
+            "'root ',method01|method02|method03|method04",
             "'root method01 --flag ',-9|-8|-7|-6|-5|-4|-3|-2|-1|1|2|3|4|5|6|7|8|9",
             "root method01 --flag 1,10|11|12|13|14|15|16|17|18|19",
             "root method01 Hello -,-9|-8|-7|-6|-5|-4|-3|-2|-1|--flag|--other-flag",
@@ -256,7 +258,8 @@ public class CommandDispatcherTests {
             "root method02 hello -345 -a,-af|-ao",
             "root method02 -f hello -345 -a c -,-o|--other-flag",
             "'root method02 -ao ',",
-            "root method03 -foa 1,10|11|12|13|14|15|16|17|18|19"
+            "root method03 -foa 1,10|11|12|13|14|15|16|17|18|19",
+            "'root method04 hey_there ',-9|-8|-7|-6|-5|-4|-3|-2|-1|1|2|3|4|5|6|7|8|9"
     })
     public void listSuggestions_validInput(final String commandLine, final String expectedString) {
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.builder(TypeToken.of(Object.class))
@@ -268,13 +271,13 @@ public class CommandDispatcherTests {
         assertTrue(contentEquals(expected, result));
     }
 
-    private static boolean contentEquals(final List<String> expected, final List<String> result) {
-        if (expected.size() != result.size()) {
+    private static boolean contentEquals(final List<String> expected, final List<String> actual) {
+        if (expected.size() != actual.size()) {
             return false;
         }
 
         for (final String each : expected) {
-            if (!result.contains(each)) {
+            if (!actual.contains(each)) {
                 return false;
             }
         }
@@ -373,6 +376,14 @@ public class CommandDispatcherTests {
                              final @Flag(value = "flag", shorthand = 'f') int i,
                              final @Flag(value = "other-flag", shorthand = 'o') Object o,
                              final @Flag(value = "another-flag", shorthand = 'a') String s) {
+            this.status = true;
+        }
+
+        @CommandDefinition(route = "root method04")
+        public void method04(final String str,
+                             final int i,
+                             final Object o,
+                             final double d) {
             this.status = true;
         }
     }
