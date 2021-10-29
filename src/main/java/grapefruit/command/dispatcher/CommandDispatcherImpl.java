@@ -382,7 +382,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                                              final @NotNull S source,
                                                              final @NotNull Queue<CommandInput> args,
                                                              final boolean suggestNext) {
-        System.out.println("---------------------");
         final List<CommandParameter<S>> parameters = registration.parameters();
         final CommandContext<S> context = CommandContext.create(source, commandLine, parameters);
         final SuggestionContext<S> suggestionContext = context.suggestions();
@@ -393,14 +392,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             CommandInput input;
             while ((input = args.peek()) != null) {
                 suggestionContext.input(input);
-                /*
-                 * "Reset" the suggestion context. If we get to this
-                 * point, that means that the parameter has been parsed
-                 * successfully, so we don't need them anymore for suggestions
-                 */
-                suggestionContext.flagNameConsumed(false);
-                suggestionContext.parameter(null);
-
                 try {
                     final String rawInput = input.rawArg();
                     final Matcher matcher = FlagGroup.VALID_PATTERN.matcher(rawInput);
@@ -418,11 +409,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                             suggestionContext.flagNameConsumed(true);
                             suggestionContext.parameter(flag);
 
-                            /*if (exitLoop) {
-                                break;
-                            }*/
-
                             consumeFlag(flag, context, args, input, rawInput);
+                            if (suggestNext) {
+                                suggestionContext.flagNameConsumed(false);
+                                suggestionContext.parameter(null);
+                            }
+
                             /*
                              * For instance this is the flag: --some-flag 10
                              * The cached input currently is --some-flag, but
@@ -435,13 +427,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         }
 
                     } else {
-                        System.out.println("standard parameter");
                         final CommandParameter<S> parameter = nextParameter(commandLine, parameters, context, parameterIndex);
-                        System.out.println("next param is");
-                        System.out.println(parameter.name());
                         suggestionContext.parameter(parameter);
-                        System.out.println("updated sugg context, about to consume");
                         consumeArgument(parameter, context, args);
+                        if (suggestNext) {
+                            suggestionContext.parameter(null);
+                        }
                     }
 
                     parameterIndex++;
@@ -457,8 +448,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             }
         } catch (final CommandException ignored) {}
 
-        System.out.println(context);
-        System.out.println("---------------------");
         return context;
     }
 
@@ -504,13 +493,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private void consumeArgument(final @NotNull CommandParameter<S> parameter,
                                  final @NotNull CommandContext<S> context,
                                  final @NotNull Queue<CommandInput> args) throws CommandException {
-        System.out.println("consuming argument...");
         final Object parsedValue = mapParameter(parameter, context, args);
-        System.out.println("done, ");
-        System.out.println(parameter);
-        System.out.println("update context");
         context.put(parameter.name(), parsedValue);
-        System.out.println("updated context");
     }
 
     private @NotNull CommandParameter<S> nextParameter(final @NotNull String commandLine,

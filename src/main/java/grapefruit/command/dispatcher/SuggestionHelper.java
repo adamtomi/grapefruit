@@ -35,9 +35,6 @@ class SuggestionHelper<S> {
                 ? Optional.of(new BlankCommandInput(1))
                 : suggestionContext.input();
 
-        System.out.println(suggestionContext);
-        System.out.println(parameterOpt);
-        System.out.println(lastInputOpt);
         if (parameterOpt.isEmpty() || lastInputOpt.isEmpty()) {
             return List.of();
         }
@@ -76,6 +73,14 @@ class SuggestionHelper<S> {
                         if (shorthandNotEmpty(flag) && !currentArg.contains(String.valueOf(shorthand))) {
                             suggestions.add(currentArg + shorthand);
                         }
+                    }
+                } else {
+                    /*
+                     * If this is true, the input is probably just a '-', and the last parsed
+                     * parameter happenes to be a flag.
+                     */
+                    if (currentArg.startsWith("-")) {
+                        suggestions.addAll(collectUnseenFlagSuggestions(parameters, context));
                     }
                 }
             }
