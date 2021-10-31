@@ -132,7 +132,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
 
         if (Modifier.isStatic(method.getModifiers())) {
-            throw new IllegalStateException(format("Static methods cannot be annotated with @CommandDefinition (%s)", method));
+            throw new IllegalStateException(format("Static methods may not be annotated with @CommandDefinition (%s)", method));
         }
 
         final String route = def.route();
