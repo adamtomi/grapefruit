@@ -41,7 +41,7 @@ final class CommandGraph<S> {
                 .collect(Collectors.toList());
 
         if (parts.isEmpty()) {
-            throw new IllegalArgumentException("Empty command tree detected");
+            throw new IllegalArgumentException("Empty command chain detected");
         }
 
         CommandNode<S> node = this.rootNode;
