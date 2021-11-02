@@ -395,6 +395,19 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 try {
                     final String rawInput = input.rawArg();
                     final Matcher matcher = FlagGroup.VALID_PATTERN.matcher(rawInput);
+
+                    /*
+                     * If the argument is '-', that could be the first character
+                     * of a flag, so if the current parameter is a flag, set that
+                     * as the next parameter to suggest.
+                     */
+                    if (rawInput.equals("-")) {
+                        final CommandParameter<S> parameter = parameters.get(parameterIndex);
+                        if (parameter.isFlag()) {
+                            suggestionContext.parameter(parameter);
+                        }
+                    }
+
                     if (matcher.matches()) {
                         final FlagGroup<S> flags = FlagGroup.parse(rawInput, matcher, parameters);
                         for (final FlagParameter<S> flag : flags) {

@@ -242,7 +242,7 @@ public class CommandDispatcherTests {
     @ParameterizedTest
     @CsvSource({
             "roo,root",
-            "'root ',method01|method02|method03|method04",
+            "'root ',method01|method02|method03|method04|method05",
             "'root method01 --flag ',-9|-8|-7|-6|-5|-4|-3|-2|-1|1|2|3|4|5|6|7|8|9",
             "root method01 --flag 1,10|11|12|13|14|15|16|17|18|19",
             "root method01 Hello -,-9|-8|-7|-6|-5|-4|-3|-2|-1|--flag|--other-flag",
@@ -259,7 +259,8 @@ public class CommandDispatcherTests {
             "root method02 -f hello -345 -a c -,-o|--other-flag",
             "'root method02 -ao ',",
             "root method03 -foa 1,10|11|12|13|14|15|16|17|18|19",
-            "'root method04 hey_there ',-9|-8|-7|-6|-5|-4|-3|-2|-1|1|2|3|4|5|6|7|8|9"
+            "'root method04 hey_there ',-9|-8|-7|-6|-5|-4|-3|-2|-1|1|2|3|4|5|6|7|8|9",
+            "root method05 First 12 -,--flag|--other-flag|-f|-o"
     })
     public void listSuggestions_validInput(final String commandLine, final String expectedString) {
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.builder(TypeToken.of(Object.class))
@@ -384,6 +385,14 @@ public class CommandDispatcherTests {
                              final int i,
                              final Object o,
                              final double d) {
+            this.status = true;
+        }
+
+        @CommandDefinition(route = "root method05")
+        public void method05(final Object o,
+                             final int i,
+                             final @Flag(value = "flag", shorthand = 'f') String s0,
+                             final @Flag(value = "other-flag", shorthand = 'o') String s1) {
             this.status = true;
         }
     }
