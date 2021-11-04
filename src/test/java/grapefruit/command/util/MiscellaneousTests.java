@@ -2,7 +2,6 @@ package grapefruit.command.util;
 
 import com.google.common.reflect.TypeToken;
 import grapefruit.command.dispatcher.CommandContext;
-import grapefruit.command.dispatcher.CommandContextTests;
 import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.FlagParameter;
@@ -216,9 +215,28 @@ public class MiscellaneousTests {
         assertEquals(name, result);
     }
 
+    @ParameterizedTest
+    @ValueSource(classes = {String.class, Object.class, Integer.class, Boolean.class})
+    public void primitiveSafeValue_nonPrimitive(final @NotNull Class<?> clazz) {
+        final Object result = Miscellaneous.primitiveSafeValue(new DummyParameter(clazz, "test"), null);
+        assertNull(result);
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {char.class, boolean.class, int.class, long.class, float.class})
+    public void primitiveSafeValue_primitive(final @NotNull Class<?> clazz) {
+        final Object result = Miscellaneous.primitiveSafeValue(new DummyParameter(clazz, "test"), null);
+        assertNotNull(result);
+    }
+
     private static final class DummyParameter extends StandardParameter<Object> {
         private DummyParameter(final String name) {
-            super(name, false, TypeToken.of(Object.class), new AnnotationList(), new DummyParameterMapper());
+            this(Object.class, name);
+        }
+
+        private DummyParameter(final Class<?> clazz,
+                               final String name) {
+            super(name, false, TypeToken.of(clazz), new AnnotationList(), new DummyParameterMapper());
         }
     }
 

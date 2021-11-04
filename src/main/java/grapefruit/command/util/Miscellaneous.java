@@ -145,4 +145,15 @@ public final class Miscellaneous {
                 ? ((FlagParameter<?>) parameter).flagName()
                 : parameter.name();
     }
+
+    // Converts null values to primitive defaults if the type of the parameter is primitive
+    public static @Nullable Object primitiveSafeValue(final @NotNull CommandParameter<?> parameter,
+                                                      final @Nullable Object obj) {
+        final Class<?> type = parameter.type().getRawType();
+        if (obj == null && type.isPrimitive()) {
+            return nullToPrimitive(type);
+        }
+
+        return obj;
+    }
 }

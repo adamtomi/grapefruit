@@ -48,10 +48,7 @@ public class CommandContext<S> {
 
         for (final CommandParameter<S> parameter : params) {
             final String name = Miscellaneous.parameterName(parameter);
-            final Class<?> type = parameter.type().getRawType();
-            final Object defaultValue = type.isPrimitive()
-                    ? Miscellaneous.nullToPrimitive(type)
-                    : null;
+            final Object defaultValue = Miscellaneous.primitiveSafeValue(parameter, null);
             defaults.put(name, new StoredValue(defaultValue, false));
         }
         return new CommandContext<>(source, commandLine, indexStore, defaults);

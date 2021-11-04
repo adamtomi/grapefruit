@@ -490,7 +490,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             }
 
             final Object parsedValue = mapParameter(flag, context, args);
-            context.put(flagName, parsedValue);
+            context.put(flagName, Miscellaneous.primitiveSafeValue(flag, parsedValue));
         }
     }
 
@@ -507,7 +507,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                  final @NotNull CommandContext<S> context,
                                  final @NotNull Queue<CommandInput> args) throws CommandException {
         final Object parsedValue = mapParameter(parameter, context, args);
-        context.put(parameter.name(), parsedValue);
+        context.put(parameter.name(), Miscellaneous.primitiveSafeValue(parameter, parsedValue));
     }
 
     private @NotNull CommandParameter<S> nextParameter(final @NotNull String commandLine,
