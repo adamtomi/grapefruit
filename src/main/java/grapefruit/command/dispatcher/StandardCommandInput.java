@@ -7,11 +7,11 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
-class StringCommandInput implements CommandInput {
+class StandardCommandInput implements CommandInput {
     private final String rawArg;
     private boolean consumed = false;
 
-    StringCommandInput(final @NotNull String rawArg) {
+    StandardCommandInput(final @NotNull String rawArg) {
         this.rawArg = requireNonNull(rawArg, "rawInput cannot be null");
     }
 
@@ -42,7 +42,7 @@ class StringCommandInput implements CommandInput {
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final StringCommandInput that = (StringCommandInput) o;
+        final StandardCommandInput that = (StandardCommandInput) o;
         return this.consumed == that.consumed && Objects.equals(this.rawArg, that.rawArg);
     }
 

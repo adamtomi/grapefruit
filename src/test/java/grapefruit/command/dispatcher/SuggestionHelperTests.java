@@ -94,7 +94,7 @@ public class SuggestionHelperTests {
         final CommandContext<Object> context = context(reg);
         final SuggestionContext<Object> suggestionContext = context.suggestions();
         suggestionContext.parameter(param0);
-        suggestionContext.input(new StringCommandInput(""));
+        suggestionContext.input(new StandardCommandInput(""));
         final SuggestionHelper<Object> suggestionHelper = new SuggestionHelper<>();
         final List<String> suggetsions = suggestionHelper.listSuggestions(context, reg, new PriorityQueue<>());
         assertTrue(contentEquals(PREFIXES, suggetsions));
@@ -113,7 +113,7 @@ public class SuggestionHelperTests {
         final CommandContext<Object> context = context(reg);
         final SuggestionContext<Object> suggestionContext = context.suggestions();
         suggestionContext.parameter(param0);
-        suggestionContext.input(new StringCommandInput("5"));
+        suggestionContext.input(new StandardCommandInput("5"));
         final SuggestionHelper<Object> suggestionHelper = new SuggestionHelper<>();
         final List<String> expected = NUMBER_OPTIONS.stream()
                 .map(num -> "5" + num)
@@ -136,7 +136,7 @@ public class SuggestionHelperTests {
         final CommandContext<Object> context = context(reg);
         final SuggestionContext<Object> suggestionContext = context.suggestions();
         suggestionContext.parameter(param0);
-        suggestionContext.input(new StringCommandInput("-"));
+        suggestionContext.input(new StandardCommandInput("-"));
         final List<String> expected = List.of(
                 "-9", "-8", "-7", "-6", "-5", "-4", "-3", "-2", "-1",
                 "1", "2", "3", "4", "5", "6", "7", "8", "9"
@@ -160,7 +160,7 @@ public class SuggestionHelperTests {
         final CommandContext<Object> context = context(reg);
         final SuggestionContext<Object> suggestionContext = context.suggestions();
         suggestionContext.parameter(param0);
-        suggestionContext.input(new StringCommandInput("-1"));
+        suggestionContext.input(new StandardCommandInput("-1"));
         final List<String> expected = List.of(
                 "-10", "-11", "-12", "-13", "-14", "-15", "-16", "-17", "-18", "-19"
         );
@@ -181,7 +181,7 @@ public class SuggestionHelperTests {
 
         final SuggestionContext<Object> suggestionContext = context.suggestions();
         suggestionContext.parameter(flag);
-        suggestionContext.input(new StringCommandInput("--"));
+        suggestionContext.input(new StandardCommandInput("--"));
         final List<String> expected = List.of(
                 "--flag-0", "--flag-1"
         );
@@ -221,7 +221,7 @@ public class SuggestionHelperTests {
         final CommandContext<Object> context = context(reg);
         final SuggestionContext<Object> suggestionContext = context.suggestions();
         suggestionContext.parameter(firstFlag);
-        suggestionContext.input(new StringCommandInput("-"));
+        suggestionContext.input(new StandardCommandInput("-"));
         final List<String> expected = List.of(
                 "-f", "-a", "-o", "--flag", "--other", "--another"
         );

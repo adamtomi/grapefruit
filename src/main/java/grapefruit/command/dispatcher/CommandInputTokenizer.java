@@ -20,7 +20,7 @@ public final class CommandInputTokenizer {
         String each;
         while ((each = strings.poll()) != null) {
             if (!each.isBlank()) {
-                result.add(new StringCommandInput(each));
+                result.add(new StandardCommandInput(each));
             } else {
                 String blank;
                 int blankCount = 0;

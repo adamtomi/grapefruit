@@ -44,19 +44,19 @@ public class CommandInputTests {
     @ParameterizedTest
     @ValueSource(strings = {"first", "second", "third", "-aa", " a bb a"})
     public void stringCommandInput_rawArg(final String rawArg) {
-        final StringCommandInput input = new StringCommandInput(rawArg);
+        final StandardCommandInput input = new StandardCommandInput(rawArg);
         assertEquals(rawArg, input.rawArg());
     }
 
     @Test
     public void stringCommandInput_notConsumed_isConsumed() {
-        final StringCommandInput input = new StringCommandInput("");
+        final StandardCommandInput input = new StandardCommandInput("");
         assertFalse(input.isConsumed());
     }
 
     @Test
     public void stringCommandInput_markedConsumed_isConsumed() {
-        final StringCommandInput input = new StringCommandInput("");
+        final StandardCommandInput input = new StandardCommandInput("");
         input.markConsumed();
         assertTrue(input.isConsumed());
     }
@@ -66,10 +66,10 @@ public class CommandInputTests {
         final String commandLine = "root sub 10 a";
         final CommandInputTokenizer tokenizer = new CommandInputTokenizer();
         final Queue<CommandInput> expected = new ConcurrentLinkedQueue<>(Arrays.asList(
-                new StringCommandInput("root"),
-                new StringCommandInput("sub"),
-                new StringCommandInput("10"),
-                new StringCommandInput("a")
+                new StandardCommandInput("root"),
+                new StandardCommandInput("sub"),
+                new StandardCommandInput("10"),
+                new StandardCommandInput("a")
         ));
         assertTrue(contentEquals(expected, tokenizer.tokenizeInput(commandLine)));
     }
@@ -79,13 +79,13 @@ public class CommandInputTests {
         final String commandLine = " root sub  aaa b ccc 203  a45";
         final CommandInputTokenizer tokenizer = new CommandInputTokenizer();
         final Queue<CommandInput> expected = new ConcurrentLinkedQueue<>(Arrays.asList(
-                new StringCommandInput("root"),
-                new StringCommandInput("sub"),
-                new StringCommandInput("aaa"),
-                new StringCommandInput("b"),
-                new StringCommandInput("ccc"),
-                new StringCommandInput("203"),
-                new StringCommandInput("a45")
+                new StandardCommandInput("root"),
+                new StandardCommandInput("sub"),
+                new StandardCommandInput("aaa"),
+                new StandardCommandInput("b"),
+                new StandardCommandInput("ccc"),
+                new StandardCommandInput("203"),
+                new StandardCommandInput("a45")
         ));
         assertTrue(contentEquals(expected, tokenizer.tokenizeInput(commandLine)));
     }
@@ -95,14 +95,14 @@ public class CommandInputTests {
         final String commandLine = "root sub aaa    c   sd  ab4 ";
         final CommandInputTokenizer tokenizer = new CommandInputTokenizer();
         final Queue<CommandInput> expected = new ConcurrentLinkedQueue<>(Arrays.asList(
-                new StringCommandInput("root"),
-                new StringCommandInput("sub"),
-                new StringCommandInput("aaa"),
+                new StandardCommandInput("root"),
+                new StandardCommandInput("sub"),
+                new StandardCommandInput("aaa"),
                 new BlankCommandInput(2),
-                new StringCommandInput("c"),
+                new StandardCommandInput("c"),
                 new BlankCommandInput(1),
-                new StringCommandInput("sd"),
-                new StringCommandInput("ab4")
+                new StandardCommandInput("sd"),
+                new StandardCommandInput("ab4")
         ));
         assertTrue(contentEquals(expected, tokenizer.tokenizeInput(commandLine)));
     }
