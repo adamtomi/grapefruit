@@ -32,7 +32,7 @@ class StandardCommandInput implements CommandInput {
 
     @Override
     public String toString() {
-        return "StringCommandInput[" +
+        return "StandardCommandInput[" +
                 "rawArg='" + this.rawArg + '\'' +
                 ", consumed=" + this.consumed +
                 ']';
