@@ -53,6 +53,11 @@ public final class RedirectingCommandRegistration<S> implements CommandRegistrat
     }
 
     @Override
+    public boolean requiresContext() {
+        return this.delegate.requiresContext();
+    }
+
+    @Override
     public boolean runAsync() {
         return this.delegate.runAsync();
     }

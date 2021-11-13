@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -51,6 +52,8 @@ public class MethodParameterParserTests {
     private Method method02;
     private Method method03;
     private Method method04;
+    private Method method05;
+    private Method method06;
 
     @BeforeAll
     public void setUp() throws ReflectiveOperationException {
@@ -71,6 +74,8 @@ public class MethodParameterParserTests {
         this.method03 = clazz.getDeclaredMethod("method03",
                 Object.class, boolean.class, byte.class, short.class, int.class, float.class, double.class, char.class);
         this.method04 = clazz.getDeclaredMethod("method04", List.class, Set.class, Collection.class);
+        this.method05 = clazz.getDeclaredMethod("method05", CommandContext.class);
+        this.method06 = clazz.getDeclaredMethod("method06", Object.class, int.class, double.class, CommandContext.class);
     }
 
     @Test
@@ -161,8 +166,8 @@ public class MethodParameterParserTests {
                 )
         );
 
-        final List<CommandParameter<Object>> result = parser.collectParameters(this.method01);
-        assertTrue(contentEquals(expected, result));
+        final MethodParameterParser.ParseResult<Object> result = parser.collectParameters(this.method01);
+        assertTrue(contentEquals(expected, result.parameters()));
     }
 
     @Test
@@ -178,8 +183,8 @@ public class MethodParameterParserTests {
                         registry.findMapper(TypeToken.of(Long.class)).orElseThrow())
         );
 
-        final List<CommandParameter<Object>> result = parser.collectParameters(this.method02);
-        assertTrue(contentEquals(expected, result));
+        final MethodParameterParser.ParseResult<Object> result = parser.collectParameters(this.method02);
+        assertTrue(contentEquals(expected, result.parameters()));
     }
 
     @Test
@@ -207,8 +212,8 @@ public class MethodParameterParserTests {
                         new AnnotationList(flag3Annot), registry.findMapper(TypeToken.of(Character.class)).orElseThrow())
         );
 
-        final List<CommandParameter<Object>> result = parser.collectParameters(this.method03);
-        assertTrue(contentEquals(expected, result));
+        final MethodParameterParser.ParseResult<Object> result = parser.collectParameters(this.method03);
+        assertTrue(contentEquals(expected, result.parameters()));
     }
 
     @Test
@@ -232,8 +237,24 @@ public class MethodParameterParserTests {
                         registry.findMapper(objectsType).orElseThrow())
         );
 
-        final List<CommandParameter<Object>> actual = parser.collectParameters(this.method04);
-        assertTrue(contentEquals(expected, actual));
+        final MethodParameterParser.ParseResult<Object> actual = parser.collectParameters(this.method04);
+        assertTrue(contentEquals(expected, actual.parameters()));
+    }
+
+    @Test
+    public void collectParameters_05() throws RuleViolationException {
+        final ParameterMapperRegistry<Object> registry = new ParameterMapperRegistry<>();
+        final MethodParameterParser<Object> parser = new MethodParameterParser<>(registry);
+        final MethodParameterParser.ParseResult<Object> result = parser.collectParameters(this.method05);
+        assertTrue(result.parameters().isEmpty());
+    }
+
+    @Test
+    public void collectParameters_06() throws RuleViolationException {
+        final ParameterMapperRegistry<Object> registry = new ParameterMapperRegistry<>();
+        final MethodParameterParser<Object> parser = new MethodParameterParser<>(registry);
+        final MethodParameterParser.ParseResult<Object> result = parser.collectParameters(this.method06);
+        assertEquals(2, result.parameters().size());
     }
 
     private static boolean contentEquals(final List<CommandParameter<Object>> expected, final List<CommandParameter<Object>> result) {
@@ -292,6 +313,13 @@ public class MethodParameterParserTests {
         public void method04(final List<Integer> ints,
                              final Set<String> strings,
                              final Collection<Object> objects) {}
+
+        public void method05(final CommandContext<Object> ctx) {}
+
+        public void method06(final @Source Object source,
+                             final int a,
+                             final double b,
+                             final CommandContext<Object> ctx) {}
     }
 
     @Retention(RetentionPolicy.RUNTIME)

@@ -20,6 +20,7 @@ import grapefruit.command.parameter.modifier.string.Regex;
 import grapefruit.command.util.AnnotationList;
 import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Serial;
 import java.lang.annotation.Annotation;
@@ -79,6 +80,11 @@ final class MethodParameterParser<S> {
             throw new RuleViolationException(format("Flags are optional by default, so they may not be annotated with @OptParam (%s)", parameter));
         }
     };
+    private static final Rule CONTEXT_HAS_TO_BE_LAST = (method, parameter, annotations) -> {
+         if (isCmdContext(parameter) && !method.getParameters()[method.getParameters().length - 1].equals(parameter)) {
+             throw new RuleViolationException("CommandContext may only be the last parameter");
+         }
+    };
 
     private final Set<Rule> rules = Set.of(
             GREEDY_AND_QUOTABLE,
@@ -88,7 +94,8 @@ final class MethodParameterParser<S> {
             SOURCE_HAS_MORE_ANNOTATIONS,
             SOURCE_NTH_PARAMETER,
             UNRECOGNIZED_ANNOTATION,
-            FLAG_OPTIONAL
+            FLAG_OPTIONAL,
+            CONTEXT_HAS_TO_BE_LAST
     );
     private final ParameterMapperRegistry<?> mapperRegistry;
 
@@ -96,68 +103,85 @@ final class MethodParameterParser<S> {
         this.mapperRegistry = requireNonNull(mapperRegistry, "mapperRegistry cannot be null");
     }
 
-    @NotNull List<CommandParameter<S>> collectParameters(final @NotNull Method method) throws RuleViolationException {
+    @NotNull ParseResult<S> collectParameters(final @NotNull Method method) throws RuleViolationException {
         final List<CommandParameter<S>> parameters = new ArrayList<>();
-        for (final Parameter parameter : method.getParameters()) {
+        final Parameter[] methodParams = method.getParameters();
+        final @Nullable TypeToken<?> commandSourceType = methodParams.length > 0 && methodParams[0].isAnnotationPresent(Source.class)
+                ? typeTokenOf(methodParams[0])
+                : null;
+        final boolean requiresContext = methodParams.length > 0
+                && isCmdContext(methodParams[methodParams.length - 1]);
+
+        for (final Parameter parameter : methodParams) {
             final AnnotationList annotations = new AnnotationList(parameter.getAnnotations());
 
             for (final Rule rule : this.rules) {
                 rule.validate(method, parameter, annotations);
             }
 
-            if (!annotations.has(Source.class)) {
-                final boolean isFlag = annotations.has(Flag.class);
-                final boolean isOptional = isFlag || annotations.has(OptParam.class);
-                final TypeToken<?> type = TypeToken.of(parameter.getAnnotatedType().getType());
-                final ParameterMapper<S, ?> mapper;
-                final Optional<Mapper> mapperAnnot = annotations.find(Mapper.class);
-
-                if (mapperAnnot.isPresent()) {
-                    final String name = mapperAnnot.get().value();
-                    mapper = (ParameterMapper<S, ?>) this.mapperRegistry.findNamedMapper(name)
-                            .orElseThrow(() -> new IllegalArgumentException(format("Could not find ParameterMapper with name %s", name)));
-                } else {
-                    mapper = (ParameterMapper<S, ?>) this.mapperRegistry.findMapper(type)
-                            .orElseThrow(() -> new IllegalArgumentException(String.format("Could not find ParameterMapper for type %s",
-                                   type.getType())));
-                }
-
-                final String paramName = parameter.getName();
-                final CommandParameter<S> cmdParam;
-                if (isFlag) {
-                    final Flag flagDef = annotations.find(Flag.class).orElseThrow();
-                    final String flagName = flagDef.value();
-                    final char shorthand = flagDef.shorthand();
-                    final List<FlagParameter<S>> existingFlags = parameters.stream()
-                            .filter(CommandParameter::isFlag)
-                            .map(x -> (FlagParameter<S>) x)
-                            .toList();
-                    if (existingFlags.stream().anyMatch(x -> x.flagName().equalsIgnoreCase(flagName))) {
-                        throw new IllegalStateException(format("Flag with name '%s' already registered", flagName));
-                    }
-
-                    if (existingFlags.stream().filter(Miscellaneous::shorthandNotEmpty)
-                            .anyMatch(x -> x.shorthand() == shorthand)) {
-                        throw new IllegalStateException(format("Flag with shorthand '%s' already registered", shorthand));
-                    }
-
-                    cmdParam = type.equals(FlagParameter.PRESENCE_FLAG_TYPE)
-                            ? new PresenceFlagParameter<>(flagName, shorthand, paramName, annotations)
-                            : new ValueFlagParameter<>(flagName, shorthand, paramName, type, annotations, mapper);
-                } else {
-                    cmdParam = new StandardParameter<>(parameter.getName(), isOptional, type, annotations, mapper);
-                }
-
-                final String actualName = cmdParam.name();
-                if (parameters.stream().anyMatch(x -> x.name().equalsIgnoreCase(actualName))) {
-                    throw new IllegalStateException(format("Parameter with name '%s' already registerd", actualName));
-                }
-
-                parameters.add(cmdParam);
+            if (annotations.has(Source.class) || isCmdContext(parameter)) {
+                continue;
             }
+
+            final boolean isFlag = annotations.has(Flag.class);
+            final boolean isOptional = isFlag || annotations.has(OptParam.class);
+            final TypeToken<?> type = typeTokenOf(parameter);
+            final ParameterMapper<S, ?> mapper;
+            final Optional<Mapper> mapperAnnot = annotations.find(Mapper.class);
+
+            if (mapperAnnot.isPresent()) {
+                final String name = mapperAnnot.get().value();
+                mapper = (ParameterMapper<S, ?>) this.mapperRegistry.findNamedMapper(name)
+                        .orElseThrow(() -> new IllegalArgumentException(format("Could not find ParameterMapper with name %s", name)));
+            } else {
+                mapper = (ParameterMapper<S, ?>) this.mapperRegistry.findMapper(type)
+                        .orElseThrow(() -> new IllegalArgumentException(String.format("Could not find ParameterMapper for type %s",
+                                type.getType())));
+            }
+
+            final String paramName = parameter.getName();
+            final CommandParameter<S> cmdParam;
+            if (isFlag) {
+                final Flag flagDef = annotations.find(Flag.class).orElseThrow();
+                final String flagName = flagDef.value();
+                final char shorthand = flagDef.shorthand();
+                final List<FlagParameter<S>> existingFlags = parameters.stream()
+                        .filter(CommandParameter::isFlag)
+                        .map(x -> (FlagParameter<S>) x)
+                        .toList();
+                if (existingFlags.stream().anyMatch(x -> x.flagName().equalsIgnoreCase(flagName))) {
+                    throw new IllegalStateException(format("Flag with name '%s' already registered", flagName));
+                }
+
+                if (existingFlags.stream().filter(Miscellaneous::shorthandNotEmpty)
+                        .anyMatch(x -> x.shorthand() == shorthand)) {
+                    throw new IllegalStateException(format("Flag with shorthand '%s' already registered", shorthand));
+                }
+
+                cmdParam = type.equals(FlagParameter.PRESENCE_FLAG_TYPE)
+                        ? new PresenceFlagParameter<>(flagName, shorthand, paramName, annotations)
+                        : new ValueFlagParameter<>(flagName, shorthand, paramName, type, annotations, mapper);
+            } else {
+                cmdParam = new StandardParameter<>(parameter.getName(), isOptional, type, annotations, mapper);
+            }
+
+            final String actualName = cmdParam.name();
+            if (parameters.stream().anyMatch(x -> x.name().equalsIgnoreCase(actualName))) {
+                throw new IllegalStateException(format("Parameter with name '%s' already registerd", actualName));
+            }
+
+            parameters.add(cmdParam);
         }
 
-        return parameters;
+        return new ParseResult<>(parameters, commandSourceType, requiresContext);
+    }
+
+    private static @NotNull TypeToken<?> typeTokenOf(final @NotNull Parameter parameter) {
+        return TypeToken.of(parameter.getAnnotatedType().getType());
+    }
+
+    private static boolean isCmdContext(final @NotNull Parameter parameter) {
+        return CommandContext.class.isAssignableFrom(parameter.getType());
     }
 
     @FunctionalInterface
@@ -175,4 +199,8 @@ final class MethodParameterParser<S> {
             super(message);
         }
     }
+
+    static final record ParseResult<S>(@NotNull List<CommandParameter<S>> parameters,
+                                       @Nullable TypeToken<?> commandSourceType,
+                                       boolean requiresContext) {}
 }

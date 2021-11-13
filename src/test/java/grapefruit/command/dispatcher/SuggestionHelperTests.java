@@ -325,6 +325,11 @@ public class SuggestionHelperTests {
         }
 
         @Override
+        public boolean requiresContext() {
+            return false;
+        }
+
+        @Override
         public boolean runAsync() {
             throw new UnsupportedOperationException();
         }

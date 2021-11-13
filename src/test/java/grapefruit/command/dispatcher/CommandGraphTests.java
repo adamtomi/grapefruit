@@ -263,6 +263,11 @@ public class CommandGraphTests {
         }
 
         @Override
+        public boolean requiresContext() {
+            return false;
+        }
+
+        @Override
         public boolean runAsync() {
             throw new UnsupportedOperationException();
         }

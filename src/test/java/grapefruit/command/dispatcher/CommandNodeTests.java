@@ -139,6 +139,11 @@ public class CommandNodeTests {
         }
 
         @Override
+        public boolean requiresContext() {
+            return false;
+        }
+
+        @Override
         public boolean runAsync() {
             return false;
         }

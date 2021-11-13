@@ -21,5 +21,7 @@ public interface CommandRegistration<S> {
 
     @NotNull Optional<TypeToken<?>> commandSourceType();
 
+    boolean requiresContext();
+
     boolean runAsync();
 }

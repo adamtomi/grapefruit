@@ -149,11 +149,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
         try {
             method.setAccessible(true);
-            final Parameter[] parameters = method.getParameters();
-            final List<CommandParameter<S>> parsedParams = this.parameterParser.collectParameters(method);
-            final @Nullable TypeToken<?> commandSourceType = (parameters.length > 0 && parameters[0].isAnnotationPresent(Source.class))
-                    ? TypeToken.of(parameters[0].getAnnotatedType().getType())
-                    : null;
+            final MethodParameterParser.ParseResult<S> result = this.parameterParser.collectParameters(method);
+            final @Nullable TypeToken<?> commandSourceType = result.commandSourceType();
 
             if (commandSourceType != null) {
                 final Class<?> baseCommandSourceType = this.commandSourceType.getRawType();
@@ -167,9 +164,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final CommandRegistration<S> reg = new StandardCommandRegistration<>(
                     container,
                     method,
-                    parsedParams,
+                    result.parameters(),
                     permission,
                     commandSourceType,
+                    result.requiresContext(),
                     runAsync);
             registerCommand(route, reg);
             redirectNodes.forEach(node ->
@@ -288,7 +286,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                             return;
                         }
 
-                        dispatchCommand(commandLine, reg, source, context.asMap().values());
+                        dispatchCommand(commandLine, reg, source, context);
                         invokePostDispatchListeners(context);
                     } catch (final CommandException ex) {
                         handleCommandException(source, ex);
@@ -311,19 +309,20 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private void dispatchCommand(final @NotNull String commandLine,
                                  final @NotNull CommandRegistration<S> reg,
                                  final @NotNull S source,
-                                 final @NotNull Collection<Object> args) throws CommandException {
+                                 final @NotNull CommandContext<S> context) throws CommandException {
         try {
-            final Object[] finalArgs;
-            if (reg.commandSourceType().isPresent()) {
-                finalArgs = new Object[args.size() + 1];
-                finalArgs[0] = source;
-                int idx = 1;
-                for (final Object arg : args) {
-                    finalArgs[idx++] = arg;
-                }
+            final boolean requiresSource = reg.commandSourceType().isPresent();
+            final boolean requiresContext = reg.requiresContext();
+            final Object[] args = context.asMap().values().toArray(Object[]::new);
+            final Object[] finalArgs = new Object[args.length + (requiresSource ? 1 : 0) + (requiresContext ? 1 : 0)];
 
-            } else {
-                finalArgs = args.toArray(Object[]::new);
+            if (requiresSource) {
+                finalArgs[0] = source;
+            }
+
+            System.arraycopy(args, 0, finalArgs, requiresSource ? 1 : 0, args.length);
+            if (requiresContext) {
+                finalArgs[finalArgs.length - 1] = context;
             }
 
             reg.method().invoke(reg.container(), finalArgs);

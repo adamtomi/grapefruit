@@ -182,7 +182,7 @@ public class CommandDispatcherTests {
                 .build();
         final StatusAwareContainer container = new ContainerWithASingleCommand();
         dispatcher.registerCommands(container);
-        dispatcher.dispatchCommand(new Object(), "test");
+        dispatcher.dispatchCommand(new GeneralCommandSource(), "test");
         assertFalse(container.status);
     }
 
@@ -238,10 +238,21 @@ public class CommandDispatcherTests {
         assertFalse(container.status);
     }
 
+    @Test
+    public void dispatchCommand_withContextParameter() {
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.builder(TypeToken.of(Object.class))
+                .build();
+        dispatcher.mappers().registerMapper(new DummyParameterMapper());
+        final StatusAwareContainer container = new ContainerWithComplexCommands();
+        dispatcher.registerCommands(container);
+        dispatcher.dispatchCommand(new GeneralCommandSource(), "root method06 10 20.0D");
+        assertTrue(container.status);
+    }
+
     @ParameterizedTest
     @CsvSource({
             "roo,root",
-            "'root ',method01|method02|method03|method04|method05",
+            "'root ',method01|method02|method03|method04|method05|method06",
             "'root method01 --flag ',-9|-8|-7|-6|-5|-4|-3|-2|-1|1|2|3|4|5|6|7|8|9",
             "root method01 --flag 1,10|11|12|13|14|15|16|17|18|19",
             "root method01 Hello -,-9|-8|-7|-6|-5|-4|-3|-2|-1|--flag|--other-flag",
@@ -393,6 +404,16 @@ public class CommandDispatcherTests {
                              final @Flag(value = "flag", shorthand = 'f') String s0,
                              final @Flag(value = "other-flag", shorthand = 'o') String s1) {
             this.status = true;
+        }
+
+        @CommandDefinition(route = "root method06")
+        public void method06(final @Source CommandSource source,
+                             final int a,
+                             final double b,
+                             final CommandContext<CommandSource> ctx) {
+            if (ctx.find("arg1").isPresent() && ctx.find("arg2").isPresent()) {
+                this.status = true;
+            }
         }
     }
 

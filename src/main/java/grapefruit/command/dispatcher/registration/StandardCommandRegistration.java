@@ -10,11 +10,12 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 
-public record StandardCommandRegistration<S>(@NotNull CommandContainer holder,
+public record StandardCommandRegistration<S>(@NotNull CommandContainer container,
                                              @NotNull Method method,
                                              @NotNull List<CommandParameter<S>> parameters,
                                              @Nullable String perm,
                                              @Nullable TypeToken<?> sourceType,
+                                             boolean requiresContext,
                                              boolean runAsync) implements CommandRegistration<S> {
     @Override
     public @NotNull Optional<String> permission() {
