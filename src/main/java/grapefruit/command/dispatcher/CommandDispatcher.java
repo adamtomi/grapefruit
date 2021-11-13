@@ -2,6 +2,8 @@ package grapefruit.command.dispatcher;
 
 import com.google.common.reflect.TypeToken;
 import grapefruit.command.CommandContainer;
+import grapefruit.command.CommandException;
+import grapefruit.command.dispatcher.exception.ExceptionHandler;
 import grapefruit.command.dispatcher.listener.PostDispatchListener;
 import grapefruit.command.dispatcher.listener.PreDispatchListener;
 import grapefruit.command.dispatcher.listener.PreProcessLitener;
@@ -19,6 +21,9 @@ public interface CommandDispatcher<S> {
     void registerListener(final @NotNull PreDispatchListener<S> listener);
 
     void registerListener(final @NotNull PostDispatchListener<S> listener);
+
+    <X extends CommandException> void registerHandler(final @NotNull Class<X> clazz,
+                                                      final @NotNull ExceptionHandler<S, X> handler);
 
     void registerCommands(final @NotNull CommandContainer container);
 

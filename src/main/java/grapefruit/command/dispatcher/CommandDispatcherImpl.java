@@ -7,6 +7,7 @@ import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
 import grapefruit.command.dispatcher.exception.CommandInvocationException;
 import grapefruit.command.dispatcher.exception.CommandSyntaxException;
+import grapefruit.command.dispatcher.exception.ExceptionHandler;
 import grapefruit.command.dispatcher.exception.FlagDuplicateException;
 import grapefruit.command.dispatcher.exception.IllegalCommandSourceException;
 import grapefruit.command.dispatcher.exception.NoSuchCommandException;
@@ -29,7 +30,6 @@ import grapefruit.command.parameter.ValueFlagParameter;
 import grapefruit.command.parameter.mapper.ParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMapperRegistry;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
-import grapefruit.command.parameter.modifier.Source;
 import grapefruit.command.util.AnnotationList;
 import grapefruit.command.util.BooleanFunction;
 import grapefruit.command.util.Miscellaneous;
@@ -38,16 +38,16 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
@@ -67,6 +67,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final Queue<PreProcessLitener<S>> preProcessLiteners = new ConcurrentLinkedQueue<>();
     private final Queue<PreDispatchListener<S>> preDispatchListeners = new ConcurrentLinkedQueue<>();
     private final Queue<PostDispatchListener<S>> postDispatchListeners = new ConcurrentLinkedQueue<>();
+    private final Map<Class<? extends CommandException>, ExceptionHandler<S, ? extends CommandException>> exceptionHandlers
+            = new ConcurrentHashMap<>();
     private final CommandInputTokenizer inputTokenizer = new CommandInputTokenizer();
     private final CommandGraph<S> commandGraph = new CommandGraph<>();
     private final SuggestionHelper<S> suggestionHelper = new SuggestionHelper<>();
@@ -122,6 +124,16 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
             registerCommand(container, method);
         }
+    }
+
+    @Override
+    public <X extends CommandException> void registerHandler(final @NotNull Class<X> clazz,
+                                                             final @NotNull ExceptionHandler<S, X> handler) {
+        if (this.exceptionHandlers.containsKey(clazz)) {
+            throw new IllegalStateException(format("ExceptionHandler for type '%s' already registerd", clazz.getName()));
+        }
+
+        this.exceptionHandlers.put(clazz, handler);
     }
 
     private void registerCommand(final @NotNull CommandContainer container,
@@ -289,7 +301,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         dispatchCommand(commandLine, reg, source, context);
                         invokePostDispatchListeners(context);
                     } catch (final CommandException ex) {
-                        handleCommandException(source, ex);
+                        handleCommandException(source, commandLine, ex);
                     }
                 });
             } else {
@@ -302,7 +314,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 ));
             }
         } catch (final CommandException ex) {
-            handleCommandException(source, ex);
+            handleCommandException(source, commandLine, ex);
         }
     }
 
@@ -605,14 +617,24 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 .toList();
     }
 
-    private void handleCommandException(final @NotNull S source, final @NotNull CommandException ex) {
-        final Message message = ex.message();
-        this.messenger.sendMessage(source, message.get(this.messageProvider));
-        /*
-         * CommandInvocationException means that things went south
-         */
-        if (ex instanceof CommandInvocationException) {
-            ex.printStackTrace();
+    @SuppressWarnings("unchecked")
+    private void handleCommandException(final @NotNull S source,
+                                        final @NotNull String commandLine,
+                                        final @NotNull CommandException ex) {
+        final Class<? extends CommandException> clazz = ex.getClass();
+        if (!this.exceptionHandlers.containsKey(clazz)) {
+            final Message message = ex.message();
+            this.messenger.sendMessage(source, message.get(this.messageProvider));
+            /*
+             * CommandInvocationException means that things went south
+             */
+            if (ex instanceof CommandInvocationException) {
+                ex.printStackTrace();
+            }
+        } else {
+            final ExceptionHandler<S, CommandException> handler =
+                    (ExceptionHandler<S, CommandException>) this.exceptionHandlers.get(clazz);
+            handler.handle(source, commandLine, ex);
         }
     }
 }

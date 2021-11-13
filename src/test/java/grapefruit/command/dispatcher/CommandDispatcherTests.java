@@ -3,6 +3,7 @@ package grapefruit.command.dispatcher;
 import com.google.common.reflect.TypeToken;
 import grapefruit.command.CommandContainer;
 import grapefruit.command.CommandDefinition;
+import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
 import grapefruit.command.dispatcher.listener.PreDispatchListener;
 import grapefruit.command.dispatcher.listener.PreProcessLitener;
 import grapefruit.command.parameter.mapper.AbstractParameterMapper;
@@ -249,10 +250,24 @@ public class CommandDispatcherTests {
         assertTrue(container.status);
     }
 
+    @Test
+    public void dispatchCommand_registerExceptionHandler() {
+        final AtomicBoolean handlerStatus = new AtomicBoolean(false);
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.builder(TypeToken.of(Object.class))
+                .withAuthorizer((source, perm) -> false) // do not grant permission
+                .build();
+        dispatcher.registerHandler(CommandAuthorizationException.class, (source, cmdLine, ex) -> handlerStatus.set(true));
+        dispatcher.mappers().registerMapper(new DummyParameterMapper());
+        final StatusAwareContainer container = new ContainerWithComplexCommands();
+        dispatcher.registerCommands(container);
+        dispatcher.dispatchCommand(new GeneralCommandSource(), "root method07 12");
+        assertTrue(handlerStatus.get());
+    }
+
     @ParameterizedTest
     @CsvSource({
             "roo,root",
-            "'root ',method01|method02|method03|method04|method05|method06",
+            "'root ',method01|method02|method03|method04|method05|method06|method07",
             "'root method01 --flag ',-9|-8|-7|-6|-5|-4|-3|-2|-1|1|2|3|4|5|6|7|8|9",
             "root method01 --flag 1,10|11|12|13|14|15|16|17|18|19",
             "root method01 Hello -,-9|-8|-7|-6|-5|-4|-3|-2|-1|--flag|--other-flag",
@@ -414,6 +429,11 @@ public class CommandDispatcherTests {
             if (ctx.find("arg1").isPresent() && ctx.find("arg2").isPresent()) {
                 this.status = true;
             }
+        }
+
+        @CommandDefinition(route = "root method07", permission = "test.permission")
+        public void method07(final int a) {
+            this.status = true;
         }
     }
 
