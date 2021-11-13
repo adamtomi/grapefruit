@@ -11,7 +11,6 @@ import grapefruit.command.parameter.modifier.Flag;
 import grapefruit.command.parameter.modifier.OptParam;
 import grapefruit.command.parameter.modifier.Source;
 import grapefruit.command.util.AnnotationList;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -415,16 +414,16 @@ public class CommandDispatcherTests {
         }
 
         @Override
-        public @NotNull Object map(final @NotNull CommandContext<Object> context,
-                                   final @NotNull Queue<CommandInput> args,
-                                   final @NotNull AnnotationList modifiers) throws ParameterMappingException {
+        public Object map(final CommandContext<Object> context,
+                          final Queue<CommandInput> args,
+                          final AnnotationList modifiers) throws ParameterMappingException {
             return new Object();
         }
 
         @Override
-        public @NotNull List<String> listSuggestions(final @NotNull CommandContext<Object> context,
-                                                     final @NotNull String currentArg,
-                                                     final @NotNull AnnotationList modifiers) {
+        public List<String> listSuggestions(final CommandContext<Object> context,
+                                            final String currentArg,
+                                            final AnnotationList modifiers) {
             return Arrays.asList("First", "Second", "Third");
         }
     }

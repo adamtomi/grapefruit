@@ -8,10 +8,8 @@ import grapefruit.command.parameter.FlagParameter;
 import grapefruit.command.parameter.PresenceFlagParameter;
 import grapefruit.command.parameter.StandardParameter;
 import grapefruit.command.parameter.mapper.AbstractParameterMapper;
-import grapefruit.command.parameter.modifier.Flag;
 import grapefruit.command.util.AnnotationList;
 import grapefruit.command.util.Miscellaneous;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -141,9 +139,9 @@ public class FlagGroupTests {
         }
 
         @Override
-        public @NotNull String map(final @NotNull CommandContext<Object> context,
-                                   final @NotNull Queue<CommandInput> args,
-                                   final @NotNull AnnotationList modifiers) {
+        public String map(final CommandContext<Object> context,
+                                   final Queue<CommandInput> args,
+                                   final AnnotationList modifiers) {
             return "Hello there!";
         }
     }

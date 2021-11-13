@@ -4,7 +4,6 @@ import com.google.common.reflect.TypeToken;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.CommandInput;
 import grapefruit.command.util.AnnotationList;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -96,14 +95,14 @@ public class ParameterMapperRegistryTests {
 
     private static final class DummyParameterMapper<T> extends AbstractParameterMapper<Object, T> {
 
-        private DummyParameterMapper(final @NotNull TypeToken<T> type) {
+        private DummyParameterMapper(final TypeToken<T> type) {
             super(type);
         }
 
         @Override
-        public @NotNull T map(final @NotNull CommandContext<Object> context,
-                              final @NotNull Queue<CommandInput> args,
-                              final @NotNull AnnotationList modifiers) {
+        public T map(final CommandContext<Object> context,
+                     final Queue<CommandInput> args,
+                     final AnnotationList modifiers) {
             throw new UnsupportedOperationException("Not supported");
         }
     }
