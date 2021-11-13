@@ -114,7 +114,7 @@ public class CommandNodeTests {
         private static final CommandContainer HOLDER = new CommandContainer() {};
 
         @Override
-        public CommandContainer holder() {
+        public CommandContainer container() {
             return HOLDER;
         }
 

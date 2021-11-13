@@ -28,8 +28,8 @@ public final class RedirectingCommandRegistration<S> implements CommandRegistrat
     }
 
     @Override
-    public @NotNull CommandContainer holder() {
-        return this.delegate.holder();
+    public @NotNull CommandContainer container() {
+        return this.delegate.container();
     }
 
     @Override

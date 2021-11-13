@@ -326,7 +326,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 finalArgs = args.toArray(Object[]::new);
             }
 
-            reg.method().invoke(reg.holder(), finalArgs);
+            reg.method().invoke(reg.container(), finalArgs);
         } catch (final Throwable ex) {
             throw new CommandInvocationException(ex, commandLine);
         }

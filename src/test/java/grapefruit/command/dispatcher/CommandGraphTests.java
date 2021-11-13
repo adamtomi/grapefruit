@@ -238,7 +238,7 @@ public class CommandGraphTests {
         }
 
         @Override
-        public CommandContainer holder() {
+        public CommandContainer container() {
             throw new UnsupportedOperationException();
         }
 

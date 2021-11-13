@@ -11,7 +11,7 @@ import java.util.Optional;
 
 public interface CommandRegistration<S> {
 
-    @NotNull CommandContainer holder();
+    @NotNull CommandContainer container();
 
     @NotNull Method method();
 
