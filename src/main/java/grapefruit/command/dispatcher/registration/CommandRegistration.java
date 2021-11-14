@@ -11,7 +11,7 @@ import java.util.Optional;
 
 public interface CommandRegistration<S> {
 
-    @NotNull CommandContainer holder();
+    @NotNull CommandContainer container();
 
     @NotNull Method method();
 
@@ -20,6 +20,8 @@ public interface CommandRegistration<S> {
     @NotNull Optional<String> permission();
 
     @NotNull Optional<TypeToken<?>> commandSourceType();
+
+    boolean requiresContext();
 
     boolean runAsync();
 }

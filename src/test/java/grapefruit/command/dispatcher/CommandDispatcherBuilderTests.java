@@ -7,7 +7,6 @@ import grapefruit.command.message.DefaultMessageProvider;
 import grapefruit.command.message.MessageKey;
 import grapefruit.command.message.MessageProvider;
 import grapefruit.command.message.Messenger;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -125,25 +124,25 @@ public class CommandDispatcherBuilderTests {
 
     private static final class DummyCommandAuthorizer implements CommandAuthorizer<Object> {
         @Override
-        public boolean isAuthorized(final @NotNull Object source, final @NotNull String permission) {
+        public boolean isAuthorized(final Object source, final String permission) {
             return false;
         }
     }
 
     private static final class DummyMessageProvider implements MessageProvider {
         @Override
-        public @NotNull String provide(final @NotNull MessageKey key) {
+        public String provide(final MessageKey key) {
             throw new UnsupportedOperationException();
         }
     }
 
     private static final class DummyCommandRegistrationHandler implements CommandRegistrationHandler<Object> {
         @Override
-        public void accept(final @NotNull CommandRegistrationContext<Object> context) {}
+        public void accept(final CommandRegistrationContext<Object> context) {}
     }
 
     private static final class DummyMessenger implements Messenger<Object> {
         @Override
-        public void sendMessage(final @NotNull Object source, final @NotNull String message) {}
+        public void sendMessage(final Object source, final String message) {}
     }
 }

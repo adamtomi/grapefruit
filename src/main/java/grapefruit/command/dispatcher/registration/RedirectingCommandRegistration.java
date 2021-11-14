@@ -28,8 +28,8 @@ public final class RedirectingCommandRegistration<S> implements CommandRegistrat
     }
 
     @Override
-    public @NotNull CommandContainer holder() {
-        return this.delegate.holder();
+    public @NotNull CommandContainer container() {
+        return this.delegate.container();
     }
 
     @Override
@@ -50,6 +50,11 @@ public final class RedirectingCommandRegistration<S> implements CommandRegistrat
     @Override
     public @NotNull Optional<TypeToken<?>> commandSourceType() {
         return this.delegate.commandSourceType();
+    }
+
+    @Override
+    public boolean requiresContext() {
+        return this.delegate.requiresContext();
     }
 
     @Override

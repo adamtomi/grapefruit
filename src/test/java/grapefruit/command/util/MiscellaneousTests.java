@@ -8,7 +8,6 @@ import grapefruit.command.parameter.FlagParameter;
 import grapefruit.command.parameter.PresenceFlagParameter;
 import grapefruit.command.parameter.StandardParameter;
 import grapefruit.command.parameter.mapper.AbstractParameterMapper;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -217,14 +216,14 @@ public class MiscellaneousTests {
 
     @ParameterizedTest
     @ValueSource(classes = {String.class, Object.class, Integer.class, Boolean.class})
-    public void primitiveSafeValue_nonPrimitive(final @NotNull Class<?> clazz) {
+    public void primitiveSafeValue_nonPrimitive(final Class<?> clazz) {
         final Object result = Miscellaneous.primitiveSafeValue(new DummyParameter(clazz, "test"), null);
         assertNull(result);
     }
 
     @ParameterizedTest
     @ValueSource(classes = {char.class, boolean.class, int.class, long.class, float.class})
-    public void primitiveSafeValue_primitive(final @NotNull Class<?> clazz) {
+    public void primitiveSafeValue_primitive(final Class<?> clazz) {
         final Object result = Miscellaneous.primitiveSafeValue(new DummyParameter(clazz, "test"), null);
         assertNotNull(result);
     }
@@ -246,9 +245,9 @@ public class MiscellaneousTests {
         }
 
         @Override
-        public @NotNull String map(final @NotNull CommandContext<Object> context,
-                                   final @NotNull Queue<CommandInput> args,
-                                   final @NotNull AnnotationList modifiers) {
+        public String map(final CommandContext<Object> context,
+                          final Queue<CommandInput> args,
+                          final AnnotationList modifiers) {
             return "Hello there!";
         }
     }

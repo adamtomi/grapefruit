@@ -3,6 +3,7 @@ package grapefruit.command.dispatcher;
 import com.google.common.reflect.TypeToken;
 import grapefruit.command.CommandContainer;
 import grapefruit.command.CommandDefinition;
+import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
 import grapefruit.command.dispatcher.listener.PreDispatchListener;
 import grapefruit.command.dispatcher.listener.PreProcessLitener;
 import grapefruit.command.parameter.mapper.AbstractParameterMapper;
@@ -11,7 +12,6 @@ import grapefruit.command.parameter.modifier.Flag;
 import grapefruit.command.parameter.modifier.OptParam;
 import grapefruit.command.parameter.modifier.Source;
 import grapefruit.command.util.AnnotationList;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -183,7 +183,7 @@ public class CommandDispatcherTests {
                 .build();
         final StatusAwareContainer container = new ContainerWithASingleCommand();
         dispatcher.registerCommands(container);
-        dispatcher.dispatchCommand(new Object(), "test");
+        dispatcher.dispatchCommand(new GeneralCommandSource(), "test");
         assertFalse(container.status);
     }
 
@@ -239,10 +239,35 @@ public class CommandDispatcherTests {
         assertFalse(container.status);
     }
 
+    @Test
+    public void dispatchCommand_withContextParameter() {
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.builder(TypeToken.of(Object.class))
+                .build();
+        dispatcher.mappers().registerMapper(new DummyParameterMapper());
+        final StatusAwareContainer container = new ContainerWithComplexCommands();
+        dispatcher.registerCommands(container);
+        dispatcher.dispatchCommand(new GeneralCommandSource(), "root method06 10 20.0D");
+        assertTrue(container.status);
+    }
+
+    @Test
+    public void dispatchCommand_registerExceptionHandler() {
+        final AtomicBoolean handlerStatus = new AtomicBoolean(false);
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.builder(TypeToken.of(Object.class))
+                .withAuthorizer((source, perm) -> false) // do not grant permission
+                .build();
+        dispatcher.registerHandler(CommandAuthorizationException.class, (source, cmdLine, ex) -> handlerStatus.set(true));
+        dispatcher.mappers().registerMapper(new DummyParameterMapper());
+        final StatusAwareContainer container = new ContainerWithComplexCommands();
+        dispatcher.registerCommands(container);
+        dispatcher.dispatchCommand(new GeneralCommandSource(), "root method07 12");
+        assertTrue(handlerStatus.get());
+    }
+
     @ParameterizedTest
     @CsvSource({
             "roo,root",
-            "'root ',method01|method02|method03|method04|method05",
+            "'root ',method01|method02|method03|method04|method05|method06|method07",
             "'root method01 --flag ',-9|-8|-7|-6|-5|-4|-3|-2|-1|1|2|3|4|5|6|7|8|9",
             "root method01 --flag 1,10|11|12|13|14|15|16|17|18|19",
             "root method01 Hello -,-9|-8|-7|-6|-5|-4|-3|-2|-1|--flag|--other-flag",
@@ -395,6 +420,21 @@ public class CommandDispatcherTests {
                              final @Flag(value = "other-flag", shorthand = 'o') String s1) {
             this.status = true;
         }
+
+        @CommandDefinition(route = "root method06")
+        public void method06(final @Source CommandSource source,
+                             final int a,
+                             final double b,
+                             final CommandContext<CommandSource> ctx) {
+            if (ctx.find("arg1").isPresent() && ctx.find("arg2").isPresent()) {
+                this.status = true;
+            }
+        }
+
+        @CommandDefinition(route = "root method07", permission = "test.permission")
+        public void method07(final int a) {
+            this.status = true;
+        }
     }
 
     /* Command source classes */
@@ -415,16 +455,16 @@ public class CommandDispatcherTests {
         }
 
         @Override
-        public @NotNull Object map(final @NotNull CommandContext<Object> context,
-                                   final @NotNull Queue<CommandInput> args,
-                                   final @NotNull AnnotationList modifiers) throws ParameterMappingException {
+        public Object map(final CommandContext<Object> context,
+                          final Queue<CommandInput> args,
+                          final AnnotationList modifiers) throws ParameterMappingException {
             return new Object();
         }
 
         @Override
-        public @NotNull List<String> listSuggestions(final @NotNull CommandContext<Object> context,
-                                                     final @NotNull String currentArg,
-                                                     final @NotNull AnnotationList modifiers) {
+        public List<String> listSuggestions(final CommandContext<Object> context,
+                                            final String currentArg,
+                                            final AnnotationList modifiers) {
             return Arrays.asList("First", "Second", "Third");
         }
     }

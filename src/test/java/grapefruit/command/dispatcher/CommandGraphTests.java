@@ -11,7 +11,6 @@ import grapefruit.command.parameter.ValueFlagParameter;
 import grapefruit.command.parameter.mapper.ParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMapperRegistry;
 import grapefruit.command.util.AnnotationList;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -239,28 +238,33 @@ public class CommandGraphTests {
         }
 
         @Override
-        public @NotNull CommandContainer holder() {
+        public CommandContainer container() {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public @NotNull Method method() {
+        public Method method() {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public @NotNull List<CommandParameter<Object>> parameters() {
+        public List<CommandParameter<Object>> parameters() {
             return this.parameter;
         }
 
         @Override
-        public @NotNull Optional<String> permission() {
+        public Optional<String> permission() {
             return Optional.empty();
         }
 
         @Override
-        public @NotNull Optional<TypeToken<?>> commandSourceType() {
+        public Optional<TypeToken<?>> commandSourceType() {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean requiresContext() {
+            return false;
         }
 
         @Override

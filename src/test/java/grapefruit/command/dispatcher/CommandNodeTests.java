@@ -4,7 +4,6 @@ import com.google.common.reflect.TypeToken;
 import grapefruit.command.CommandContainer;
 import grapefruit.command.dispatcher.registration.CommandRegistration;
 import grapefruit.command.parameter.CommandParameter;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -115,28 +114,33 @@ public class CommandNodeTests {
         private static final CommandContainer HOLDER = new CommandContainer() {};
 
         @Override
-        public @NotNull CommandContainer holder() {
+        public CommandContainer container() {
             return HOLDER;
         }
 
         @Override
-        public @NotNull Method method() {
+        public Method method() {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public @NotNull List<CommandParameter<Object>> parameters() {
+        public List<CommandParameter<Object>> parameters() {
             return List.of();
         }
 
         @Override
-        public @NotNull Optional<String> permission() {
+        public Optional<String> permission() {
             return Optional.empty();
         }
 
         @Override
-        public @NotNull Optional<TypeToken<?>> commandSourceType() {
+        public Optional<TypeToken<?>> commandSourceType() {
             return Optional.of(TYPE);
+        }
+
+        @Override
+        public boolean requiresContext() {
+            return false;
         }
 
         @Override

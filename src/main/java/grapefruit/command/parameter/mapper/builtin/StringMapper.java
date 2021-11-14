@@ -105,9 +105,4 @@ public class StringMapper<S> extends AbstractParameterMapper<S, String> {
 
         return parsedValue;
     }
-
-    @Override
-    public boolean suggestionsNeedValidation() {
-        return false;
-    }
 }

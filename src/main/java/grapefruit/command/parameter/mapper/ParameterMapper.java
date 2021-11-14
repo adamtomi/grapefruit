@@ -23,8 +23,4 @@ public interface ParameterMapper<S, T> {
                                                   final @NotNull AnnotationList modifiers) {
         return List.of();
     }
-
-    default boolean suggestionsNeedValidation() {
-        return true;
-    }
 }

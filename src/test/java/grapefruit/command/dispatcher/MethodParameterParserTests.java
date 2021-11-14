@@ -8,8 +8,7 @@ import grapefruit.command.parameter.StandardParameter;
 import grapefruit.command.parameter.ValueFlagParameter;
 import grapefruit.command.parameter.mapper.ParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMapperRegistry;
-import grapefruit.command.parameter.mapper.builtin.NumberMapper;
-import grapefruit.command.parameter.mapper.builtin.StringMapper;
+import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.parameter.modifier.Flag;
 import grapefruit.command.parameter.modifier.Mapper;
 import grapefruit.command.parameter.modifier.OptParam;
@@ -27,8 +26,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.Collection;
 import java.util.List;
+import java.util.Queue;
+import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -48,6 +51,9 @@ public class MethodParameterParserTests {
     private Method method01;
     private Method method02;
     private Method method03;
+    private Method method04;
+    private Method method05;
+    private Method method06;
 
     @BeforeAll
     public void setUp() throws ReflectiveOperationException {
@@ -67,6 +73,9 @@ public class MethodParameterParserTests {
         this.method02 = clazz.getDeclaredMethod("method02", Object.class, boolean.class, long.class);
         this.method03 = clazz.getDeclaredMethod("method03",
                 Object.class, boolean.class, byte.class, short.class, int.class, float.class, double.class, char.class);
+        this.method04 = clazz.getDeclaredMethod("method04", List.class, Set.class, Collection.class);
+        this.method05 = clazz.getDeclaredMethod("method05", CommandContext.class);
+        this.method06 = clazz.getDeclaredMethod("method06", Object.class, int.class, double.class, CommandContext.class);
     }
 
     @Test
@@ -157,8 +166,8 @@ public class MethodParameterParserTests {
                 )
         );
 
-        final List<CommandParameter<Object>> result = parser.collectParameters(this.method01);
-        assertTrue(contentEquals(expected, result));
+        final MethodParameterParser.ParseResult<Object> result = parser.collectParameters(this.method01);
+        assertTrue(contentEquals(expected, result.parameters()));
     }
 
     @Test
@@ -174,8 +183,8 @@ public class MethodParameterParserTests {
                         registry.findMapper(TypeToken.of(Long.class)).orElseThrow())
         );
 
-        final List<CommandParameter<Object>> result = parser.collectParameters(this.method02);
-        assertTrue(contentEquals(expected, result));
+        final MethodParameterParser.ParseResult<Object> result = parser.collectParameters(this.method02);
+        assertTrue(contentEquals(expected, result.parameters()));
     }
 
     @Test
@@ -203,8 +212,49 @@ public class MethodParameterParserTests {
                         new AnnotationList(flag3Annot), registry.findMapper(TypeToken.of(Character.class)).orElseThrow())
         );
 
-        final List<CommandParameter<Object>> result = parser.collectParameters(this.method03);
-        assertTrue(contentEquals(expected, result));
+        final MethodParameterParser.ParseResult<Object> result = parser.collectParameters(this.method03);
+        assertTrue(contentEquals(expected, result.parameters()));
+    }
+
+    @Test
+    public void collectParameters_04() throws RuleViolationException {
+        final ParameterMapperRegistry<Object> registry = new ParameterMapperRegistry<>();
+        final TypeToken<List<Integer>> intsType = new TypeToken<>() {};
+        final TypeToken<Set<String>> stringsType = new TypeToken<>() {};
+        final TypeToken<Collection<Object>> objectsType = new TypeToken<>() {};
+
+        registry.registerMapper(new DummyParameterMapper<>(intsType));
+        registry.registerMapper(new DummyParameterMapper<>(stringsType));
+        registry.registerMapper(new DummyParameterMapper<>(objectsType));
+
+        final MethodParameterParser<Object> parser = new MethodParameterParser<>(registry);
+        final List<CommandParameter<Object>> expected = List.of(
+                new StandardParameter<>("arg0", false, intsType, new AnnotationList(),
+                        registry.findMapper(intsType).orElseThrow()),
+                new StandardParameter<>("arg1", false, stringsType, new AnnotationList(),
+                        registry.findMapper(stringsType).orElseThrow()),
+                new StandardParameter<>("arg2", false, objectsType, new AnnotationList(),
+                        registry.findMapper(objectsType).orElseThrow())
+        );
+
+        final MethodParameterParser.ParseResult<Object> actual = parser.collectParameters(this.method04);
+        assertTrue(contentEquals(expected, actual.parameters()));
+    }
+
+    @Test
+    public void collectParameters_05() throws RuleViolationException {
+        final ParameterMapperRegistry<Object> registry = new ParameterMapperRegistry<>();
+        final MethodParameterParser<Object> parser = new MethodParameterParser<>(registry);
+        final MethodParameterParser.ParseResult<Object> result = parser.collectParameters(this.method05);
+        assertTrue(result.parameters().isEmpty());
+    }
+
+    @Test
+    public void collectParameters_06() throws RuleViolationException {
+        final ParameterMapperRegistry<Object> registry = new ParameterMapperRegistry<>();
+        final MethodParameterParser<Object> parser = new MethodParameterParser<>(registry);
+        final MethodParameterParser.ParseResult<Object> result = parser.collectParameters(this.method06);
+        assertEquals(2, result.parameters().size());
     }
 
     private static boolean contentEquals(final List<CommandParameter<Object>> expected, final List<CommandParameter<Object>> result) {
@@ -259,8 +309,39 @@ public class MethodParameterParserTests {
                              final float f,
                              final @Range(min = 1.0D, max = 1034.54D) double d,
                              final @Flag("flag-3") char c) {}
+
+        public void method04(final List<Integer> ints,
+                             final Set<String> strings,
+                             final Collection<Object> objects) {}
+
+        public void method05(final CommandContext<Object> ctx) {}
+
+        public void method06(final @Source Object source,
+                             final int a,
+                             final double b,
+                             final CommandContext<Object> ctx) {}
     }
 
     @Retention(RetentionPolicy.RUNTIME)
     public @interface Dummy {}
+
+    private static final class DummyParameterMapper<T> implements ParameterMapper<Object, T> {
+        private final TypeToken<T> type;
+
+        DummyParameterMapper(final TypeToken<T> type) {
+            this.type = type;
+        }
+
+        @Override
+        public TypeToken<T> type() {
+            return this.type;
+        }
+
+        @Override
+        public T map(final CommandContext<Object> context,
+                     final Queue<CommandInput> args,
+                     final AnnotationList modifiers) throws ParameterMappingException {
+            throw new UnsupportedOperationException();
+        }
+    }
 }

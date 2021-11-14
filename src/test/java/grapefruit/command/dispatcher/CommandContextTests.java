@@ -5,7 +5,6 @@ import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.StandardParameter;
 import grapefruit.command.parameter.mapper.AbstractParameterMapper;
 import grapefruit.command.util.AnnotationList;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -158,9 +157,9 @@ public class CommandContextTests {
         }
 
         @Override
-        public @NotNull String map(final @NotNull CommandContext<Object> context,
-                                   final @NotNull Queue<CommandInput> args,
-                                   final @NotNull AnnotationList modifiers) {
+        public String map(final CommandContext<Object> context,
+                          final Queue<CommandInput> args,
+                          final AnnotationList modifiers) {
             return "Hello there!";
         }
     }
