@@ -115,6 +115,16 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     @Override
+    public <X extends CommandException> void registerHandler(final @NotNull Class<X> clazz,
+                                                             final @NotNull ExceptionHandler<S, X> handler) {
+        if (this.exceptionHandlers.containsKey(clazz)) {
+            throw new IllegalStateException(format("ExceptionHandler for type '%s' already registerd", clazz.getName()));
+        }
+
+        this.exceptionHandlers.put(clazz, handler);
+    }
+
+    @Override
     public void registerCommands(final @NotNull CommandContainer container) {
         requireNonNull(container, "container cannot be null");
         for (final Method method : container.getClass().getDeclaredMethods()) {
@@ -124,16 +134,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
             registerCommand(container, method);
         }
-    }
-
-    @Override
-    public <X extends CommandException> void registerHandler(final @NotNull Class<X> clazz,
-                                                             final @NotNull ExceptionHandler<S, X> handler) {
-        if (this.exceptionHandlers.containsKey(clazz)) {
-            throw new IllegalStateException(format("ExceptionHandler for type '%s' already registerd", clazz.getName()));
-        }
-
-        this.exceptionHandlers.put(clazz, handler);
     }
 
     private void registerCommand(final @NotNull CommandContainer container,
