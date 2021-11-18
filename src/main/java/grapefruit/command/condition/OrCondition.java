@@ -7,9 +7,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 final class OrCondition<S> extends AbstractMultiCondition<S> {
+    private static final String ID = "OR";
 
     OrCondition(final @NotNull List<CommandCondition<S>> conditions) {
-        super(conditions);
+        super(ID, conditions);
     }
 
     @Override

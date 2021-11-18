@@ -6,9 +6,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 final class AndCondition<S> extends AbstractMultiCondition<S> {
+    private static final String ID = "AND";
 
     AndCondition(final @NotNull List<CommandCondition<S>> conditions) {
-        super(conditions);
+        super(ID, conditions);
     }
 
     @Override
