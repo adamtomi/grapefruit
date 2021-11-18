@@ -2,6 +2,7 @@ package grapefruit.command.dispatcher;
 
 import com.google.common.reflect.TypeToken;
 import grapefruit.command.CommandContainer;
+import grapefruit.command.condition.CommandCondition;
 import grapefruit.command.dispatcher.registration.CommandRegistration;
 import grapefruit.command.dispatcher.registration.RedirectingCommandRegistration;
 import grapefruit.command.parameter.CommandParameter;
@@ -254,6 +255,11 @@ public class CommandGraphTests {
 
         @Override
         public Optional<String> permission() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<CommandCondition<Object>> condition() {
             return Optional.empty();
         }
 

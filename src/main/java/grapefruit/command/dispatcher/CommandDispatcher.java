@@ -3,6 +3,7 @@ package grapefruit.command.dispatcher;
 import com.google.common.reflect.TypeToken;
 import grapefruit.command.CommandContainer;
 import grapefruit.command.CommandException;
+import grapefruit.command.condition.CommandConditionRegistry;
 import grapefruit.command.dispatcher.exception.ExceptionHandler;
 import grapefruit.command.dispatcher.listener.PostDispatchListener;
 import grapefruit.command.dispatcher.listener.PreDispatchListener;
@@ -15,6 +16,8 @@ import java.util.List;
 public interface CommandDispatcher<S> {
 
     @NotNull ParameterMapperRegistry<S> mappers();
+
+    @NotNull CommandConditionRegistry<S> conditions();
 
     void registerListener(final @NotNull PreProcessLitener<S> listener);
 
