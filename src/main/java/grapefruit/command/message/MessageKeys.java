@@ -8,6 +8,9 @@ import java.util.Set;
 public final class MessageKeys {
     private static final Set<MessageKey> values = new HashSet<>();
 
+    // Variables: {id}
+    public static final MessageKey CONDITION_FAILED = register(MessageKey.of("condition.failed"));
+
     // Variables: {permission}
     public static final MessageKey AUTHORIZATION_ERROR = register(MessageKey.of("dispatcher.authorization-error"));
     // Variables: {commandline}
