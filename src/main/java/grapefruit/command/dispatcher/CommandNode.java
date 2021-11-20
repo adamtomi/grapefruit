@@ -5,7 +5,7 @@ import grapefruit.command.util.Miscellaneous;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -18,7 +18,7 @@ public class CommandNode<S> {
     private static final Pattern VALID_NAME_PATTERN = Pattern.compile("(\\w|-)+", Pattern.UNICODE_CHARACTER_CLASS);
     private final String primary;
     private final Set<String> aliases;
-    private final Set<CommandNode<S>> children = new HashSet<>();
+    private final Set<CommandNode<S>> children = new LinkedHashSet<>();
     private @Nullable CommandRegistration<S> registration;
 
     public CommandNode(final @NotNull String primary,
@@ -28,14 +28,14 @@ public class CommandNode<S> {
         aliases.forEach(CommandNode::validate);
         this.primary = primary;
         // Create a mutable copy, so #mergeAliases doesn't fail
-        this.aliases = new HashSet<>(aliases);
+        this.aliases = new LinkedHashSet<>(aliases);
         this.registration = registration;
     }
 
     public CommandNode(final @NotNull String primary,
                        final @NotNull String[] aliases,
                        final @Nullable CommandRegistration<S> registration) {
-        this(primary, Miscellaneous.mutableCollectionOf(aliases, HashSet::new), registration);
+        this(primary, Miscellaneous.mutableCollectionOf(aliases, LinkedHashSet::new), registration);
     }
 
     private static void validate(final @NotNull String name) {
