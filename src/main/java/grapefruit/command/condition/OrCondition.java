@@ -19,6 +19,7 @@ final class OrCondition<S> extends AbstractMultiCondition<S> {
         for (final CommandCondition<S> condition : this.conditions) {
             try {
                 condition.test(context);
+                return; // One condition passing is enough
             } catch (final ConditionFailedException ex) {
                 lastException = ex;
             }
