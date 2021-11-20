@@ -2,6 +2,7 @@ package grapefruit.command.dispatcher.registration;
 
 import com.google.common.reflect.TypeToken;
 import grapefruit.command.CommandContainer;
+import grapefruit.command.condition.CommandCondition;
 import grapefruit.command.parameter.CommandParameter;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,6 +19,8 @@ public interface CommandRegistration<S> {
     @NotNull List<CommandParameter<S>> parameters();
 
     @NotNull Optional<String> permission();
+
+    @NotNull Optional<CommandCondition<S>> condition();
 
     @NotNull Optional<TypeToken<?>> commandSourceType();
 

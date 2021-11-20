@@ -4,6 +4,9 @@ import com.google.common.reflect.TypeToken;
 import grapefruit.command.CommandContainer;
 import grapefruit.command.CommandDefinition;
 import grapefruit.command.CommandException;
+import grapefruit.command.condition.CommandCondition;
+import grapefruit.command.condition.CommandConditionAssembler;
+import grapefruit.command.condition.CommandConditionRegistry;
 import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
 import grapefruit.command.dispatcher.exception.CommandInvocationException;
 import grapefruit.command.dispatcher.exception.CommandSyntaxException;
@@ -64,6 +67,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private static final System.Logger LOGGER = System.getLogger(CommandDispatcherImpl.class.getName());
     private final ParameterMapperRegistry<S> mapperRegistry = new ParameterMapperRegistry<>();
     private final MethodParameterParser<S> parameterParser = new MethodParameterParser<>(this.mapperRegistry);
+    private final CommandConditionRegistry<S> conditionRegistry = new CommandConditionRegistry<>();
+    private final CommandConditionAssembler<S> conditionAssembler = new CommandConditionAssembler<>(this.conditionRegistry);
     private final Queue<PreProcessLitener<S>> preProcessLiteners = new ConcurrentLinkedQueue<>();
     private final Queue<PreDispatchListener<S>> preDispatchListeners = new ConcurrentLinkedQueue<>();
     private final Queue<PostDispatchListener<S>> postDispatchListeners = new ConcurrentLinkedQueue<>();
@@ -100,6 +105,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     @Override
+    public @NotNull CommandConditionRegistry<S> conditions() {
+        return this.conditionRegistry;
+    }
+
+    @Override
     public void registerListener(final @NotNull PreProcessLitener<S> listener) {
         this.preProcessLiteners.offer(requireNonNull(listener, "listener cannot be null"));
     }
@@ -115,6 +125,16 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     @Override
+    public <X extends CommandException> void registerHandler(final @NotNull Class<X> clazz,
+                                                             final @NotNull ExceptionHandler<S, X> handler) {
+        if (this.exceptionHandlers.containsKey(clazz)) {
+            throw new IllegalStateException(format("ExceptionHandler for type '%s' already registerd", clazz.getName()));
+        }
+
+        this.exceptionHandlers.put(clazz, handler);
+    }
+
+    @Override
     public void registerCommands(final @NotNull CommandContainer container) {
         requireNonNull(container, "container cannot be null");
         for (final Method method : container.getClass().getDeclaredMethods()) {
@@ -124,16 +144,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
             registerCommand(container, method);
         }
-    }
-
-    @Override
-    public <X extends CommandException> void registerHandler(final @NotNull Class<X> clazz,
-                                                             final @NotNull ExceptionHandler<S, X> handler) {
-        if (this.exceptionHandlers.containsKey(clazz)) {
-            throw new IllegalStateException(format("ExceptionHandler for type '%s' already registerd", clazz.getName()));
-        }
-
-        this.exceptionHandlers.put(clazz, handler);
     }
 
     private void registerCommand(final @NotNull CommandContainer container,
@@ -173,11 +183,14 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 }
             }
 
+            final @Nullable CommandCondition<S> condition = this.conditionAssembler.constructCondition(method)
+                    .orElse(null);
             final CommandRegistration<S> reg = new StandardCommandRegistration<>(
                     container,
                     method,
                     result.parameters(),
                     permission,
+                    condition,
                     commandSourceType,
                     result.requiresContext(),
                     runAsync);
@@ -293,6 +306,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 executor.execute(() -> {
                     try {
                         final CommandContext<S> context = processCommand(reg, commandLine, source, args);
+                        final Optional<CommandCondition<S>> condition = reg.condition();
+                        if (condition.isPresent()) {
+                            condition.orElseThrow().test(context);
+                        }
+
                         postprocessArguments(context, reg.parameters(), commandLine);
                         if (!invokePreDispatchListeners(context, reg)) {
                             return;

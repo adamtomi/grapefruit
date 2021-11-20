@@ -17,6 +17,8 @@ public final class DefaultMessageProvider implements MessageProvider {
         private static final long serialVersionUID = -6031910817776585422L;
 
         {
+            put(MessageKeys.CONDITION_FAILED, "Condition with id '{id}' was not satisfied");
+
             put(MessageKeys.AUTHORIZATION_ERROR, "You lack permission '{permission}'");
             put(MessageKeys.FAILED_TO_EXECUTE_COMMAND, "Failed to execute command '{commandline}'");
             put(MessageKeys.NO_SUCH_COMMAND, "Root command node with name '{name}' could not be found");

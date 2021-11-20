@@ -3,6 +3,9 @@ package grapefruit.command.dispatcher;
 import com.google.common.reflect.TypeToken;
 import grapefruit.command.CommandContainer;
 import grapefruit.command.CommandDefinition;
+import grapefruit.command.condition.CommandCondition;
+import grapefruit.command.condition.Condition;
+import grapefruit.command.condition.ConditionFailedException;
 import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
 import grapefruit.command.dispatcher.listener.PreDispatchListener;
 import grapefruit.command.dispatcher.listener.PreProcessLitener;
@@ -264,6 +267,34 @@ public class CommandDispatcherTests {
         assertTrue(handlerStatus.get());
     }
 
+    @Test
+    public void dispatchCommand_conditionsFail() {
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.builder(TypeToken.of(Object.class))
+                .withAuthorizer((source, perm) -> false) // do not grant permission
+                .build();
+
+        final StatusAwareContainer container = new ContainerWithConditions();
+        dispatcher.conditions().registerCondition(new AlwaysFailingCondition());
+        dispatcher.conditions().registerCondition(new AlwaysPassingCondition());
+        dispatcher.registerCommands(container);
+        dispatcher.dispatchCommand(new Object(), "a");
+        assertFalse(container.status);
+    }
+
+    @Test
+    public void dispatchCommand_conditionsPass() {
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.builder(TypeToken.of(Object.class))
+                .withAuthorizer((source, perm) -> false) // do not grant permission
+                .build();
+
+        final StatusAwareContainer container = new ContainerWithConditions();
+        dispatcher.conditions().registerCondition(new AlwaysPassingCondition());
+        dispatcher.conditions().registerCondition(new AlwaysFailingCondition());
+        dispatcher.registerCommands(container);
+        dispatcher.dispatchCommand(new Object(), "b");
+        assertTrue(container.status);
+    }
+
     @ParameterizedTest
     @CsvSource({
             "roo,root",
@@ -437,6 +468,21 @@ public class CommandDispatcherTests {
         }
     }
 
+    private static final class ContainerWithConditions extends StatusAwareContainer {
+
+        @Condition("always-fail")
+        @CommandDefinition(route = "a")
+        public void method01() {
+            this.status = true;
+        }
+
+        @Condition("always-pass")
+        @CommandDefinition(route = "b")
+        public void method02() {
+            this.status = true;
+        }
+    }
+
     /* Command source classes */
     private interface CommandSource {}
 
@@ -466,6 +512,36 @@ public class CommandDispatcherTests {
                                             final String currentArg,
                                             final AnnotationList modifiers) {
             return Arrays.asList("First", "Second", "Third");
+        }
+    }
+
+
+    /* Condition classes */
+    private static final class AlwaysFailingCondition implements CommandCondition<Object> {
+        private static final String ID = "always-fail";
+
+        @Override
+        public String id() {
+            return ID;
+        }
+
+        @Override
+        public void test(final CommandContext<Object> context) throws ConditionFailedException {
+            throw new ConditionFailedException(ID, context);
+        }
+    }
+
+    private static final class AlwaysPassingCondition implements CommandCondition<Object> {
+        private static final String ID = "always-pass";
+
+        @Override
+        public String id() {
+            return ID;
+        }
+
+        @Override
+        public void test(final CommandContext<Object> context) throws ConditionFailedException {
+            // do nothing
         }
     }
 }

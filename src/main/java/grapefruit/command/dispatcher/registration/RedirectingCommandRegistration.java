@@ -2,6 +2,7 @@ package grapefruit.command.dispatcher.registration;
 
 import com.google.common.reflect.TypeToken;
 import grapefruit.command.CommandContainer;
+import grapefruit.command.condition.CommandCondition;
 import grapefruit.command.parameter.CommandParameter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,6 +46,11 @@ public final class RedirectingCommandRegistration<S> implements CommandRegistrat
     @Override
     public @NotNull Optional<String> permission() {
         return this.delegate.permission();
+    }
+
+    @Override
+    public @NotNull Optional<CommandCondition<S>> condition() {
+        return this.delegate.condition();
     }
 
     @Override
