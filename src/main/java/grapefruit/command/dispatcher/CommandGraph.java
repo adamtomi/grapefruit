@@ -177,7 +177,7 @@ final class CommandGraph<S> {
                     joiner.add(parameter.isOptional() ? AS_OPTIONAL.apply(syntaxPart) : AS_REQUIRED.apply(syntaxPart));
                 }
 
-                return new CommandSyntax(joiner.toString(), List.of());
+                return new CommandSyntax(joiner.toString(), List.of(), Optional.of(registration));
             }
         }
 
@@ -194,7 +194,7 @@ final class CommandGraph<S> {
                 .toList();
         final String rawSyntax = joiner.add(AS_REQUIRED.apply(String.join("|", children))).toString();
 
-        return new CommandSyntax(rawSyntax, syntaxOptions);
+        return new CommandSyntax(rawSyntax, syntaxOptions, Optional.empty());
     }
 
     private @NotNull Optional<CommandNode<S>> findChild(final @NotNull CommandNode<S> parent,
