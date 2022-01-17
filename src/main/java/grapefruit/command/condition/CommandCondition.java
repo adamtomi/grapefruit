@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.regex.Pattern;
 
 public interface CommandCondition<S> {
-    Pattern VALID_NAME_PATTERN = Pattern.compile("(\\w|-)+", Pattern.UNICODE_CHARACTER_CLASS);
+    Pattern VALID_NAME_PATTERN = Pattern.compile("(\\w|:|-)+", Pattern.UNICODE_CHARACTER_CLASS);
 
     @NotNull String id();
 
