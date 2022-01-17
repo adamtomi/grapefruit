@@ -323,7 +323,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     }
                 });
             } else {
-                final CommandSyntax syntax = this.commandGraph.generateSyntaxFor(commandLine);
+                final CommandSyntax syntax = generateSyntax(commandLine);
                 throw ((CommandGraph.RouteResult.Failure<S>) routeResult).reason().equals(
                         CommandGraph.RouteResult.Failure.Reason.NO_SUCH_COMMAND)
                             ? new NoSuchCommandException(commandLine.split(ALIAS_SEPARATOR)[0])
@@ -512,7 +512,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         } else {
             args.remove();
             if (args.isEmpty()) {
-                final CommandSyntax syntax = this.commandGraph.generateSyntaxFor(context.commandLine());
+                final CommandSyntax syntax = generateSyntax(context.commandLine());
                 // This means that there aren't any values for this flag
                 throw new CommandSyntaxException(syntax, Message.of(
                         MessageKeys.MISSING_FLAG_VALUE,
@@ -545,7 +545,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                                        final @NotNull List<CommandParameter<S>> parameters,
                                                        final @NotNull CommandContext<S> context,
                                                        final int parameterIndex) throws CommandException {
-        final CommandSyntax syntax = this.commandGraph.generateSyntaxFor(commandLine);
+        final CommandSyntax syntax = generateSyntax(commandLine);
         if (parameterIndex >= parameters.size()) {
             throw new CommandSyntaxException(syntax, Message.of(
                     MessageKeys.TOO_MANY_ARGUMENTS,
@@ -589,7 +589,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final Optional<Object> argument = context.find(name);
 
             if (!parameter.isOptional() && argument.isEmpty()) {
-                final CommandSyntax syntax = this.commandGraph.generateSyntaxFor(commandLine);
+                final CommandSyntax syntax = generateSyntax(commandLine);
                 throw new CommandSyntaxException(syntax, Message.of(
                         MessageKeys.TOO_FEW_ARGUMENTS,
                         Template.of("{syntax}", syntax.rawSyntax())
@@ -659,5 +659,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     (ExceptionHandler<S, CommandException>) this.exceptionHandlers.get(clazz);
             handler.handle(source, commandLine, ex);
         }
+    }
+
+    @Override
+    public @NotNull CommandSyntax generateSyntax(final @NotNull String commandLine) {
+        return this.commandGraph.generateSyntaxFor(commandLine);
     }
 }
