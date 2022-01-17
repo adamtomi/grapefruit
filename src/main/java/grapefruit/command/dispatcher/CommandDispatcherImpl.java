@@ -326,7 +326,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 throw ((CommandGraph.RouteResult.Failure<S>) routeResult).reason().equals(
                         CommandGraph.RouteResult.Failure.Reason.NO_SUCH_COMMAND)
                             ? new NoSuchCommandException(commandLine.split(ALIAS_SEPARATOR)[0])
-                            : new CommandSyntaxException(Message.of(
+                            : new CommandSyntaxException(commandLine, Message.of(
                             MessageKeys.TOO_FEW_ARGUMENTS,
                             Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))
                 ));
@@ -512,7 +512,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             args.remove();
             if (args.isEmpty()) {
                 // This means that there aren't any values for this flag
-                throw new CommandSyntaxException(Message.of(
+                throw new CommandSyntaxException(context.commandLine(), Message.of(
                         MessageKeys.MISSING_FLAG_VALUE,
                         Template.of("{input}", rawInput)
                 ));
@@ -544,7 +544,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                                        final @NotNull CommandContext<S> context,
                                                        final int parameterIndex) throws CommandException {
         if (parameterIndex >= parameters.size()) {
-            throw new CommandSyntaxException(Message.of(
+            throw new CommandSyntaxException(commandLine, Message.of(
                     MessageKeys.TOO_MANY_ARGUMENTS,
                     Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))
             ));
@@ -555,7 +555,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 .filter(x -> context.find(x.name()).isEmpty())
                 .findFirst();
         if (firstNonFlagParameter.isEmpty()) {
-            throw new CommandSyntaxException(Message.of(MessageKeys.MISSING_FLAG,
+            throw new CommandSyntaxException(commandLine, Message.of(MessageKeys.MISSING_FLAG,
                     Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))));
         }
 
@@ -585,7 +585,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final String name = Miscellaneous.parameterName(parameter);
             final Optional<Object> argument = context.find(name);
             if (!parameter.isOptional() && argument.isEmpty()) {
-                throw new CommandSyntaxException(Message.of(
+                throw new CommandSyntaxException(commandLine, Message.of(
                         MessageKeys.TOO_FEW_ARGUMENTS,
                         Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))
                 ));
