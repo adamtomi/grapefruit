@@ -323,12 +323,13 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     }
                 });
             } else {
+                final CommandSyntax syntax = this.commandGraph.generateSyntaxFor(commandLine);
                 throw ((CommandGraph.RouteResult.Failure<S>) routeResult).reason().equals(
                         CommandGraph.RouteResult.Failure.Reason.NO_SUCH_COMMAND)
                             ? new NoSuchCommandException(commandLine.split(ALIAS_SEPARATOR)[0])
-                            : new CommandSyntaxException(commandLine, Message.of(
+                            : new CommandSyntaxException(syntax, Message.of(
                             MessageKeys.TOO_FEW_ARGUMENTS,
-                            Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))
+                            Template.of("{syntax}", syntax.rawSyntax())
                 ));
             }
         } catch (final CommandException ex) {
@@ -511,8 +512,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         } else {
             args.remove();
             if (args.isEmpty()) {
+                final CommandSyntax syntax = this.commandGraph.generateSyntaxFor(context.commandLine());
                 // This means that there aren't any values for this flag
-                throw new CommandSyntaxException(context.commandLine(), Message.of(
+                throw new CommandSyntaxException(syntax, Message.of(
                         MessageKeys.MISSING_FLAG_VALUE,
                         Template.of("{input}", rawInput)
                 ));
@@ -543,10 +545,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                                                        final @NotNull List<CommandParameter<S>> parameters,
                                                        final @NotNull CommandContext<S> context,
                                                        final int parameterIndex) throws CommandException {
+        final CommandSyntax syntax = this.commandGraph.generateSyntaxFor(commandLine);
         if (parameterIndex >= parameters.size()) {
-            throw new CommandSyntaxException(commandLine, Message.of(
+            throw new CommandSyntaxException(syntax, Message.of(
                     MessageKeys.TOO_MANY_ARGUMENTS,
-                    Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))
+                    Template.of("{syntax}", syntax.rawSyntax())
             ));
         }
 
@@ -555,8 +558,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 .filter(x -> context.find(x.name()).isEmpty())
                 .findFirst();
         if (firstNonFlagParameter.isEmpty()) {
-            throw new CommandSyntaxException(commandLine, Message.of(MessageKeys.MISSING_FLAG,
-                    Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))));
+            throw new CommandSyntaxException(syntax, Message.of(MessageKeys.MISSING_FLAG,
+                    Template.of("{syntax}", syntax.rawSyntax())));
         }
 
         return firstNonFlagParameter.orElseThrow();
@@ -584,10 +587,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         for (final CommandParameter<S> parameter : parameters) {
             final String name = Miscellaneous.parameterName(parameter);
             final Optional<Object> argument = context.find(name);
+
             if (!parameter.isOptional() && argument.isEmpty()) {
-                throw new CommandSyntaxException(commandLine, Message.of(
+                final CommandSyntax syntax = this.commandGraph.generateSyntaxFor(commandLine);
+                throw new CommandSyntaxException(syntax, Message.of(
                         MessageKeys.TOO_FEW_ARGUMENTS,
-                        Template.of("{syntax}", this.commandGraph.generateSyntaxFor(commandLine))
+                        Template.of("{syntax}", syntax.rawSyntax())
                 ));
             }
         }
