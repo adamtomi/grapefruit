@@ -168,25 +168,20 @@ public class CommandGraphTests {
     @ParameterizedTest
     @CsvSource({
             "some command path$test$root child,some$test$root,''",
-            "some command|othercommand|third$path$test$root child,some,command$othercommand$third",
-            "some command path$test$root child,root,child"
+            "some command path$test$root child,root,child",
+            "some command$some path$some test$some hello,some command$some path$some test$some hello,some"
     })
     public void generateSyntaxFor_validInput_noParameters(final String routesStr, final String expectedStr, final String commandLine) {
         final CommandGraph<Object> graph = graph();
         final List<String> routes = Arrays.asList(routesStr.split("\\$"));
         routes.forEach(route -> graph.registerCommand(route, new DummyCommandRegistration()));
         final String[] expected = expectedStr.split("\\$");
-        final String syntax = graph.generateSyntaxFor(commandLine);
+        final CommandSyntax syntax = graph.generateSyntaxFor(commandLine);
 
-        boolean containsAll = true;
+        final List<String> syntaxOptions = syntax.syntaxOptions();
         for (final String each : expected) {
-            if (!syntax.contains(each)) {
-                containsAll = false;
-                break;
-            }
+            assertTrue(syntaxOptions.contains(each));
         }
-
-        assertTrue(containsAll);
     }
 
     @Test
@@ -207,7 +202,7 @@ public class CommandGraphTests {
         ));
         graph.registerCommand("root", reg);
         final String expectedSyntax = "root <test> <test2> [test3] [--flag-0] [--flag-1] [--flag-2 test6]";
-        final String actualSyntax = graph.generateSyntaxFor("root");
+        final String actualSyntax = graph.generateSyntaxFor("root").rawSyntax();
         assertEquals(expectedSyntax, actualSyntax);
     }
 

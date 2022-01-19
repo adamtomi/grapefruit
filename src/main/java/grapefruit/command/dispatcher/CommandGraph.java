@@ -136,7 +136,7 @@ final class CommandGraph<S> {
         return result;
     }
 
-    public @NotNull String generateSyntaxFor(final @NotNull String commandLine) {
+    public @NotNull CommandSyntax generateSyntaxFor(final @NotNull String commandLine) {
         CommandNode<S> node = this.rootNode;
         if (node.children().isEmpty()) {
             throw new IllegalStateException("Cannot generate syntax for empty command tree");
@@ -177,17 +177,24 @@ final class CommandGraph<S> {
                     joiner.add(parameter.isOptional() ? AS_OPTIONAL.apply(syntaxPart) : AS_REQUIRED.apply(syntaxPart));
                 }
 
-                return joiner.toString();
+                return new CommandSyntax(joiner.toString(), List.of(), Optional.of(registration));
             }
         }
 
-        final String children = node.children().stream()
+        final List<String> children = node.children().stream()
                 .map(CommandNode::primary)
                 .sorted()
-                .collect(Collectors.joining("|"));
-        joiner.add(AS_REQUIRED.apply(children));
+                .toList();
+        final String prefix = joiner.toString();
+        final UnaryOperator<String> prefixer = x -> prefix.isEmpty()
+                ? x
+                : "%s %s".formatted(prefix, x);
+        final List<String> syntaxOptions = children.stream()
+                .map(prefixer)
+                .toList();
+        final String rawSyntax = joiner.add(AS_REQUIRED.apply(String.join("|", children))).toString();
 
-        return joiner.toString();
+        return new CommandSyntax(rawSyntax, syntaxOptions, Optional.empty());
     }
 
     private @NotNull Optional<CommandNode<S>> findChild(final @NotNull CommandNode<S> parent,
