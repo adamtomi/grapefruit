@@ -52,7 +52,7 @@ public class ConditionAssemblerTests {
     }
 
     @Test
-    public void constructCondition_multipleConditionGroups() {
+    public void constructCondition_multipleConditionGroups_doesNotThrow() {
         final CommandConditionRegistry<Object> registry = new CommandConditionRegistry<>();
         final CommandConditionAssembler<Object> assembler = new CommandConditionAssembler<>(registry);
         Stream.of("a", "b", "c", "d", "e", "f", "g", "h")
@@ -60,6 +60,17 @@ public class ConditionAssemblerTests {
                 .forEach(registry::registerCondition);
 
         assertDoesNotThrow(() -> assembler.constructCondition(this.methodWithMultipleConditionGroups));
+    }
+
+    @Test
+    public void constructCondition_multipleConditionGroups_notEmpty() {
+        final CommandConditionRegistry<Object> registry = new CommandConditionRegistry<>();
+        final CommandConditionAssembler<Object> assembler = new CommandConditionAssembler<>(registry);
+        Stream.of("a", "b", "c", "d", "e", "f", "g", "h")
+                .map(DummyCondition::new)
+                .forEach(registry::registerCondition);
+
+        assertTrue(assembler.constructCondition(this.methodWithMultipleConditionGroups).isPresent());
     }
 
     private static final class DummyCondition implements CommandCondition<Object> {
