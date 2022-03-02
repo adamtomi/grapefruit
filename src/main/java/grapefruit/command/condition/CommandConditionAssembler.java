@@ -19,14 +19,15 @@ public class CommandConditionAssembler<S> {
     }
 
     public @NotNull Optional<CommandCondition<S>> constructCondition(final @NotNull Method method) {
-        if (!method.isAnnotationPresent(Condition.class)) {
+        final Condition[] conditions = method.getAnnotationsByType(Condition.class);
+        if (conditions.length < 1) {
             return Optional.empty();
         }
 
-        final Condition[] conditions = method.getAnnotationsByType(Condition.class);
         final List<CommandCondition<S>> orConditions = Arrays.stream(conditions)
                 .map(this::parseAnnotation)
                 .toList();
+
         return Optional.of(new AndCondition<>(orConditions));
     }
 
