@@ -20,6 +20,7 @@ public class CommandNode<S> {
     private final Set<String> aliases;
     private final Set<CommandNode<S>> children = new LinkedHashSet<>();
     private @Nullable CommandRegistration<S> registration;
+    private @Nullable CommandNode<S> parent;
 
     public CommandNode(final @NotNull String primary,
                        final @NotNull Set<String> aliases,
@@ -69,6 +70,10 @@ public class CommandNode<S> {
         this.children.add(child);
     }
 
+    public void removeChild(final @NotNull CommandNode<S> child) {
+        this.children.remove(child);
+    }
+
     public @NotNull Set<CommandNode<S>> children() {
         return Set.copyOf(this.children);
     }
@@ -79,6 +84,18 @@ public class CommandNode<S> {
                 .findFirst();
     }
 
+    public @NotNull Optional<CommandNode<S>> parent() {
+        return Optional.ofNullable(this.parent);
+    }
+
+    public void parent(final @Nullable CommandNode<S> parent) {
+        this.parent = parent;
+    }
+
+    public boolean isLeaf() {
+        return this.children.isEmpty();
+    }
+
     @Override
     public String toString() {
         return "CommandNode[" +
@@ -86,6 +103,7 @@ public class CommandNode<S> {
                 ", aliases=" + this.aliases +
                 ", registration=" + this.registration +
                 ", children=" + this.children +
+                ", parent=" + this.parent +
                 ']';
     }
 

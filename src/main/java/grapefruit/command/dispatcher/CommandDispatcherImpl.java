@@ -18,7 +18,6 @@ import grapefruit.command.dispatcher.listener.PostDispatchListener;
 import grapefruit.command.dispatcher.listener.PreDispatchListener;
 import grapefruit.command.dispatcher.listener.PreProcessLitener;
 import grapefruit.command.dispatcher.registration.CommandRegistration;
-import grapefruit.command.dispatcher.registration.CommandRegistrationContext;
 import grapefruit.command.dispatcher.registration.CommandRegistrationHandler;
 import grapefruit.command.dispatcher.registration.RedirectingCommandRegistration;
 import grapefruit.command.dispatcher.registration.StandardCommandRegistration;
@@ -45,6 +44,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -74,6 +74,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final Queue<PostDispatchListener<S>> postDispatchListeners = new ConcurrentLinkedQueue<>();
     private final Map<Class<? extends CommandException>, ExceptionHandler<S, ? extends CommandException>> exceptionHandlers
             = new ConcurrentHashMap<>();
+    private final Map<CommandContainer, Set<CommandRegistration<S>>> registrations = new ConcurrentHashMap<>();
     private final CommandInputTokenizer inputTokenizer = new CommandInputTokenizer();
     private final CommandGraph<S> commandGraph = new CommandGraph<>();
     private final SuggestionHelper<S> suggestionHelper = new SuggestionHelper<>();
@@ -185,6 +186,16 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
             final @Nullable CommandCondition<S> condition = this.conditionAssembler.constructCondition(method)
                     .orElse(null);
+            List<RouteFragment> parsedRoute = Arrays.stream(route.split(" "))
+                    .map(String::trim)
+                    .map(x -> x.split(ALIAS_SEPARATOR))
+                    .map(x -> {
+                        final String primary = x[0];
+                        final String[] aliases = x.length > 1
+                                ? Arrays.copyOfRange(x, 1, x.length)
+                                : new String[0];
+                        return new RouteFragment(primary, aliases);
+                    }).toList();
             final CommandRegistration<S> reg = new StandardCommandRegistration<>(
                     container,
                     method,
@@ -194,9 +205,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     commandSourceType,
                     result.requiresContext(),
                     runAsync);
-            registerCommand(route, reg);
+            registerCommand(container, reg);
             redirectNodes.forEach(node ->
-                    registerCommand(node.route(), new RedirectingCommandRegistration<>(reg, Arrays.asList(node.arguments()))));
+                    registerCommand(container, new RedirectingCommandRegistration<>(reg, Arrays.asList(node.arguments()))));
         } catch (final MethodParameterParser.RuleViolationException ex) {
             throw new RuntimeException(ex);
         } catch (final Throwable ex) {
@@ -204,14 +215,24 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
-    private void registerCommand(final @NotNull String route,
+    private void registerCommand(final @NotNull CommandContainer container,
                                  final @NotNull CommandRegistration<S> registration) {
-        this.commandGraph.registerCommand(route, registration);
-        final CommandRegistrationContext<S> regContext = new CommandRegistrationContext<>(
-                Arrays.asList(route.split(" ")),
-                registration
-        );
-        this.registrationHandler.accept(regContext);
+        this.commandGraph.registerCommand(registration);
+        this.registrationHandler.register(registration);
+
+        if (!this.registrations.containsKey(container)) this.registrations.put(container, new HashSet<>());
+        this.registrations.get(container).add(registration);
+    }
+
+    @Override
+    public void unregisterCommands(final @NotNull CommandContainer container) {
+        final Set<CommandRegistration<S>> registrations = this.registrations.remove(container);
+        if (registrations == null || registrations.isEmpty()) throw new IllegalStateException("This container has no registered commands");
+
+        for (final CommandRegistration<S> registration : registrations) {
+            final boolean fullUnregister = this.commandGraph.unregisterCommand(registration);
+            this.registrationHandler.unregister(registration, fullUnregister);
+        }
     }
 
     private <L> boolean invokeListeners(final @NotNull Supplier<Queue<L>> listeners,

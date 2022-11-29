@@ -6,8 +6,9 @@ import grapefruit.command.parameter.CommandParameter;
 import grapefruit.command.parameter.FlagParameter;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -15,7 +16,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 
 import static grapefruit.command.util.Miscellaneous.formatFlag;
 
@@ -27,19 +27,8 @@ final class CommandGraph<S> {
 
     CommandGraph() {}
 
-    public void registerCommand(final @NotNull String route, final @NotNull CommandRegistration<S> reg) {
-        final List<RouteFragment> parts = Arrays.stream(route.split(" "))
-                .map(String::trim)
-                .map(x -> x.split(ALIAS_SEPARATOR))
-                .map(x -> {
-                    final String primary = x[0];
-                    final String[] aliases = x.length > 1
-                            ? Arrays.copyOfRange(x, 1, x.length)
-                            : new String[0];
-                    return new RouteFragment(primary, aliases);
-                })
-                .collect(Collectors.toList());
-
+    public void registerCommand(final @NotNull CommandRegistration<S> reg) {
+        final List<RouteFragment> parts = reg.route();
         if (parts.isEmpty()) {
             throw new IllegalArgumentException("Empty command chain detected");
         }
@@ -48,8 +37,7 @@ final class CommandGraph<S> {
         for (final Iterator<RouteFragment> iter = parts.iterator(); iter.hasNext();) {
             final RouteFragment current = iter.next();
             final boolean last = !iter.hasNext();
-            final CommandNode<S> childNode = new CommandNode<>(current.primary(), current.aliases(), !last ? null : reg);
-            final Optional<CommandNode<S>> possibleChild = node.findChild(childNode.primary());
+            final Optional<CommandNode<S>> possibleChild = node.findChild(current.primary());
 
             if (possibleChild.isPresent()) {
                 final boolean isRedirectReg = reg instanceof RedirectingCommandRegistration;
@@ -58,16 +46,46 @@ final class CommandGraph<S> {
                 }
 
                 final CommandNode<S> realChildNode = possibleChild.get();
-                realChildNode.mergeAliases(childNode.aliases());
+                realChildNode.mergeAliases(List.of(current.aliases()));
                 node = realChildNode;
                 if (isRedirectReg) {
                     node.registration(reg);
                 }
             } else {
+                final CommandNode<S> childNode = new CommandNode<>(current.primary(), current.aliases(), !last ? null : reg);
+                childNode.parent(node);
                 node.addChild(childNode);
                 node = childNode;
             }
         }
+    }
+
+    public boolean unregisterCommand(final @NotNull CommandRegistration<S> reg) {
+        final Deque<CommandNode<S>> visitedNodes = new ArrayDeque<>(); // Collect all visited nodes
+        CommandNode<S> node = this.rootNode;
+        for (final Iterator<RouteFragment> iter = reg.route().iterator(); iter.hasNext();) {
+            final RouteFragment fragment = iter.next();
+            final CommandNode<S> child = node.findChild(fragment.primary()).orElseThrow(() ->
+                    new IllegalStateException("Command node %s does not have a child named %s".formatted(node.primary(), fragment.primary())));
+
+            visitedNodes.offer(child);
+            if (!iter.hasNext() && child.registration().isEmpty() && !child.isLeaf()) {
+                throw new IllegalStateException("Cannot unregister node %s because it has children (and has no registration)");
+            }
+        }
+
+        while (!visitedNodes.isEmpty()) {
+            final CommandNode<S> each = visitedNodes.pollLast();
+            if (!each.isLeaf()) break;
+
+            each.parent().ifPresent(x -> x.removeChild(each));
+        }
+
+        /*
+         * If the list is empty, that means that all nodes in that
+         * branch have been visited and removed from the tree.
+         */
+        return visitedNodes.isEmpty();
     }
 
     public @NotNull RouteResult<S> routeCommand(final @NotNull Queue<CommandInput> args) {
@@ -93,7 +111,7 @@ final class CommandGraph<S> {
             final CommandNode<S> child = childCandidate.get();
             final Optional<CommandRegistration<S>> registration = child.registration();
             final boolean redirectReg = registration.map(RedirectingCommandRegistration.class::isInstance).orElse(false);
-            if (child.children().isEmpty() || (redirectReg && args.peek() == null)) {
+            if (child.isLeaf() || (redirectReg && args.peek() == null)) {
                 return registration.map(RouteResult::success).orElseGet(() ->
                         RouteResult.failure(RouteResult.Failure.Reason.INVALID_SYNTAX));
             } else {
@@ -138,7 +156,7 @@ final class CommandGraph<S> {
 
     public @NotNull CommandSyntax generateSyntaxFor(final @NotNull String commandLine) {
         CommandNode<S> node = this.rootNode;
-        if (node.children().isEmpty()) {
+        if (node.isLeaf()) {
             throw new IllegalStateException("Cannot generate syntax for empty command tree");
         }
 
@@ -204,8 +222,6 @@ final class CommandGraph<S> {
                 ? child
                 : parent.children().stream().filter(x -> x.aliases().stream().anyMatch(alias::equalsIgnoreCase)).findFirst();
     }
-
-    private static final record RouteFragment (@NotNull String primary, @NotNull String[] aliases) {}
 
     @SuppressWarnings("all") // Don't complain about generics.
     interface RouteResult<S> {

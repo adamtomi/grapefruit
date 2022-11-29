@@ -3,6 +3,7 @@ package grapefruit.command.dispatcher.registration;
 import com.google.common.reflect.TypeToken;
 import grapefruit.command.CommandContainer;
 import grapefruit.command.condition.CommandCondition;
+import grapefruit.command.dispatcher.RouteFragment;
 import grapefruit.command.parameter.CommandParameter;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,6 +16,8 @@ public interface CommandRegistration<S> {
     @NotNull CommandContainer container();
 
     @NotNull Method method();
+
+    @NotNull List<RouteFragment> route();
 
     @NotNull List<CommandParameter<S>> parameters();
 

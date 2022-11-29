@@ -30,6 +30,8 @@ public interface CommandDispatcher<S> {
 
     void registerCommands(final @NotNull CommandContainer container);
 
+    void unregisterCommands(final @NotNull CommandContainer container);
+
     void dispatchCommand(final @NotNull S source, final @NotNull String commandLine);
 
     @NotNull List<String> listSuggestions(final @NotNull S source, final @NotNull String commandLine);

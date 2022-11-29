@@ -1,9 +1,28 @@
 package grapefruit.command.dispatcher.registration;
 
-import java.util.function.Consumer;
+import org.jetbrains.annotations.NotNull;
 
-@FunctionalInterface
-public interface CommandRegistrationHandler<S> extends Consumer<CommandRegistrationContext<S>> {
+public interface CommandRegistrationHandler<S> {
 
-    CommandRegistrationHandler<?> NO_OP = context -> {};
+    void register(final @NotNull CommandRegistration<S> reg);
+
+    void unregister(final @NotNull CommandRegistration<S> reg, final boolean fullUnregister);
+
+    CommandRegistrationHandler<?> NO_OP = NoOpRegistrationHandler.INSTANCE;
+
+    class NoOpRegistrationHandler<S> implements CommandRegistrationHandler<S> {
+        private static final NoOpRegistrationHandler<?> INSTANCE = new NoOpRegistrationHandler<>();
+
+        private NoOpRegistrationHandler() {}
+
+        @Override
+        public void register(final @NotNull CommandRegistration<S> reg) {
+            // Do nothing
+        }
+
+        @Override
+        public void unregister(final @NotNull CommandRegistration<S> reg, final boolean fullUnregister) {
+            // Do nothing
+        }
+    }
 }
