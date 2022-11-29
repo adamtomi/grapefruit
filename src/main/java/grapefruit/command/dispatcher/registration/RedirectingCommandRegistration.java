@@ -3,6 +3,7 @@ package grapefruit.command.dispatcher.registration;
 import com.google.common.reflect.TypeToken;
 import grapefruit.command.CommandContainer;
 import grapefruit.command.condition.CommandCondition;
+import grapefruit.command.dispatcher.RouteFragment;
 import grapefruit.command.parameter.CommandParameter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -15,11 +16,14 @@ import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 
 public final class RedirectingCommandRegistration<S> implements CommandRegistration<S> {
+    private final List<RouteFragment> route;
     private final CommandRegistration<S> delegate;
     private final List<String> rawArguments;
 
-    public RedirectingCommandRegistration(final @NotNull CommandRegistration<S> delegate,
+    public RedirectingCommandRegistration(final List<RouteFragment> route,
+                                          final @NotNull CommandRegistration<S> delegate,
                                           final @NotNull List<String> rawArguments) {
+        this.route = requireNonNull(route, "route cannot be null");
         this.delegate = requireNonNull(delegate, "delegate cannot be null");
         this.rawArguments = requireNonNull(rawArguments, "rawParameters cannot be null");
     }
@@ -36,6 +40,11 @@ public final class RedirectingCommandRegistration<S> implements CommandRegistrat
     @Override
     public @NotNull Method method() {
         return this.delegate.method();
+    }
+
+    @Override
+    public @NotNull List<RouteFragment> route() {
+        return List.copyOf(this.route);
     }
 
     @Override

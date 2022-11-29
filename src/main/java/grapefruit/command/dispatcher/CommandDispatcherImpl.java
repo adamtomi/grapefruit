@@ -186,19 +186,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
             final @Nullable CommandCondition<S> condition = this.conditionAssembler.constructCondition(method)
                     .orElse(null);
-            List<RouteFragment> parsedRoute = Arrays.stream(route.split(" "))
-                    .map(String::trim)
-                    .map(x -> x.split(ALIAS_SEPARATOR))
-                    .map(x -> {
-                        final String primary = x[0];
-                        final String[] aliases = x.length > 1
-                                ? Arrays.copyOfRange(x, 1, x.length)
-                                : new String[0];
-                        return new RouteFragment(primary, aliases);
-                    }).toList();
+            final List<RouteFragment> parsedRoute = RouteFragment.parseRoute(route);
             final CommandRegistration<S> reg = new StandardCommandRegistration<>(
                     container,
                     method,
+                    parsedRoute,
                     result.parameters(),
                     permission,
                     condition,
@@ -207,7 +199,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     runAsync);
             registerCommand(container, reg);
             redirectNodes.forEach(node ->
-                    registerCommand(container, new RedirectingCommandRegistration<>(reg, Arrays.asList(node.arguments()))));
+                    registerCommand(container, new RedirectingCommandRegistration<>(RouteFragment.parseRoute(node.route()), reg, Arrays.asList(node.arguments())))
+            );
         } catch (final MethodParameterParser.RuleViolationException ex) {
             throw new RuntimeException(ex);
         } catch (final Throwable ex) {

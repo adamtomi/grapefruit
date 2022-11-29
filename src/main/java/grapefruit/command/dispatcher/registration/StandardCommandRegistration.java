@@ -3,6 +3,7 @@ package grapefruit.command.dispatcher.registration;
 import com.google.common.reflect.TypeToken;
 import grapefruit.command.CommandContainer;
 import grapefruit.command.condition.CommandCondition;
+import grapefruit.command.dispatcher.RouteFragment;
 import grapefruit.command.parameter.CommandParameter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -13,6 +14,7 @@ import java.util.Optional;
 
 public record StandardCommandRegistration<S>(@NotNull CommandContainer container,
                                              @NotNull Method method,
+                                             @NotNull List<RouteFragment> route,
                                              @NotNull List<CommandParameter<S>> parameters,
                                              @Nullable String perm,
                                              @Nullable CommandCondition<S> cmdCondition,
