@@ -26,7 +26,7 @@ public class RouteFragmentTests {
         assertEquals(fragment.primary(), parts[0]);
 
         for (int i = 1; i < parts.length; i++) {
-            assertEquals(parts[i], fragment.aliases()[i - 1]); // Subtract one as the original array contained the primary alias as well
+            assertEquals(parts[i], fragment.aliases().get(i - 1)); // Subtract one as the original array contained the primary alias as well
         }
     }
 }

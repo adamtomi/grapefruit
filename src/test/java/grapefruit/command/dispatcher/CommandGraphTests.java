@@ -27,6 +27,7 @@ import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -76,6 +77,37 @@ public class CommandGraphTests {
         final DummyCommandRegistration reg = new DummyCommandRegistration("root0|root1 sub0|sub1");
         graph.registerCommand(reg);
         assertDoesNotThrow(() -> graph.registerCommand(new RedirectingCommandRegistration<>(RouteFragment.parseRoute(route), reg, List.of())));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"a", "b", "c", "test", "some", "some command"})
+    public void unregisterCommand_invalidTree(final String route) {
+        final CommandGraph<Object> graph = graph();
+        final DummyCommandRegistration reg = new DummyCommandRegistration("some command path");
+        graph.registerCommand(reg);
+
+        assertThrows(IllegalStateException.class, () -> graph.unregisterCommand(new DummyCommandRegistration(route)));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            ",some path,some path,false",
+            ",some path,some path,false",
+            "a very interesting thing this is,a very|extremely long command|cmd route,a very long command route,true",
+            "a very long cmd path this is,a very|extremely long command|cmd route,a extremely long command route,true",
+            ",this is just a test path,this is just a test path,false"
+    })
+    public void unregisterCommand_test(final String other, final String regRoute, final String unregRoute, final boolean partial) {
+        final CommandGraph<Object> graph = graph();
+        final DummyCommandRegistration reg = new DummyCommandRegistration(regRoute);
+        graph.registerCommand(reg);
+        if (other != null) {
+            final DummyCommandRegistration otherReg = new DummyCommandRegistration(other);
+            graph.registerCommand(otherReg);
+        }
+
+        final boolean result = graph.unregisterCommand(new DummyCommandRegistration(unregRoute));
+        assertNotEquals(result, partial);
     }
 
     @ParameterizedTest

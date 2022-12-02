@@ -102,8 +102,6 @@ public class CommandNode<S> {
                 "primary='" + this.primary + '\'' +
                 ", aliases=" + this.aliases +
                 ", registration=" + this.registration +
-                ", children=" + this.children +
-                ", parent=" + this.parent +
                 ']';
     }
 

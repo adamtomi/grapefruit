@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
@@ -17,6 +19,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.UnaryOperator;
 
+import static grapefruit.command.util.Miscellaneous.containsIgnoreCase;
 import static grapefruit.command.util.Miscellaneous.formatFlag;
 
 final class CommandGraph<S> {
@@ -46,13 +49,13 @@ final class CommandGraph<S> {
                 }
 
                 final CommandNode<S> realChildNode = possibleChild.get();
-                realChildNode.mergeAliases(List.of(current.aliases()));
+                realChildNode.mergeAliases(current.aliases());
                 node = realChildNode;
                 if (isRedirectReg) {
                     node.registration(reg);
                 }
             } else {
-                final CommandNode<S> childNode = new CommandNode<>(current.primary(), current.aliases(), !last ? null : reg);
+                final CommandNode<S> childNode = new CommandNode<>(current.primary(), Set.copyOf(current.aliases()), !last ? null : reg);
                 childNode.parent(node);
                 node.addChild(childNode);
                 node = childNode;
@@ -61,21 +64,35 @@ final class CommandGraph<S> {
     }
 
     public boolean unregisterCommand(final @NotNull CommandRegistration<S> reg) {
+        System.out.println("unregister");
         final Deque<CommandNode<S>> visitedNodes = new ArrayDeque<>(); // Collect all visited nodes
         CommandNode<S> node = this.rootNode;
         for (final Iterator<RouteFragment> iter = reg.route().iterator(); iter.hasNext();) {
             final RouteFragment fragment = iter.next();
-            final CommandNode<S> child = node.findChild(fragment.primary()).orElseThrow(() ->
-                    new IllegalStateException("Command node %s does not have a child named %s".formatted(node.primary(), fragment.primary())));
+            System.out.println(fragment);
+            System.out.println(node);
+            System.out.println(node.children());
+            final Optional<CommandNode<S>> childCandidate = findChild(node, fragment);
+            if (childCandidate.isEmpty()) throw new IllegalStateException("Command node %s does not have a child named %s".formatted(node.primary(), fragment.primary()));
 
+            System.out.println("we have a child");
+            System.out.println(childCandidate);
+            final CommandNode<S> child = childCandidate.orElseThrow();
             visitedNodes.offer(child);
             if (!iter.hasNext() && child.registration().isEmpty() && !child.isLeaf()) {
                 throw new IllegalStateException("Cannot unregister node %s because it has children (and has no registration)");
             }
+
+            System.out.println("---------------");
+            node = child;
         }
 
+        System.out.println(visitedNodes);
+        System.out.println("----------");
         while (!visitedNodes.isEmpty()) {
             final CommandNode<S> each = visitedNodes.pollLast();
+            System.out.println(each);
+            System.out.println(each.isLeaf());
             if (!each.isLeaf()) break;
 
             each.parent().ifPresent(x -> x.removeChild(each));
@@ -221,6 +238,24 @@ final class CommandGraph<S> {
         return child.isPresent()
                 ? child
                 : parent.children().stream().filter(x -> x.aliases().stream().anyMatch(alias::equalsIgnoreCase)).findFirst();
+    }
+
+    private @NotNull Optional<CommandNode<S>> findChild(final @NotNull CommandNode<S> parent,
+                                                        final @NotNull RouteFragment fragment) {
+        final List<String> allAliases = new ArrayList<>();
+        allAliases.add(fragment.primary());
+        allAliases.addAll(fragment.aliases());
+
+        final Set<CommandNode<S>> children = parent.children();
+        for (final String alias : allAliases) {
+            final Optional<CommandNode<S>> childCandidate = children.stream()
+                    .filter(x -> containsIgnoreCase(alias, x.aliases()) || alias.equalsIgnoreCase(x.primary()))
+                    .findFirst();
+
+            if (childCandidate.isPresent()) return childCandidate;
+        }
+
+        return Optional.empty();
     }
 
     @SuppressWarnings("all") // Don't complain about generics.
