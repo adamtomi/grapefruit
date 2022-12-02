@@ -6,7 +6,7 @@ public interface CommandRegistrationHandler<S> {
 
     void register(final @NotNull CommandRegistration<S> reg);
 
-    void unregister(final @NotNull CommandRegistration<S> reg, final boolean fullUnregister);
+    void unregister(final @NotNull CommandRegistration<S> reg, final boolean partial);
 
     CommandRegistrationHandler<?> NO_OP = NoOpRegistrationHandler.INSTANCE;
 
@@ -21,7 +21,7 @@ public interface CommandRegistrationHandler<S> {
         }
 
         @Override
-        public void unregister(final @NotNull CommandRegistration<S> reg, final boolean fullUnregister) {
+        public void unregister(final @NotNull CommandRegistration<S> reg, final boolean partial) {
             // Do nothing
         }
     }

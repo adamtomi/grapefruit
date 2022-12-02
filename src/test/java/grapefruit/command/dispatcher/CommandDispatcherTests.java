@@ -561,6 +561,6 @@ public class CommandDispatcherTests {
         }
 
         @Override
-        public void unregister(final CommandRegistration<Object> reg, boolean fullUnregister) {}
+        public void unregister(final CommandRegistration<Object> reg, boolean partial) {}
     }
 }

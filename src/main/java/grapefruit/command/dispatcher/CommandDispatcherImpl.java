@@ -223,8 +223,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         if (registrations == null || registrations.isEmpty()) throw new IllegalStateException("This container has no registered commands");
 
         for (final CommandRegistration<S> registration : registrations) {
-            final boolean fullUnregister = this.commandGraph.unregisterCommand(registration);
-            this.registrationHandler.unregister(registration, fullUnregister);
+            final boolean rootNodeRemoved = this.commandGraph.unregisterCommand(registration);
+            this.registrationHandler.unregister(registration, !rootNodeRemoved);
         }
     }
 

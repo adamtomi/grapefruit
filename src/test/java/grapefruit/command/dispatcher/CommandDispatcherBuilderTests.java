@@ -141,7 +141,7 @@ public class CommandDispatcherBuilderTests {
         public void register(final CommandRegistration<Object> reg) {}
 
         @Override
-        public void unregister(final CommandRegistration<Object> reg, boolean fullUnregister) {}
+        public void unregister(final CommandRegistration<Object> reg, boolean partial) {}
     }
 
     private static final class DummyMessenger implements Messenger<Object> {
