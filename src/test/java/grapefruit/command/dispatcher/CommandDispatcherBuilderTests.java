@@ -1,7 +1,7 @@
 package grapefruit.command.dispatcher;
 
 import com.google.common.reflect.TypeToken;
-import grapefruit.command.dispatcher.registration.CommandRegistrationContext;
+import grapefruit.command.dispatcher.registration.CommandRegistration;
 import grapefruit.command.dispatcher.registration.CommandRegistrationHandler;
 import grapefruit.command.message.DefaultMessageProvider;
 import grapefruit.command.message.MessageKey;
@@ -138,7 +138,10 @@ public class CommandDispatcherBuilderTests {
 
     private static final class DummyCommandRegistrationHandler implements CommandRegistrationHandler<Object> {
         @Override
-        public void accept(final CommandRegistrationContext<Object> context) {}
+        public void register(final CommandRegistration<Object> reg) {}
+
+        @Override
+        public void unregister(final CommandRegistration<Object> reg, boolean fullUnregister) {}
     }
 
     private static final class DummyMessenger implements Messenger<Object> {

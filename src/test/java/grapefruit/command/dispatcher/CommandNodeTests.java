@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class CommandNodeTests {
 
     @ParameterizedTest
-    @ValueSource(strings = {"node", "name", "test", "command", "root", "command-node", "some_node", "cámmandnáde"})
+    @ValueSource(strings = {"node", "name", "test", "command", "root", "command-node", "some_node", "cmmandde"})
     public void constructor_validNameAndAliasInput(final String name) {
         assertDoesNotThrow(() -> new CommandNode<>(name, Set.of(name), null));
     }
@@ -35,14 +35,14 @@ public class CommandNodeTests {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"node", "name", "test", "command", "root", "command-node", "some_node", "cámmandnáde"})
+    @ValueSource(strings = {"node", "name", "test", "command", "root", "command-node", "some_node", "cmmandde"})
     public void primary_equals(final String name) {
         final CommandNode<?> node = new CommandNode<>(name, Set.of(), null);
         assertEquals(name, node.primary());
     }
 
     @ParameterizedTest
-    @CsvSource({"node,true", "name,false", "test,true", "command,false", "root,true", "command-node,false", "cámmandnáde,false"})
+    @CsvSource({"node,true", "name,false", "test,true", "command,false", "root,true", "command-node,false", "cmmandde,false"})
     public void aliases_contains(final String alias, final boolean shouldContain) {
         final String[] aliases = {"node", "test", "root"};
         final CommandNode<?> node = new CommandNode<>("some-node", aliases, null);
@@ -50,7 +50,7 @@ public class CommandNodeTests {
     }
 
     @ParameterizedTest
-    @CsvSource({"node,true", "name,false", "test,true", "command,false", "root,true", "command-node,false", "cámmandnáde,false"})
+    @CsvSource({"node,true", "name,false", "test,true", "command,false", "root,true", "command-node,false", "cmmandde,false"})
     public void mergeAliases_contains(final String alias, final boolean shouldContain) {
         final CommandNode<?> firstNode = new CommandNode<>("somenode", Set.of(), null);
         final CommandNode<?> secondNode = new CommandNode<>("othernode", Set.of("node", "test", "root"), null);
@@ -117,6 +117,11 @@ public class CommandNodeTests {
         @Override
         public CommandContainer container() {
             return HOLDER;
+        }
+
+        @Override
+        public List<RouteFragment> route() {
+            return List.of();
         }
 
         @Override

@@ -9,6 +9,8 @@ import grapefruit.command.condition.ConditionFailedException;
 import grapefruit.command.dispatcher.exception.CommandAuthorizationException;
 import grapefruit.command.dispatcher.listener.PreDispatchListener;
 import grapefruit.command.dispatcher.listener.PreProcessLitener;
+import grapefruit.command.dispatcher.registration.CommandRegistration;
+import grapefruit.command.dispatcher.registration.CommandRegistrationHandler;
 import grapefruit.command.parameter.mapper.AbstractParameterMapper;
 import grapefruit.command.parameter.mapper.ParameterMappingException;
 import grapefruit.command.parameter.modifier.Flag;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -66,7 +69,7 @@ public class CommandDispatcherTests {
     public void registerCommand_registrationHandler() {
         final AtomicBoolean regHandlerInvoked = new AtomicBoolean(false);
         final CommandDispatcher<?> dispatcher = CommandDispatcher.builder(TypeToken.of(Object.class))
-                .withRegistrationHandler(context -> regHandlerInvoked.set(true))
+                .withRegistrationHandler(new SimpleRegistrationHandler(context -> regHandlerInvoked.set(true)))
                 .build();
         dispatcher.registerCommands(new OrdinaryContainer());
         assertTrue(regHandlerInvoked.get());
@@ -76,7 +79,7 @@ public class CommandDispatcherTests {
     public void registerCommand_registrationHandlerWithRedirectNodes() {
         final AtomicInteger regHandlerStatus = new AtomicInteger(0);
         final CommandDispatcher<?> dispatcher = CommandDispatcher.builder(TypeToken.of(Object.class))
-                .withRegistrationHandler(context -> regHandlerStatus.incrementAndGet())
+                .withRegistrationHandler(new SimpleRegistrationHandler(context -> regHandlerStatus.incrementAndGet()))
                 .build();
         dispatcher.registerCommands(new ContainerWithValidRedirectAnnot());
         assertEquals(2, regHandlerStatus.get());
@@ -543,5 +546,21 @@ public class CommandDispatcherTests {
         public void test(final CommandContext<Object> context) throws ConditionFailedException {
             // do nothing
         }
+    }
+
+    private static final class SimpleRegistrationHandler implements CommandRegistrationHandler<Object> {
+        private final Consumer<CommandRegistration<Object>> regAction;
+
+        private SimpleRegistrationHandler(final Consumer<CommandRegistration<Object>> regAction) {
+            this.regAction = regAction;
+        }
+
+        @Override
+        public void register(final CommandRegistration<Object> reg) {
+            this.regAction.accept(reg);
+        }
+
+        @Override
+        public void unregister(final CommandRegistration<Object> reg, boolean fullUnregister) {}
     }
 }

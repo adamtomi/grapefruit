@@ -301,6 +301,11 @@ public class SuggestionHelperTests {
         }
 
         @Override
+        public List<RouteFragment> route() {
+            return List.of();
+        }
+
+        @Override
         public CommandContainer container() {
             throw new UnsupportedOperationException();
         }

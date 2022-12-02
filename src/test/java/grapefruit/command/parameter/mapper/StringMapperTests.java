@@ -147,9 +147,7 @@ public class StringMapperTests {
     @ParameterizedTest
     @ValueSource(strings = {
             "hi-there",
-            "háháhá",
             "hihih\u00ed",
-            "áááá",
             "\u00C9\u00C9\u00C9"
     })
     public void map_regexAllowUnicode_matches(final String input) {

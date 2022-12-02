@@ -40,42 +40,42 @@ public class CommandGraphTests {
     @ValueSource(strings = {"root0|root1 sub0|sub1", "test0|test1", "some command path"})
     public void registerCommand_dummyRegistration(final String route) {
         final CommandGraph<Object> graph = graph();
-        final DummyCommandRegistration reg = new DummyCommandRegistration();
-        assertDoesNotThrow(() -> graph.registerCommand(route, reg));
+        final DummyCommandRegistration reg = new DummyCommandRegistration(route);
+        assertDoesNotThrow(() -> graph.registerCommand(reg));
     }
 
     @Test
     public void registerCommand_emptyCommandRoute() {
         final CommandGraph<Object> graph = graph();
-        final DummyCommandRegistration reg = new DummyCommandRegistration();
-        assertThrows(IllegalArgumentException.class, () -> graph.registerCommand("", reg));
+        final DummyCommandRegistration reg = new DummyCommandRegistration("");
+        assertThrows(IllegalArgumentException.class, () -> graph.registerCommand(reg));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"root0|root1 sub0|sub1", "test0|test1", "some command path"})
     public void registerCommand_ambigiousTree(final String route) {
         final CommandGraph<Object> graph = graph();
-        final DummyCommandRegistration reg0 = new DummyCommandRegistration();
-        final DummyCommandRegistration reg1 = new DummyCommandRegistration();
-        graph.registerCommand(route, reg0);
-        assertThrows(IllegalStateException.class, () -> graph.registerCommand(route, reg1));
+        final DummyCommandRegistration reg0 = new DummyCommandRegistration(route);
+        final DummyCommandRegistration reg1 = new DummyCommandRegistration(route);
+        graph.registerCommand(reg0);
+        assertThrows(IllegalStateException.class, () -> graph.registerCommand(reg1));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"$ ..|a", "\\\\ cc"})
     public void registerCommand_invalidNodeNames(final String route) {
         final CommandGraph<Object> graph = graph();
-        final DummyCommandRegistration reg = new DummyCommandRegistration();
-        assertThrows(IllegalArgumentException.class, () -> graph.registerCommand(route, reg));
+        final DummyCommandRegistration reg = new DummyCommandRegistration(route);
+        assertThrows(IllegalArgumentException.class, () -> graph.registerCommand(reg));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"test0|test1", "some|command|path", "redirect", "root0", "sub1"})
     public void registerCommand_redirectingRegistration(final String route) {
         final CommandGraph<Object> graph = graph();
-        final DummyCommandRegistration reg = new DummyCommandRegistration();
-        graph.registerCommand("root0|root1 sub0|sub1", reg);
-        assertDoesNotThrow(() -> graph.registerCommand(route, new RedirectingCommandRegistration<>(reg, List.of())));
+        final DummyCommandRegistration reg = new DummyCommandRegistration("root0|root1 sub0|sub1");
+        graph.registerCommand(reg);
+        assertDoesNotThrow(() -> graph.registerCommand(new RedirectingCommandRegistration<>(RouteFragment.parseRoute(route), reg, List.of())));
     }
 
     @ParameterizedTest
@@ -93,8 +93,8 @@ public class CommandGraphTests {
     @CsvSource({"root,root sub", "test,test child", "some,some command path"})
     public void routeCommand_invalidSyntax(final String commandLine, final String route) {
         final CommandGraph<Object> graph = graph();
-        final DummyCommandRegistration reg = new DummyCommandRegistration();
-        graph.registerCommand(route, reg);
+        final DummyCommandRegistration reg = new DummyCommandRegistration(route);
+        graph.registerCommand(reg);
         final CommandInputTokenizer tokenizer = new CommandInputTokenizer();
         final Queue<CommandInput> inputQueue = tokenizer.tokenizeInput(commandLine);
         final CommandGraph.RouteResult<?> result = graph.routeCommand(inputQueue);
@@ -110,8 +110,8 @@ public class CommandGraphTests {
     })
     public void routeCommand_success(final String route, final String commandLine) {
         final CommandGraph<Object> graph = graph();
-        final DummyCommandRegistration reg = new DummyCommandRegistration();
-        graph.registerCommand(route, reg);
+        final DummyCommandRegistration reg = new DummyCommandRegistration(route);
+        graph.registerCommand(reg);
         final CommandInputTokenizer tokenizer = new CommandInputTokenizer();
         final Queue<CommandInput> inputQueue = tokenizer.tokenizeInput(commandLine);
         final CommandGraph.RouteResult<?> result = graph.routeCommand(inputQueue);
@@ -123,10 +123,10 @@ public class CommandGraphTests {
     @CsvSource({"root,root sub", "test,test child", "some,some command path"})
     public void routeCommand_redirectNode(final String redirectFrom, final String route) {
         final CommandGraph<Object> graph = graph();
-        final DummyCommandRegistration reg = new DummyCommandRegistration();
-        final RedirectingCommandRegistration<Object> redirectReg = new RedirectingCommandRegistration<>(reg, List.of());
-        graph.registerCommand(route, reg);
-        graph.registerCommand(redirectFrom, redirectReg);
+        final DummyCommandRegistration reg = new DummyCommandRegistration(route);
+        final RedirectingCommandRegistration<Object> redirectReg = new RedirectingCommandRegistration<>(RouteFragment.parseRoute(redirectFrom), reg, List.of());
+        graph.registerCommand(reg);
+        graph.registerCommand(redirectReg);
         final CommandInputTokenizer tokenizer = new CommandInputTokenizer();
         final Queue<CommandInput> inputQueue = tokenizer.tokenizeInput(redirectFrom);
         final CommandGraph.RouteResult<?> result = graph.routeCommand(inputQueue);
@@ -138,7 +138,7 @@ public class CommandGraphTests {
     public void listSuggestions_emptyList() {
         final List<String> options = List.of("root", "test", "other");
         final CommandGraph<Object> graph = graph();
-        options.forEach(route -> graph.registerCommand(route, new DummyCommandRegistration()));
+        options.forEach(route -> graph.registerCommand(new DummyCommandRegistration(route)));
         final List<String> result = graph.listSuggestions(new ConcurrentLinkedQueue<>());
         assertTrue(contentEquals(options, result));
     }
@@ -152,7 +152,7 @@ public class CommandGraphTests {
     public void listSuggestions_validRoute(final String route, final String input, final String expected) {
         final List<String> expectedElements = Arrays.asList(expected.split("\\|"));
         final CommandGraph<Object> graph = graph();
-        graph.registerCommand(route, new DummyCommandRegistration());
+        graph.registerCommand(new DummyCommandRegistration(route));
         final CommandInputTokenizer tokenizer = new CommandInputTokenizer();
         final Queue<CommandInput> inputQueue = tokenizer.tokenizeInput(input);
         final List<String> result = graph.listSuggestions(inputQueue);
@@ -174,7 +174,7 @@ public class CommandGraphTests {
     public void generateSyntaxFor_validInput_noParameters(final String routesStr, final String expectedStr, final String commandLine) {
         final CommandGraph<Object> graph = graph();
         final List<String> routes = Arrays.asList(routesStr.split("\\$"));
-        routes.forEach(route -> graph.registerCommand(route, new DummyCommandRegistration()));
+        routes.forEach(route -> graph.registerCommand(new DummyCommandRegistration(route)));
         final String[] expected = expectedStr.split("\\$");
         final CommandSyntax syntax = graph.generateSyntaxFor(commandLine);
 
@@ -188,7 +188,7 @@ public class CommandGraphTests {
     public void generateSyntaxFor_validInput_parameters() {
         final CommandGraph<Object> graph = graph();
         final ParameterMapperRegistry<Object> registry = new ParameterMapperRegistry<>();
-        final DummyCommandRegistration reg = new DummyCommandRegistration(List.of(
+        final DummyCommandRegistration reg = new DummyCommandRegistration("root", List.of(
                 new StandardParameter<>("test", false, TypeToken.of(String.class), new AnnotationList(),
                     mapper(registry, TypeToken.of(String.class))),
                 new StandardParameter<>("test2", false, TypeToken.of(Integer.TYPE), new AnnotationList(),
@@ -200,7 +200,7 @@ public class CommandGraphTests {
                 new ValueFlagParameter<>("flag-2", ' ', "test6", TypeToken.of(Long.TYPE), new AnnotationList(),
                         mapper(registry, TypeToken.of(Long.class)))
         ));
-        graph.registerCommand("root", reg);
+        graph.registerCommand(reg);
         final String expectedSyntax = "root <test> <test2> [test3] [--flag-0] [--flag-1] [--flag-2 test6]";
         final String actualSyntax = graph.generateSyntaxFor("root").rawSyntax();
         assertEquals(expectedSyntax, actualSyntax);
@@ -223,14 +223,16 @@ public class CommandGraphTests {
     }
 
     private static final class DummyCommandRegistration implements CommandRegistration<Object> {
+        private final List<RouteFragment> route;
         private final List<CommandParameter<Object>> parameter;
 
-        private DummyCommandRegistration(final List<CommandParameter<Object>> parameters) {
+        private DummyCommandRegistration(final String route, final List<CommandParameter<Object>> parameters) {
+            this.route = RouteFragment.parseRoute(route);
             this.parameter = parameters;
         }
 
-        private DummyCommandRegistration() {
-            this(List.of());
+        private DummyCommandRegistration(final String route) {
+            this(route, List.of());
         }
 
         @Override
@@ -241,6 +243,11 @@ public class CommandGraphTests {
         @Override
         public Method method() {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<RouteFragment> route() {
+            return this.route;
         }
 
         @Override
