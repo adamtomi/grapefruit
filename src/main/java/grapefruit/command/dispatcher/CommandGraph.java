@@ -64,35 +64,24 @@ final class CommandGraph<S> {
     }
 
     public boolean unregisterCommand(final @NotNull CommandRegistration<S> reg) {
-        System.out.println("unregister");
         final Deque<CommandNode<S>> visitedNodes = new ArrayDeque<>(); // Collect all visited nodes
         CommandNode<S> node = this.rootNode;
         for (final Iterator<RouteFragment> iter = reg.route().iterator(); iter.hasNext();) {
             final RouteFragment fragment = iter.next();
-            System.out.println(fragment);
-            System.out.println(node);
-            System.out.println(node.children());
             final Optional<CommandNode<S>> childCandidate = findChild(node, fragment);
             if (childCandidate.isEmpty()) throw new IllegalStateException("Command node %s does not have a child named %s".formatted(node.primary(), fragment.primary()));
 
-            System.out.println("we have a child");
-            System.out.println(childCandidate);
             final CommandNode<S> child = childCandidate.orElseThrow();
             visitedNodes.offer(child);
             if (!iter.hasNext() && child.registration().isEmpty() && !child.isLeaf()) {
                 throw new IllegalStateException("Cannot unregister node %s because it has children (and has no registration)");
             }
 
-            System.out.println("---------------");
             node = child;
         }
 
-        System.out.println(visitedNodes);
-        System.out.println("----------");
         while (!visitedNodes.isEmpty()) {
             final CommandNode<S> each = visitedNodes.pollLast();
-            System.out.println(each);
-            System.out.println(each.isLeaf());
             if (!each.isLeaf()) break;
 
             each.parent().ifPresent(x -> x.removeChild(each));
