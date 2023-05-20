@@ -27,7 +27,14 @@ public @interface Regex {
      */
     @Deprecated(forRemoval = true)
     boolean allowUnicode() default false;
-
+    
+    /**
+     * @deprecated Use {@link this#flags()} instead. To enable
+     * case insensitivity, use {@link java.util.regex.Pattern#CASE_INSENSITIVE}
+     * flag. Example:
+     *
+     * <p>@Regex(value = "\\w+", flags = Pattern.CASE_INSENSITIVE)</p>
+     */
     @Deprecated(forRemoval = true)
     boolean caseInsensitive() default false;
 
