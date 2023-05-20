@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.List;
 import java.util.Queue;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -153,7 +154,7 @@ public class StringMapperTests {
             "\u00C9\u00C9\u00C9"
     })
     public void map_regexAllowUnicode_matches(final String input) {
-        final Regex regex = new RegexImpl("(\\w|_|-)+", true, false);
+        final Regex regex = new RegexImpl("(\\w|_|-)+", Pattern.UNICODE_CHARACTER_CLASS);
         final StringMapper<Object> stringMapper = new StringMapper<>();
         final CommandInputTokenizer tokenizer = new CommandInputTokenizer();
         final Queue<CommandInput> inputQueue = tokenizer.tokenizeInput(input);
@@ -168,7 +169,24 @@ public class StringMapperTests {
             "09bNcH"
     })
     public void map_regexCaseInsensitive_matches(final String input) {
-        final Regex regex = new RegexImpl("[0-9a-z]+", false, true);
+        final Regex regex = new RegexImpl("[0-9a-z]+", Pattern.CASE_INSENSITIVE);
+        final StringMapper<Object> stringMapper = new StringMapper<>();
+        final CommandInputTokenizer tokenizer = new CommandInputTokenizer();
+        final Queue<CommandInput> inputQueue = tokenizer.tokenizeInput(input);
+        assertDoesNotThrow(() ->
+                stringMapper.map(dummyCommandContext(), inputQueue, new AnnotationList(this.greedyAnnotation, regex)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "Hello",
+            "aBcD",
+            "09bNcH",
+            "\u00C9\u00C9\u00C9",
+            "hihih\u00ed",
+    })
+    public void map_regexCaseInsensitive_allowUnicode_matches(final String input) {
+        final Regex regex = new RegexImpl("[0-9|\\w]+", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CHARACTER_CLASS);
         final StringMapper<Object> stringMapper = new StringMapper<>();
         final CommandInputTokenizer tokenizer = new CommandInputTokenizer();
         final Queue<CommandInput> inputQueue = tokenizer.tokenizeInput(input);
@@ -189,19 +207,16 @@ public class StringMapperTests {
         @Serial
         private static final long serialVersionUID = -1013588770689577267L;
         private final String value;
-        private final boolean allowUnicode;
-        private final boolean caseInsensitive;
+        private final int flags;
 
         private RegexImpl(final String value,
-                          final boolean allowUnicode,
-                          final boolean caseInsensitive) {
+                          final int flags) {
             this.value = value;
-            this.allowUnicode = allowUnicode;
-            this.caseInsensitive = caseInsensitive;
+            this.flags = flags;
         }
 
         private RegexImpl(final String value) {
-            this(value, false, false);
+            this(value, 0);
         }
 
         @Override
@@ -211,12 +226,17 @@ public class StringMapperTests {
 
         @Override
         public boolean allowUnicode() {
-            return this.allowUnicode;
+            return (this.flags & Pattern.UNICODE_CHARACTER_CLASS) != 0;
         }
 
         @Override
         public boolean caseInsensitive() {
-            return this.caseInsensitive;
+            return (this.flags & Pattern.CASE_INSENSITIVE) != 0;
+        }
+
+        @Override
+        public int flags() {
+            return this.flags;
         }
 
         @Override
@@ -230,9 +250,7 @@ public class StringMapperTests {
                 return false;
             }
 
-            return regex.value().equals(this.value)
-                    && regex.allowUnicode() == this.allowUnicode
-                    && regex.caseInsensitive() == this.caseInsensitive;
+            return regex.value().equals(this.value) && regex.flags() == this.flags;
         }
 
         @Override
@@ -242,14 +260,14 @@ public class StringMapperTests {
             result += (PRIME * "value".hashCode()) ^ value().hashCode();
             result += (PRIME * "allowUnicode".hashCode()) ^ Boolean.hashCode(allowUnicode());
             result += (PRIME * "caseInsensitive".hashCode()) ^ Boolean.hashCode(caseInsensitive());
+            result += (PRIME * "flags".hashCode()) ^ flags();
             return result;
         }
 
         @Override
         public String toString() {
             return Regex.class.getName() + "(" +
-                    "caseInsensitive=" + this.caseInsensitive + ", " +
-                    "allowUnicode=" + this.allowUnicode + ", " +
+                    "flags=" + this.flags + ", " +
                     "value=\"" + this.value + "\")";
         }
     }
