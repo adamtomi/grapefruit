@@ -88,10 +88,7 @@ public class StringMapper<S> extends AbstractParameterMapper<S, String> {
         final Optional<Regex> regexOpt = modifiers.find(Regex.class);
         if (regexOpt.isPresent()) {
             final Regex regex = regexOpt.get();
-            final int allowUnicode = regex.allowUnicode() ? Pattern.UNICODE_CHARACTER_CLASS : 0;
-            final int caseInsensitive = regex.caseInsensitive() ? Pattern.CASE_INSENSITIVE : 0;
-            final int flags = allowUnicode + caseInsensitive;
-            final Pattern pattern = Pattern.compile(regex.value(), flags);
+            final Pattern pattern = compilePattern(regex);
             final Matcher matcher = pattern.matcher(parsedValue);
 
             if (!matcher.matches()) {
@@ -104,5 +101,15 @@ public class StringMapper<S> extends AbstractParameterMapper<S, String> {
         }
 
         return parsedValue;
+    }
+
+    @Deprecated(forRemoval = true)
+    @SuppressWarnings("all")
+    private Pattern compilePattern(final @NotNull Regex regex) {
+        final int allowUnicode = regex.allowUnicode() ? Pattern.UNICODE_CHARACTER_CLASS : 0;
+        final int caseInsensitive = regex.caseInsensitive() ? Pattern.CASE_INSENSITIVE : 0;
+        final int flags = regex.flags() | allowUnicode | caseInsensitive;
+
+        return Pattern.compile(regex.value(), flags);
     }
 }
