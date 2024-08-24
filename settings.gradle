@@ -1,3 +1,4 @@
 rootProject.name = 'grapefruit'
 include 'grapefruit-core'
+include 'grapefruit-gen'
 
