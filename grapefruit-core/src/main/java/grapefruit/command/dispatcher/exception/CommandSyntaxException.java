@@ -6,7 +6,6 @@ import grapefruit.command.message.Message;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serial;
-import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 

@@ -1,13 +1,8 @@
 plugins {
-    id 'java'
-    id 'maven-publish'
-    id 'jacoco'
+    id("java")
+    id("maven-publish")
+    id("jacoco")
 }
-
-group 'grapefruit'
-version '1.5.0'
-
-sourceCompatibility = JavaVersion.VERSION_16
 
 repositories {
     mavenCentral()
@@ -15,21 +10,22 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'org.jetbrains:annotations:23.0.0'
-    implementation ('com.google.guava:guava:31.0.1-jre') {
-        exclude module: 'gson'
-        exclude module: 'error_prone_annotations'
-        exclude module: 'jsr305'
-        exclude module: 'failureaccess'
-        exclude module: 'listenablefuture'
-        exclude module: 'j2objc-annotations'
-        exclude module: 'checker-qual'
+    compileOnly("org.jetbrains:annotations:23.0.0")
+    implementation("com.google.guava:guava:31.0.1-jre") {
+        exclude("gson")
+        exclude(module = "error_prone_annotations")
+        exclude(module = "jsr305")
+        exclude(module = "failureaccess")
+        exclude(module = "listenablefuture")
+        exclude(module = "j2objc-annotation")
+        exclude(module = "checker-qual")
     }
-
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
-    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.8.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 }
+
+
+
+/*
+
 
 test {
     useJUnitPlatform()
@@ -94,3 +90,4 @@ publishing {
         }
     }
 }
+*/
