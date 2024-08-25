@@ -1,3 +1,4 @@
+## Basic requirements
 - Command handler methods should be annotated with `@CommandDefinition`
 - Code should be generated for every command handler method in order to avoid invoking methods via reflection
 - Command parameters can be of any type, the conversion of strings into these types are to be handled by mappers.
@@ -15,3 +16,10 @@ void setup(CommandContext context) {
 - Flags should have a long name, such as `--some-flag`, but they also may specify a shorthand, `-s` for instance. The command parser should be able to handle grouped flags. Suppose there are three flags in a parameter list, `-a`, `-b` and `-c`; these grouped together would be `-abc`.
 - As flags are easily identified because of their names, their position in the command line is not fixed, however they must be specified after literal arguments (command names).
 - Flags of boolean type are considered "presence flags". The boolean value doesn't need to be set as the presence of the flag name itself will determine the value
+
+## Condition requirements
+- Grapefruit should support command conditions. A command condition will decide based on the current context if the execution of the pending command should proceed.
+- A single command handler method may have multiple conditions; in which case all of them need to pass.
+- The condation API should provide a simple way (most likely through annotations) to define and use conditions.
+
+
