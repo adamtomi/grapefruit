@@ -20,6 +20,6 @@ void setup(CommandContext context) {
 ## Condition requirements
 - Grapefruit should support command conditions. A command condition will decide based on the current context if the execution of the pending command should proceed.
 - A single command handler method may have multiple conditions; in which case all of them need to pass.
-- The condation API should provide a simple way (most likely through annotations) to define and use conditions.
+- The condition API should provide a simple way (most likely through annotations) to define and use conditions.
 
 
