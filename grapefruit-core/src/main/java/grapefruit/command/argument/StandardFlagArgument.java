@@ -21,4 +21,10 @@ final class StandardFlagArgument extends AbstractCommandArgument implements Flag
     public boolean isPresenceFlag() {
         return this.isPresenceFlag;
     }
+
+    @Override
+    public String toString() {
+        return "StandardFlagArgument(name=%s, shorthand=%s, isPresenceFlag=%b)"
+                .formatted(this.name, this.shorthand, this.isPresenceFlag);
+    }
 }
