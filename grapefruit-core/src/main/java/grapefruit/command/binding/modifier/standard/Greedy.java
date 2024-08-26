@@ -1,13 +1,13 @@
-package grapefruit.command.binding.qualifier.standard;
+package grapefruit.command.binding.modifier.standard;
 
-import grapefruit.command.binding.qualifier.Qualifier;
+import grapefruit.command.binding.modifier.Modifier;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Qualifier
+@Modifier
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 public @interface Greedy {}
