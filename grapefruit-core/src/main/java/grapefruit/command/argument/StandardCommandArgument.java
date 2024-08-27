@@ -2,9 +2,9 @@ package grapefruit.command.argument;
 
 import grapefruit.command.util.key.Key;
 
-public final class StandardCommandArgument extends AbstractCommandArgument {
+public final class StandardCommandArgument<T> extends AbstractCommandArgument<T> {
 
-    public StandardCommandArgument(String name, Key<?> key) {
+    public StandardCommandArgument(String name, Key<T> key) {
         super(name, key, false);
     }
 

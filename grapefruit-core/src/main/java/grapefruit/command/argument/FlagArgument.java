@@ -2,17 +2,17 @@ package grapefruit.command.argument;
 
 import grapefruit.command.util.key.Key;
 
-public interface FlagArgument extends CommandArgument {
+public interface FlagArgument<T> extends CommandArgument<T> {
 
     char shorthand();
 
     boolean isPresenceFlag();
 
-    static FlagArgument presence(String name, char shorthand) {
-        return new StandardFlagArgument(name, Key.of(Boolean.TYPE), shorthand, true);
+    static FlagArgument<Boolean> presence(String name, char shorthand) {
+        return new StandardFlagArgument<>(name, Key.of(Boolean.TYPE), shorthand, true);
     }
 
-    static FlagArgument value(String name, char shorthand, Key<?> key) {
-        return new StandardFlagArgument(name, key, shorthand, false);
+    static <T> FlagArgument<T> value(String name, char shorthand, Key<T> key) {
+        return new StandardFlagArgument<>(name, key, shorthand, false);
     }
 }

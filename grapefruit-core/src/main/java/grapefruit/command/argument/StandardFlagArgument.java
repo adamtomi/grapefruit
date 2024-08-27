@@ -2,11 +2,11 @@ package grapefruit.command.argument;
 
 import grapefruit.command.util.key.Key;
 
-final class StandardFlagArgument extends AbstractCommandArgument implements FlagArgument {
+final class StandardFlagArgument<T> extends AbstractCommandArgument<T> implements FlagArgument<T> {
     private final char shorthand;
     private final boolean isPresenceFlag;
 
-    public StandardFlagArgument(String name, Key<?> key, char shorthand, boolean isPresenceFlag) {
+    public StandardFlagArgument(String name, Key<T> key, char shorthand, boolean isPresenceFlag) {
         super(name, key, true);
         this.shorthand = shorthand;
         this.isPresenceFlag = isPresenceFlag;
