@@ -1,6 +1,6 @@
-package grapefruit.command.binding.modifier.standard;
+package grapefruit.command.argument.modifier.standard;
 
-import grapefruit.command.binding.modifier.Modifier;
+import grapefruit.command.argument.modifier.Modifier;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

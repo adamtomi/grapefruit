@@ -1,14 +1,19 @@
 package grapefruit.command.argument;
 
-import grapefruit.command.binding.BindingKey;
+import grapefruit.command.argument.modifier.ArgumentModifier;
+import grapefruit.command.util.key.Key;
 
-public interface CommandArgument {
+import java.util.Set;
+
+public interface CommandArgument<T> {
 
     String name();
 
-    BindingKey<?> key();
+    Key<T> key();
 
     boolean isFlag();
 
-    // TODO store qualifiers
+    default Set<ArgumentModifier<T>> modifiers() {
+        return Set.of();
+    }
 }
