@@ -1,12 +1,12 @@
 package grapefruit.command.argument;
 
-import grapefruit.command.binding.BindingKey;
+import grapefruit.command.util.key.Key;
 
 final class StandardFlagArgument extends AbstractCommandArgument implements FlagArgument {
     private final char shorthand;
     private final boolean isPresenceFlag;
 
-    public StandardFlagArgument(String name, BindingKey<?> key, char shorthand, boolean isPresenceFlag) {
+    public StandardFlagArgument(String name, Key<?> key, char shorthand, boolean isPresenceFlag) {
         super(name, key, true);
         this.shorthand = shorthand;
         this.isPresenceFlag = isPresenceFlag;

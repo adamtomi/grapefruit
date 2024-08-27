@@ -1,6 +1,6 @@
 package grapefruit.command.argument;
 
-import grapefruit.command.binding.BindingKey;
+import grapefruit.command.util.key.Key;
 
 public interface FlagArgument extends CommandArgument {
 
@@ -9,10 +9,10 @@ public interface FlagArgument extends CommandArgument {
     boolean isPresenceFlag();
 
     static FlagArgument presence(String name, char shorthand) {
-        return new StandardFlagArgument(name, BindingKey.of(Boolean.TYPE), shorthand, true);
+        return new StandardFlagArgument(name, Key.of(Boolean.TYPE), shorthand, true);
     }
 
-    static FlagArgument value(String name, char shorthand, BindingKey<?> key) {
+    static FlagArgument value(String name, char shorthand, Key<?> key) {
         return new StandardFlagArgument(name, key, shorthand, false);
     }
 }

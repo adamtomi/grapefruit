@@ -1,10 +1,10 @@
 package grapefruit.command.argument;
 
-import grapefruit.command.binding.BindingKey;
+import grapefruit.command.util.key.Key;
 
 public final class StandardCommandArgument extends AbstractCommandArgument {
 
-    public StandardCommandArgument(String name, BindingKey<?> key) {
+    public StandardCommandArgument(String name, Key<?> key) {
         super(name, key, false);
     }
 

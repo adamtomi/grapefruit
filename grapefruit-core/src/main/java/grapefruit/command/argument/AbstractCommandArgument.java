@@ -1,15 +1,15 @@
 package grapefruit.command.argument;
 
-import grapefruit.command.binding.BindingKey;
+import grapefruit.command.util.key.Key;
 
 import static java.util.Objects.requireNonNull;
 
 abstract class AbstractCommandArgument implements CommandArgument {
     protected final String name;
-    protected final BindingKey<?> key;
+    protected final Key<?> key;
     protected final boolean isFlag;
 
-    AbstractCommandArgument(String name, BindingKey<?> key, boolean isFlag) {
+    AbstractCommandArgument(String name, Key<?> key, boolean isFlag) {
         this.name = requireNonNull(name, "name cannot be null");
         this.key = requireNonNull(key, "key cannot be null");
         this.isFlag = isFlag;
@@ -21,7 +21,7 @@ abstract class AbstractCommandArgument implements CommandArgument {
     }
 
     @Override
-    public BindingKey<?> key() {
+    public Key<?> key() {
         return this.key;
     }
 
