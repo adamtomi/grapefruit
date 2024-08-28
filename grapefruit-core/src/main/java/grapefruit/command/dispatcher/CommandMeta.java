@@ -8,9 +8,9 @@ public interface CommandMeta {
 
     String route();
 
-    List<CommandArgument> arguments();
+    List<CommandArgument<?>> arguments();
 
-    static CommandMeta of(String route, List<CommandArgument> arguments) {
+    static CommandMeta of(String route, List<CommandArgument<?>> arguments) {
         return new CommandMetaImpl(route, arguments);
     }
 }

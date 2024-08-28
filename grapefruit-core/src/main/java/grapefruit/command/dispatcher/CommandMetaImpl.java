@@ -6,7 +6,7 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
-record CommandMetaImpl(String route, List<CommandArgument> arguments) implements CommandMeta {
+record CommandMetaImpl(String route, List<CommandArgument<?>> arguments) implements CommandMeta {
 
     CommandMetaImpl {
         requireNonNull(route, "route cannot be null");
