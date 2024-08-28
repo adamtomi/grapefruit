@@ -62,7 +62,7 @@ final class Keys {
 
         @Override
         public String toString() {
-            return "NamedKey(type=%s, name=%s)".formatted(this.type, this.name);
+            return "NamedKeyImpl(type=%s, name=%s)".formatted(this.type, this.name);
         }
 
         @Override
