@@ -5,7 +5,6 @@ import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
-import com.squareup.javapoet.WildcardTypeName;
 import grapefruit.command.Command;
 import grapefruit.command.CommandDefinition;
 import grapefruit.command.argument.CommandArgument;
@@ -118,20 +117,18 @@ public class CommandDescriptor implements Decorator {
 
     private MethodSpec generateAssembleArgsMethod() {
         CodeBlock returnBlock = CodeBlock.builder()
-                .addStatement("return $T.of(\n", List.class)
-                .indent()
-                .add(CodeBlockUtil.join(",\n", this.arguments.stream()
+                .add("$T.of(", List.class)
+                .add(this.arguments.stream()
                         .filter(ArgumentDescriptor::isCommandArg)
                         .map(ArgumentDescriptor::generateArgumentInitializer)
-                        .toList()))
-                .unindent()
-                .add("\n)")
+                        .collect(CodeBlock.joining(", ")))
+                .add(")")
                 .build();
 
         return MethodSpec.methodBuilder(this.assembleArgsMethodName)
                 .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
-                .returns(ParameterizedTypeName.get(ClassName.get(List.class), WildcardTypeName.get(CommandArgument.class)))
-                .addCode(returnBlock)
+                .returns(ParameterizedTypeName.get(ClassName.get(List.class), ParameterizedTypeName.get(CommandArgument.class)))
+                .addStatement("return $L", returnBlock)
                 .build();
     }
 }

@@ -71,7 +71,7 @@ public class FactoryDescriptor {
                         .map(CommandDescriptor::generateInitializer)
                         .collect(CodeBlock.joining(",\n")))
                 .unindent()
-                .add(")")
+                .add("\n)")
                 .build();
 
         return FieldSpec.builder(
@@ -93,8 +93,8 @@ public class FactoryDescriptor {
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addAnnotation(Override.class)
                 .returns(ParameterizedTypeName.get(Set.class, Command.class))
-                .addParameter(CommandContext.class, Naming.CONTEXT_PARAM)
-                .addStatement("return this.$L.apply($L)", Naming.INTERNAL_FACTORY_FIELD, Naming.CONTEXT_PARAM)
+                .addParameter(toTypeName(this.classFile), Naming.REFERENCE_PARAM)
+                .addStatement("return this.$L.apply($L)", Naming.INTERNAL_FACTORY_FIELD, Naming.REFERENCE_PARAM)
                 .build();
     }
 
@@ -112,7 +112,8 @@ public class FactoryDescriptor {
                 .sorted()
                 .toArray()[lines.size() - 1] + 2; // + 2 for padding
 
-        StringBuilder builder = new StringBuilder();
+        StringBuilder builder = new StringBuilder()
+                .append("\n");
         writeHorizontal(builder, length);
         writeBlank(builder, length);
         lines.forEach(x -> writeLine(builder, length, x));
