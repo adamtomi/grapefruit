@@ -38,7 +38,7 @@ public class CommandProcessor extends AbstractProcessor {
                 .collect(groupingBy(CommandDescriptor::parent));
 
         for (Map.Entry<TypeElement, List<CommandDescriptor>> entry : knownCommands.entrySet()) {
-            FactoryDescriptor descriptor = new FactoryDescriptor(entry.getKey(), entry.getValue());
+            FactoryDescriptor descriptor = new FactoryDescriptor(entry.getKey(), entry.getValue(), getClass());
             JavaFile file = descriptor.generateFile();
 
             try {
