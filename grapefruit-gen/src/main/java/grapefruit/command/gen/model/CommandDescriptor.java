@@ -4,7 +4,9 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.WildcardTypeName;
 import grapefruit.command.Command;
 import grapefruit.command.CommandDefinition;
 import grapefruit.command.argument.CommandArgument;
@@ -44,7 +46,7 @@ public class CommandDescriptor implements Decorator {
         this.parent = requireNonNull(parent, "parent cannot be null");
         this.commandDef = requireNonNull(commandDef, "commandDef cannot be null");
         this.arguments = requireNonNull(arguments, "arguments cannot be null");
-        this.assembleArgsMethodName = method.getSimpleName() + Naming.ASSEMBLE_ARGUMENTS_METHOD_SUFFIX;
+        this.assembleArgsMethodName = method.getSimpleName() + Naming.ARGUMENTS_METHOD_SUFFIX;
     }
 
     public static CommandDescriptor create(Element candidate) {
@@ -77,7 +79,7 @@ public class CommandDescriptor implements Decorator {
 
     @Override
     public void decorate(TypeSpec.Builder builder) {
-        builder.addMethod(generateAssembleArgsMethod());
+        builder.addMethod(generateArgumentsMethod());
         this.arguments.forEach(x -> x.decorate(builder));
     }
 
@@ -115,7 +117,7 @@ public class CommandDescriptor implements Decorator {
         );
     }
 
-    private MethodSpec generateAssembleArgsMethod() {
+    private MethodSpec generateArgumentsMethod() {
         CodeBlock returnBlock = CodeBlock.builder()
                 .add("$T.of(", List.class)
                 .add(this.arguments.stream()
@@ -125,9 +127,17 @@ public class CommandDescriptor implements Decorator {
                 .add(")")
                 .build();
 
+        TypeName returnType = ParameterizedTypeName.get(
+                ClassName.get(List.class),
+                ParameterizedTypeName.get(
+                        ClassName.get(CommandArgument.class),
+                        WildcardTypeName.subtypeOf(TypeName.OBJECT)
+                )
+        );
+
         return MethodSpec.methodBuilder(this.assembleArgsMethodName)
                 .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
-                .returns(ParameterizedTypeName.get(ClassName.get(List.class), ParameterizedTypeName.get(CommandArgument.class)))
+                .returns(returnType)
                 .addStatement("return $L", returnBlock)
                 .build();
     }
