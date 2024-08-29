@@ -21,6 +21,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import java.util.List;
 
+import static com.google.auto.common.MoreElements.asExecutable;
 import static com.google.auto.common.MoreElements.asType;
 import static grapefruit.command.gen.util.AnnotationUtil.accessAnnotationValue;
 import static grapefruit.command.gen.util.AnnotationUtil.assertAnnotation;
@@ -46,24 +47,30 @@ public class CommandDescriptor implements Descriptor {
         this.assembleArgsMethodName = method.getSimpleName() + Naming.ASSEMBLE_ARGUMENTS_METHOD_SUFFIX;
     }
 
-    public static CommandDescriptor create(ExecutableElement method) {
-        Element parent = method.getEnclosingElement();
+    public static CommandDescriptor create(Element candidate) {
+        if (!candidate.getKind().equals(ElementKind.METHOD)) {
+            throw new RuntimeException("Expected element to be a method");
+        }
+
+        ExecutableElement method = asExecutable(candidate);
+        Element parent = candidate.getEnclosingElement();
+
         if (!parent.getKind().equals(ElementKind.CLASS)) {
             throw new RuntimeException("Expected parent to be a class");
         }
 
-        if (method.getModifiers().contains(Modifier.STATIC)) {
+        if (candidate.getModifiers().contains(Modifier.STATIC)) {
             throw new RuntimeException("Command handler methods may not be static");
         }
 
-        if (method.getModifiers().contains(Modifier.PRIVATE)) {
+        if (candidate.getModifiers().contains(Modifier.PRIVATE)) {
             throw new RuntimeException("Command handler methods may not be private");
         }
 
         return new CommandDescriptor(
                 method,
                 asType(parent),
-                assertAnnotation(method, CommandDefinition.class),
+                assertAnnotation(candidate, CommandDefinition.class),
                 method.getParameters().stream().map(ArgumentDescriptor::create).toList()
         );
     }
