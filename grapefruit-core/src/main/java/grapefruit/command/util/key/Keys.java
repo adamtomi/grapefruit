@@ -46,8 +46,8 @@ final class Keys {
         private final String name;
 
         NamedKeyImpl(TypeToken<T> type, String name) {
-            this.type = requireNonNull(type, " type cannot be null");
-            this.name = requireNonNull(name, " name cannot be null");
+            this.type = requireNonNull(type, "type cannot be null");
+            this.name = requireNonNull(name, "name cannot be null");
         }
 
         @Override
