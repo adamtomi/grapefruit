@@ -91,7 +91,7 @@ public class ArgumentDescriptor implements Decorator {
             isCommandArg = true;
             isFlag = true;
             name = accessAnnotationValue(flagMirror.orElseThrow(), "name", String.class);
-            shorthand = accessAnnotationValue(flagMirror.orElseThrow(), "shorthand", Character.TYPE);
+            shorthand = accessAnnotationValue(flagMirror.orElseThrow(), "shorthand", Character.class);
         }
 
         return new ArgumentDescriptor(
@@ -105,7 +105,8 @@ public class ArgumentDescriptor implements Decorator {
 
     @Override
     public void decorate(TypeSpec.Builder builder) {
-        builder.addField(generateKeyField());
+        FieldSpec field = generateKeyField();
+        if (!builder.fieldSpecs.contains(field)) builder.addField(field);
     }
 
     public String keyFieldName() {
@@ -121,8 +122,8 @@ public class ArgumentDescriptor implements Decorator {
 
         if (this.isFlag) {
             return toTypeName(this.parameter).equals(TypeName.BOOLEAN)
-                    ? CodeBlock.of("$T.presence($S, $S)", FlagArgument.class, this.name, this.shorthand)
-                    : CodeBlock.of("$T.value($S, $S, $L)", FlagArgument.class, this.name, this.shorthand, generateArgumentInitializer());
+                    ? CodeBlock.of("$T.presence($S, '$L')", FlagArgument.class, this.name, this.shorthand)
+                    : CodeBlock.of("$T.value($S, '$L', $L)", FlagArgument.class, this.name, this.shorthand, generateKeyInitializer());
         }
 
         return CodeBlock.of("new $T($S, $L)", StandardCommandArgument.class, this.name, generateKeyInitializer());
@@ -140,7 +141,7 @@ public class ArgumentDescriptor implements Decorator {
         CodeBlock typeToken = generateTypeToken();
         return this.isCommandArg
                 ? CodeBlock.of("$T.named($L, $S)", Key.class, typeToken, this.name)
-                : CodeBlock.of("$T.of($L)", Key.class, typeToken, this.name);
+                : CodeBlock.of("$T.of($L)", Key.class, typeToken);
     }
 
     private FieldSpec generateKeyField() {
