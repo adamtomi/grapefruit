@@ -2,7 +2,7 @@ package grapefruit.command.gen;
 
 import com.google.auto.service.AutoService;
 import grapefruit.command.CommandDefinition;
-import grapefruit.command.gen.descriptor.CommandDescriptor;
+import grapefruit.command.gen.model.CommandDescriptor;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;
@@ -32,6 +32,8 @@ public class CommandProcessor extends AbstractProcessor {
         Map<TypeElement, List<CommandDescriptor>> knownCommands = commandMethods.stream()
                 .map(CommandDescriptor::create)
                 .collect(groupingBy(CommandDescriptor::parent));
+
+
 
         return true;
     }

@@ -1,9 +1,9 @@
-package grapefruit.command.gen.descriptor;
+package grapefruit.command.gen.model;
 
 import com.squareup.javapoet.TypeSpec;
 
 @FunctionalInterface
-public interface Descriptor {
+public interface Decorator {
 
     void decorate(TypeSpec.Builder builder);
 }

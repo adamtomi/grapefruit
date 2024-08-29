@@ -1,4 +1,4 @@
-package grapefruit.command.gen.descriptor;
+package grapefruit.command.gen.model;
 
 import com.google.common.reflect.TypeToken;
 import com.squareup.javapoet.ClassName;
@@ -27,7 +27,7 @@ import static grapefruit.command.gen.util.AnnotationUtil.accessAnnotationValue;
 import static grapefruit.command.gen.util.TypeNameUtil.toTypeName;
 import static java.util.Objects.requireNonNull;
 
-public class ArgumentDescriptor implements Descriptor {
+public class ArgumentDescriptor implements Decorator {
     private final VariableElement parameter;
     private final String name;
     // Only set, if this argument represents a flag (that has a shorthand)

@@ -1,4 +1,4 @@
-package grapefruit.command.gen.descriptor;
+package grapefruit.command.gen.model;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -27,7 +27,7 @@ import static grapefruit.command.gen.util.AnnotationUtil.accessAnnotationValue;
 import static grapefruit.command.gen.util.AnnotationUtil.assertAnnotation;
 import static java.util.Objects.requireNonNull;
 
-public class CommandDescriptor implements Descriptor {
+public class CommandDescriptor implements Decorator {
     private final ExecutableElement method;
     private final TypeElement parent;
     private final AnnotationMirror commandDef;
