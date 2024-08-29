@@ -1,4 +1,4 @@
-package grapefruit.command.gen.model;
+package grapefruit.command.gen.util;
 
 import com.squareup.javapoet.TypeSpec;
 

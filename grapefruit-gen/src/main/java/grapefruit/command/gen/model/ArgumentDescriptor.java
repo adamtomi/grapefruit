@@ -12,13 +12,13 @@ import grapefruit.command.argument.Flag;
 import grapefruit.command.argument.FlagArgument;
 import grapefruit.command.argument.StandardCommandArgument;
 import grapefruit.command.gen.Naming;
+import grapefruit.command.gen.util.Decorator;
 import grapefruit.command.gen.util.TypeNameUtil;
 import grapefruit.command.util.key.Key;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
-
 import java.util.Optional;
 import java.util.stream.Collectors;
 

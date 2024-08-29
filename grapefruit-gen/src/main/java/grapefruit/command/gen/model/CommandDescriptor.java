@@ -12,6 +12,7 @@ import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.dispatcher.CommandMeta;
 import grapefruit.command.gen.Naming;
 import grapefruit.command.gen.util.CodeBlockUtil;
+import grapefruit.command.gen.util.Decorator;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
