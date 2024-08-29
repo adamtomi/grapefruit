@@ -12,7 +12,6 @@ import grapefruit.command.CommandDefinition;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.dispatcher.CommandMeta;
 import grapefruit.command.gen.Naming;
-import grapefruit.command.gen.util.CodeBlockUtil;
 import grapefruit.command.gen.util.Decorator;
 
 import javax.lang.model.element.AnnotationMirror;
@@ -109,12 +108,9 @@ public class CommandDescriptor implements Decorator {
     }
 
     private CodeBlock generateArgumentList() {
-        return CodeBlockUtil.join(
-                ", ",
-                this.arguments.stream()
-                        .map(x -> CodeBlock.of("$L.get($L)", Naming.CONTEXT_PARAM, x.keyFieldName()))
-                        .toList()
-        );
+        return this.arguments.stream()
+                .map(x -> CodeBlock.of("$L.get($L)", Naming.CONTEXT_PARAM, x.keyFieldName()))
+                .collect(CodeBlock.joining(", "));
     }
 
     private MethodSpec generateArgumentsMethod() {
