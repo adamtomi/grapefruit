@@ -1,4 +1,4 @@
-package grapefruit.command.dispatcher;
+package grapefruit.command;
 
 import java.io.Serial;
 
@@ -8,5 +8,9 @@ public class CommandException extends Exception {
 
     public CommandException() {
         super();
+    }
+
+    public CommandException(Throwable cause) {
+        super(cause);
     }
 }

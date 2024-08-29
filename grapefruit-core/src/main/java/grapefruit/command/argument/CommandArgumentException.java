@@ -1,6 +1,6 @@
 package grapefruit.command.argument;
 
-import grapefruit.command.dispatcher.CommandException;
+import grapefruit.command.CommandException;
 
 import java.io.Serial;
 
