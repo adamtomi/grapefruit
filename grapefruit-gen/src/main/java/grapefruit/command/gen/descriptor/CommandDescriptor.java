@@ -110,7 +110,7 @@ public class CommandDescriptor implements Descriptor {
         return CodeBlockUtil.join(
                 ", ",
                 this.arguments.stream()
-                        .map(x -> CodeBlock.of("$L.get($L)", Naming.CONTEXT_PARAM, x.keyName()))
+                        .map(x -> CodeBlock.of("$L.get($L)", Naming.CONTEXT_PARAM, x.keyFieldName()))
                         .toList()
         );
     }
@@ -120,7 +120,8 @@ public class CommandDescriptor implements Descriptor {
                 .addStatement("return $T.of(\n", List.class)
                 .indent()
                 .add(CodeBlockUtil.join(",\n", this.arguments.stream()
-                        .map(ArgumentDescriptor::generateInitializer)
+                        .filter(ArgumentDescriptor::isCommandArg)
+                        .map(ArgumentDescriptor::generateArgumentInitializer)
                         .toList()))
                 .unindent()
                 .add("\n)")
