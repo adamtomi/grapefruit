@@ -14,11 +14,8 @@ import javax.lang.model.element.TypeElement;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
 
 @AutoService(Processor.class)
 @SupportedAnnotationTypes("grapefruit.command.CommandDefinition")
@@ -34,13 +31,7 @@ public class CommandProcessor extends AbstractProcessor {
         Set<? extends Element> commandMethods = roundEnv.getElementsAnnotatedWith(CommandDefinition.class);
         Map<TypeElement, List<CommandDescriptor>> knownCommands = commandMethods.stream()
                 .map(CommandDescriptor::create)
-                .collect(groupingBy(
-                        CommandDescriptor::parent,
-                        mapping(
-                                Function.identity(),
-                                toList()
-                        )
-                ));
+                .collect(groupingBy(CommandDescriptor::parent));
 
         return true;
     }
