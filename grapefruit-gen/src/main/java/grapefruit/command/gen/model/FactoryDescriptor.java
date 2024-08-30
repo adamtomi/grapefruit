@@ -9,7 +9,6 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
 import grapefruit.command.Command;
 import grapefruit.command.CommandFactory;
-import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.gen.Naming;
 
 import javax.annotation.processing.Processor;
@@ -53,8 +52,7 @@ public class FactoryDescriptor {
 
     private TypeSpec generateClassFile() {
         TypeSpec.Builder classBuilder = TypeSpec.classBuilder(this.classFile.getSimpleName() + Naming.FACTORY_SUFFIX)
-                .addModifiers(Modifier.PUBLIC)
-                .addModifiers(Modifier.FINAL)
+                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addSuperinterface(ParameterizedTypeName.get(ClassName.get(CommandFactory.class), toTypeName(this.classFile)));
         this.commands.forEach(x -> x.decorate(classBuilder));
 
