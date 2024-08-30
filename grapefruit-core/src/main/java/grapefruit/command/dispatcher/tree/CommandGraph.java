@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -110,13 +111,16 @@ public class CommandGraph {
             }
 
             // The first alias will be treated as the primary
-            String primaryAlias = split[0];
-            // The remaining (if any) aliases become secondary aliases
-            String[] aliases = split.length == 1
-                    ? new String[0]
-                    : Arrays.copyOfRange(split, 1, split.length);
+            String primaryAlias = split[0].trim();
+            if (primaryAlias.isBlank()) throw new IllegalArgumentException("Primary alias cannot be blank");
 
-            return new RoutePart(primaryAlias, Set.of(aliases));
+            // The remaining (if any) aliases become secondary aliases
+            Set<String> aliases = Arrays.stream(split).skip(1)
+                    .map(String::trim)
+                    .filter(String::isBlank) // Filter out blank strings
+                    .collect(Collectors.toSet());
+
+            return new RoutePart(primaryAlias, aliases);
         }
 
         /**
