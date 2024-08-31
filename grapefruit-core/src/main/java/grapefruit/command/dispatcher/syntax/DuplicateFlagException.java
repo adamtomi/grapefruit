@@ -1,4 +1,4 @@
-package grapefruit.command.dispatcher.input;
+package grapefruit.command.dispatcher.syntax;
 
 import grapefruit.command.CommandException;
 
