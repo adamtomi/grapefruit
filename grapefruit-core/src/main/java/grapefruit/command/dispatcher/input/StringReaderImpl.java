@@ -58,6 +58,16 @@ public class StringReaderImpl implements StringReader {
         return this.input.substring(start);
     }
 
+    @Override
+    public String consumed() {
+        return this.input.substring(0, this.cursor - 1);
+    }
+
+    @Override
+    public String unwrap() {
+        return this.input;
+    }
+
     private void readUntil(CharPredicate condition) {
         char c;
         do {

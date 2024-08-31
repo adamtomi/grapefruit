@@ -54,6 +54,22 @@ public interface StringReader {
     String readRemaining() throws CommandSyntaxException;
 
     /**
+     * Returns the consumed part of the original input. Consumed
+     * parts are parts that have been read successfully by any
+     * of the reader's read methods.
+     *
+     * @return The consumed part of the input
+     */
+    String consumed();
+
+    /**
+     * Returns the original input wrapped this reader instance.
+     *
+     * @return The original input
+     */
+    String unwrap();
+
+    /**
      * Constructs a new {@link StringReaderImpl} instance wrapping
      * the provided input.
      *

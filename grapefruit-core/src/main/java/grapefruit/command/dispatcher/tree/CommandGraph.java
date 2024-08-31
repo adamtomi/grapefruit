@@ -1,7 +1,11 @@
 package grapefruit.command.dispatcher.tree;
 
 import grapefruit.command.Command;
+import grapefruit.command.CommandException;
+import grapefruit.command.dispatcher.CommandSyntaxException;
+import grapefruit.command.dispatcher.input.StringReader;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -71,6 +75,50 @@ public class CommandGraph {
     }
 
     /**
+     * Attempts to find a {@link Command} instance attached to a
+     * {@link CommandNode} based on user input.
+     *
+     * @param reader The reader wrapping user input
+     * @return The command if it was found
+     * @throws CommandSyntaxException If there is nothing to read
+     * from the reader
+     * @throws NoSuchCommandException If no child {@link CommandNode}
+     * exists with the provided name
+     */
+    public Command search(StringReader reader) throws CommandException {
+        CommandNode node = this.rootNode;
+        while (true) {
+            String name = reader.readSingle();
+            // Attempt to find a child node with this name
+            Optional<CommandNode> childCandidate = node.findChild(name);
+            if (childCandidate.isEmpty()) {
+                // There is no child node with the provided name, we throw an exception
+                throw new NoSuchCommandException(
+                        name,
+                        reader.consumed(),
+                        node.children().stream().map(CommandNode::primaryAlias).toList()
+                );
+            }
+
+            node = childCandidate.orElseThrow();
+            if (node.isLeaf()) {
+                Optional<Command> command = node.command();
+                // Not using Optional#orElseThrow(String), because node isn't final
+                if (command.isPresent()) return command.orElseThrow();
+
+                /*
+                 * If the node is a leaf node, we assume this is the command handler
+                 * we're looking for. Technically it should always exist, because
+                 * leaf nodes must have a command attached to them, and this#insert
+                 * makes sure of that. Just to be safe though, if the command handler
+                 * still happens to be missing.
+                 */
+                throw new IllegalStateException("CommandNode '%s' is a leaf node, but has no command attached to it.".formatted(node));
+            }
+        }
+    }
+
+    /**
      * Finds a child node of the supplied parent node by primary alias
      * or secondary aliases.
      *
@@ -132,6 +180,54 @@ public class CommandGraph {
          */
         public CommandNode toNode(CommandNode parent) {
             return new CommandNode(this.primaryAlias, this.aliases, parent);
+        }
+    }
+
+    /**
+     * This exception indicated that no command node with the provided name
+     * could be found.
+     */
+    public static class NoSuchCommandException extends CommandException {
+        @Serial
+        private static final long serialVersionUID = 1581132770833148304L;
+        private final String name;
+        private final String consumedArgs;
+        private final List<String> options;
+
+        public NoSuchCommandException(String name, String consumedArgs, List<String> options) {
+            super();
+            this.name = requireNonNull(name, "name cannot be null");
+            this.consumedArgs = requireNonNull(consumedArgs, "consumedArgs cannot be null");
+            this.options = requireNonNull(options, "options cannot be null");
+        }
+
+        /**
+         * Returns the supplied name.
+         *
+         * @return The supplied name
+         */
+        public String name() {
+            return this.name;
+        }
+
+        /**
+         * Returns the part of the user input that has successfully
+         * been consumed.
+         *
+         * @return The consumed part of the user input
+         */
+        public String consumedArgs() {
+            return this.consumedArgs;
+        }
+
+        /**
+         * Returns valid options (in this case the name of the direct
+         * child nodes).
+         *
+         * @return The valid options
+         */
+        public List<String> options() {
+            return this.options;
         }
     }
 }

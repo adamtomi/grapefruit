@@ -1,7 +1,7 @@
 package grapefruit.command.argument.mapper;
 
+import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.CommandContext;
-import grapefruit.command.dispatcher.CommandSyntaxException;
 import grapefruit.command.dispatcher.input.StringReader;
 
 import static java.util.Objects.requireNonNull;
@@ -18,7 +18,7 @@ public final class WrappedArgumentMapper<T> implements ArgumentMapper<T> {
     }
 
     @Override
-    public T tryMap(CommandContext context, StringReader reader) throws CommandSyntaxException {
+    public T tryMap(CommandContext context, StringReader reader) throws CommandException {
         return this.delegate.tryMap(context, reader);
     }
 }

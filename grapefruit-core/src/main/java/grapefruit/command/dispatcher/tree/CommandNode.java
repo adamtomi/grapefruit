@@ -42,6 +42,10 @@ public class CommandNode {
         if (!matcher.matches()) throw new IllegalStateException("String '%s' contains illegal characters".formatted(input));
     }
 
+    public String primaryAlias() {
+        return this.primaryAlias;
+    }
+
     public Optional<Command> command() {
         return Optional.ofNullable(this.command);
     }
@@ -61,6 +65,10 @@ public class CommandNode {
 
     public void addChild(CommandNode child) {
         this.children.add(child);
+    }
+
+    public Set<CommandNode> children() {
+        return Set.copyOf(this.children);
     }
 
     public Optional<CommandNode> parent() {
