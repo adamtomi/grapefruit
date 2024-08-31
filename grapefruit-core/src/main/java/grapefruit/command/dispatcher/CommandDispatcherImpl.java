@@ -38,6 +38,12 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     }
 
     @Override
+    public void unregister(Iterable<Command> commands) {
+        requireNonNull(commands, "commands cannot be null");
+        commands.forEach(this.commandGraph::delete);
+    }
+
+    @Override
     public void dispatch(CommandContext context, String commandLine) throws CommandException {
         requireNonNull(context, "context cannot be null");
         requireNonNull(commandLine, "commandLine cannot be null");

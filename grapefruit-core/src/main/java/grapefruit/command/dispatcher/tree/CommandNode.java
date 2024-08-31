@@ -67,16 +67,16 @@ public class CommandNode {
         this.children.add(child);
     }
 
+    public void deleteChild(CommandNode child) {
+        this.children.remove(child);
+    }
+
     public Set<CommandNode> children() {
         return Set.copyOf(this.children);
     }
 
     public Optional<CommandNode> parent() {
         return Optional.ofNullable(this.parent);
-    }
-
-    public void parent(CommandNode parent) {
-        this.parent = requireNonNull(parent, "parent cannot be null");
     }
 
     public boolean isLeaf() {

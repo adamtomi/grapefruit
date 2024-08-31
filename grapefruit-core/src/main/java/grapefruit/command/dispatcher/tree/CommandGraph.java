@@ -26,14 +26,7 @@ public class CommandGraph {
      */
     public void insert(Command command) {
         requireNonNull(command, "command cannot be null");
-        /*
-         * Split the command route into parts. Each individual part
-         * will become a command node in the tree if the registration
-         * succeeds.
-         */
-        List<RoutePart> parts = Arrays.stream(command.meta().route().split(" "))
-                .map(RoutePart::of)
-                .toList();
+        List<RoutePart> parts = parseRoute(command);
         /*
          * A command handler cannot be registered directly on the
          * root node, at least one route part is required.
@@ -53,7 +46,9 @@ public class CommandGraph {
             Optional<CommandNode> childCandidate = findChild(node, part);
             if (childCandidate.isEmpty()) {
                 // Create new child node
-                node = part.toNode(node);
+                CommandNode temp = part.toNode(node);
+                node.addChild(temp);
+                node = temp;
                 // Register command if we're at the end of the chain
                 if (isLast) node.command(command);
             } else {
@@ -70,6 +65,44 @@ public class CommandGraph {
 
                 childNode.mergeAliases(part.aliases);
                 node = childNode;
+            }
+        }
+    }
+
+    /**
+     * Deletes the given command from the command tree.
+     *
+     * @param command The command to delete
+     */
+    public void delete(Command command) {
+        requireNonNull(command, "command cannot be null");
+        List<RoutePart> parts = parseRoute(command);
+        // There's nothing to delete if the list is empty
+        if (parts.isEmpty()) return;
+
+        CommandNode node = this.rootNode;
+        // Find the last node in this command chain
+        for (RoutePart part : parts) {
+            Optional<CommandNode> childCandidate = findChild(node, part);
+            if (childCandidate.isEmpty()) {
+                // This shouldn't happen
+                throw new IllegalStateException("Command node '%s' does not have a suitable child.".formatted(node));
+            }
+
+            node = childCandidate.orElseThrow();
+        }
+
+        // Check just in case
+        if (!node.isLeaf()) throw new IllegalStateException("Attempting to delete a non-leaf command node.");
+        while (!node.equals(this.rootNode)) {
+            CommandNode parent = node.parent().orElseThrow();
+            // If the node is a leaf node, we can safely delete it from its parent
+            if (node.isLeaf()) {
+                parent.deleteChild(node);
+                node = parent;
+            } else {
+                // If the node is not a leaf node, we can't delete more nodes.
+                break;
             }
         }
     }
@@ -132,6 +165,23 @@ public class CommandGraph {
         }
 
         return found;
+    }
+
+    /**
+     * Parses the route of the command and returns a {@link List} of
+     * {@link RoutePart} instances.
+     *
+     * @return The generated list of route parts
+     */
+    private List<RoutePart> parseRoute(Command command) {
+        /*
+         * Split the command route into parts. Each individual part
+         * will become a command node in the tree if the registration
+         * succeeds.
+         */
+        return Arrays.stream(command.meta().route().split(" "))
+                .map(RoutePart::of)
+                .toList();
     }
 
     /**
