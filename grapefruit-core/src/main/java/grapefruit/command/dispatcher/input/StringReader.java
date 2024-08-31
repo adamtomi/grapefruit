@@ -1,6 +1,6 @@
 package grapefruit.command.dispatcher.input;
 
-import grapefruit.command.dispatcher.CommandSyntaxException;
+import grapefruit.command.dispatcher.syntax.CommandSyntaxException;
 
 /**
  * Provides utility functions for {@link grapefruit.command.argument.mapper.ArgumentMapper mappers}
@@ -68,15 +68,4 @@ public interface StringReader {
      * @return The original input
      */
     String unwrap();
-
-    /**
-     * Constructs a new {@link StringReaderImpl} instance wrapping
-     * the provided input.
-     *
-     * @param input The input to read from
-     * @return The constructed reader
-     */
-    static StringReader wrap(String input) {
-        return new StringReaderImpl(input);
-    }
 }

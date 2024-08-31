@@ -1,17 +1,19 @@
 package grapefruit.command.dispatcher.input;
 
-import grapefruit.command.dispatcher.CommandSyntaxException;
-
-import java.util.NoSuchElementException;
+import grapefruit.command.dispatcher.CommandContext;
+import grapefruit.command.dispatcher.StandardContextKeys;
+import grapefruit.command.dispatcher.syntax.CommandSyntaxException;
 
 import static java.util.Objects.requireNonNull;
 
 public class StringReaderImpl implements StringReader {
     private final String input;
+    private final CommandContext context;
     private int cursor;
 
-    StringReaderImpl(String input) {
+    public StringReaderImpl(String input, CommandContext context) {
         this.input = requireNonNull(input, "input cannot be null");
+        this.context = requireNonNull(context, "context cannot be null");
     }
 
     @Override
@@ -20,13 +22,12 @@ public class StringReaderImpl implements StringReader {
     }
 
     @Override
-    public char next() {
+    public char next() throws CommandSyntaxException {
         if (hasNext()) {
             return this.input.charAt(this.cursor++);
         }
 
-        // TODO throw CommandSyntaxException(too few arguments)
-        throw new NoSuchElementException("There is nothing left to read");
+        throw generateException();
     }
 
     @Override
@@ -51,8 +52,7 @@ public class StringReaderImpl implements StringReader {
 
     @Override
     public String readRemaining() throws CommandSyntaxException {
-        // TODO throw CommandSyntaxException instead
-        if (!hasNext()) throw new NoSuchElementException("There is nothing to read");
+        if (!hasNext()) throw generateException();
         int start = this.cursor;
         this.cursor = this.input.length();
         return this.input.substring(start);
@@ -68,15 +68,23 @@ public class StringReaderImpl implements StringReader {
         return this.input;
     }
 
-    private void readUntil(CharPredicate condition) {
+    private void readUntil(CharPredicate condition) throws CommandSyntaxException {
         char c;
         do {
             c = next();
         } while (condition.test(c));
     }
 
-    private void skipWhitespace() {
+    private void skipWhitespace() throws CommandSyntaxException {
         readUntil(Character::isWhitespace);
+    }
+
+    private CommandSyntaxException generateException() {
+        return CommandSyntaxException.from(
+                this,
+                this.context.get(StandardContextKeys.COMMAND_INSTANCE),
+                CommandSyntaxException.Reason.TOO_FEW_ARGUMENTS
+        );
     }
 
     @FunctionalInterface

@@ -11,6 +11,8 @@ public interface Registry<K, V> {
 
     Optional<V> get(K key);
 
+    boolean has(K key);
+
     static <K, V> Registry<K, V> create() {
         return new Impl<>();
     }
@@ -40,6 +42,16 @@ public interface Registry<K, V> {
             try {
                 this.lock.readLock().lock();
                 return Optional.ofNullable(this.internalMap.get(key));
+            } finally {
+                this.lock.readLock().unlock();
+            }
+        }
+
+        @Override
+        public boolean has(K key) {
+            try {
+                this.lock.readLock().lock();
+                return this.internalMap.containsKey(key);
             } finally {
                 this.lock.readLock().unlock();
             }
