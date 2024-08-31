@@ -14,9 +14,11 @@ import grapefruit.command.dispatcher.tree.CommandGraph;
 import grapefruit.command.util.FlagGroup;
 import grapefruit.command.util.Registry;
 import grapefruit.command.util.key.Key;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 
 import static java.util.Objects.requireNonNull;
@@ -25,22 +27,49 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     private final CommandGraph commandGraph = new CommandGraph();
     private final CommandAuthorizer authorizer;
     private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers;
+    private final CommandRegistrationHandler registrationHandler;
 
-    CommandDispatcherImpl(CommandAuthorizer authorizer, Registry<Key<?>, ArgumentMapper<?>> argumentMappers) {
+    CommandDispatcherImpl(
+            CommandAuthorizer authorizer,
+            Registry<Key<?>, ArgumentMapper<?>> argumentMappers,
+            @Nullable CommandRegistrationHandler registrationHandler
+    ) {
         this.authorizer = requireNonNull(authorizer, "authorizer cannot be null");
         this.argumentMappers = requireNonNull(argumentMappers, "argumentMappers cannot be null");
+        this.registrationHandler = registrationHandler != null ? registrationHandler : CommandRegistrationHandler.noop();
     }
 
     @Override
     public void register(Iterable<Command> commands) {
         requireNonNull(commands, "commands cannot be null");
-        commands.forEach(this.commandGraph::insert);
+        changeRegistrationState(commands, command -> {
+            // The registartion handler is invoked first
+            this.registrationHandler.onRegister(command);
+            // If the process wasn't interrupted, insert the command into the tree
+            this.commandGraph.insert(command);
+        });
     }
 
     @Override
     public void unregister(Iterable<Command> commands) {
         requireNonNull(commands, "commands cannot be null");
-        commands.forEach(this.commandGraph::delete);
+        changeRegistrationState(commands, command -> {
+            // The registration handler is invoked first
+            this.registrationHandler.onUnregister(command);
+            // If the process wasn't interrupted, delete the command from the tree
+            this.commandGraph.delete(command);
+        });
+    }
+
+    private void changeRegistrationState(Iterable<Command> commands, Consumer<Command> handler) {
+        for (Command command : commands) {
+            try {
+                // Run state change handler
+                handler.accept(command);
+            } catch (CommandRegistrationHandler.Interrupt ignored) {
+                // Interrupt was thrown, do nothing
+            }
+        }
     }
 
     @Override
