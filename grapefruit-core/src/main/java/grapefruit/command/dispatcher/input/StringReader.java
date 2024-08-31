@@ -1,6 +1,7 @@
 package grapefruit.command.dispatcher.input;
 
 import grapefruit.command.dispatcher.syntax.CommandSyntaxException;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Provides utility functions for {@link grapefruit.command.argument.mapper.ArgumentMapper mappers}
@@ -27,6 +28,15 @@ public interface StringReader {
      * @throws CommandSyntaxException If there is nothing to read
      */
     char next() throws CommandSyntaxException;
+
+
+    /**
+     * Returns a single string surrounded by whitespace without
+     * moving the cursor, or null if no string could be read.
+     *
+     * @return The string or null
+     */
+    @Nullable String peekSingle();
 
     /**
      * Reads a single string surrounded by whitespace.

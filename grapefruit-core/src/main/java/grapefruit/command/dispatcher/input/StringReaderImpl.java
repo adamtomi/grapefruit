@@ -3,6 +3,7 @@ package grapefruit.command.dispatcher.input;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.StandardContextKeys;
 import grapefruit.command.dispatcher.syntax.CommandSyntaxException;
+import org.jetbrains.annotations.Nullable;
 
 import static java.util.Objects.requireNonNull;
 
@@ -28,6 +29,18 @@ public class StringReaderImpl implements StringReader {
         }
 
         throw generateException();
+    }
+
+    @Override
+    public @Nullable String peekSingle() {
+        int start = this.cursor;
+        try {
+            return readSingle();
+        } catch (CommandSyntaxException ex) {
+            return null;
+        } finally {
+            this.cursor = start;
+        }
     }
 
     @Override

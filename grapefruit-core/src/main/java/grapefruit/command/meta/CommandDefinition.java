@@ -21,4 +21,11 @@ public @interface CommandDefinition {
      * will be registered at.
      */
     String route();
+
+    /**
+     * The permission which the user will be required
+     * to have in order to execute the command. No
+     * permission is required by default.
+     */
+    String permission() default "";
 }
