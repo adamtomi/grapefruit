@@ -1,4 +1,6 @@
-package grapefruit.command;
+package grapefruit.command.meta;
+
+import grapefruit.command.Command;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

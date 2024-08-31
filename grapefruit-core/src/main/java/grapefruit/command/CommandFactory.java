@@ -1,5 +1,7 @@
 package grapefruit.command;
 
+import grapefruit.command.meta.CommandDefinition;
+
 import java.util.Set;
 
 /**

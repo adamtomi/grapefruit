@@ -8,11 +8,11 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.WildcardTypeName;
 import grapefruit.command.Command;
-import grapefruit.command.CommandDefinition;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.dispatcher.CommandMeta;
 import grapefruit.command.gen.Naming;
 import grapefruit.command.gen.util.Decorator;
+import grapefruit.command.meta.CommandDefinition;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
