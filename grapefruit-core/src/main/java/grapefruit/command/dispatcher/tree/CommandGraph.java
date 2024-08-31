@@ -17,7 +17,7 @@ import static java.util.Objects.requireNonNull;
 
 public class CommandGraph {
     /* The internal command tree */
-    private final CommandNode rootNode = new CommandNode("__ROOT__", Set.of(), null, null);
+    private final CommandNode rootNode = new CommandNode("__ROOT__", Set.of(), null);
 
     /**
      * Inserts the given command into the command tree.
