@@ -33,11 +33,14 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
     @Override
     public void register(Iterable<Command> commands) {
+        requireNonNull(commands, "commands cannot be null");
         commands.forEach(this.commandGraph::insert);
     }
 
     @Override
     public void dispatch(CommandContext context, String commandLine) throws CommandException {
+        requireNonNull(context, "context cannot be null");
+        requireNonNull(commandLine, "commandLine cannot be null");
         // Construct a new reader from user input
         StringReader input = new StringReaderImpl(commandLine, context);
         // Find the command instance to execute
