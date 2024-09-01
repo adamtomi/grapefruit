@@ -44,7 +44,7 @@ public interface CommandSyntax {
     static CommandSyntax create(Command command) {
         List<SyntaxPart> parts = new ArrayList<>();
         // Loop through all command arguments
-        for (CommandArgument<?> argument : command.meta().arguments()) {
+        for (CommandArgument<?> argument : command.arguments()) {
             // Flags are represented in their long form (as --flagname paramname)
             String format = argument.isFlag()
                     ? "%s%s %s".formatted(LONG_FLAG_PREFIX, argument.name(), argument.name())

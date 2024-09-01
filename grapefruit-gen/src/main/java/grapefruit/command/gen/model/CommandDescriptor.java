@@ -88,10 +88,11 @@ public class CommandDescriptor implements Decorator {
 
     public CodeBlock generateInitializer() {
         return CodeBlock.of(
-                "$T.wrap($T.of($S, $L()), $L)",
+                "$T.wrap($L(), $T.of($S, $S), $L)",
                 Command.class,
                 CommandMeta.class,
                 accessAnnotationValue(this.commandDef, "route", String.class),
+                accessAnnotationValue(this.commandDef, "permission", String.class),
                 this.assembleArgsMethodName,
                 generateCommandAction()
         );

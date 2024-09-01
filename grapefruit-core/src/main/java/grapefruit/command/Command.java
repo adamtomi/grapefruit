@@ -9,14 +9,17 @@ import java.util.List;
 
 public interface Command extends CommandAction {
 
+    List<CommandArgument<?>> arguments();
+
     CommandMeta meta();
 
-    default List<CommandArgument<?>> arguments() {
-        return meta().arguments();
-    }
-
-    static Command wrap(CommandMeta meta, CommandAction action) {
+    static Command wrap(List<CommandArgument<?>> arguments, CommandMeta meta, CommandAction action) {
         return new Command() {
+            @Override
+            public List<CommandArgument<?>> arguments() {
+                return arguments;
+            }
+
             @Override
             public CommandMeta meta() {
                 return meta;
