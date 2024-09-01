@@ -39,7 +39,7 @@ public class CommandGraph {
         // Loop through the route parts
         for (Iterator<RoutePart> iter = parts.iterator(); iter.hasNext();) {
             RoutePart part = iter.next();
-            boolean isLast = iter.hasNext();
+            boolean isLast = !iter.hasNext();
 
             // Attempt to find an existing child node with the
             // provided aliases

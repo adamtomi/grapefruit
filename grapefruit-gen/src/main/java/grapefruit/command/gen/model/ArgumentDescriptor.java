@@ -117,11 +117,19 @@ public class ArgumentDescriptor implements Decorator {
         return this.isCommandArg;
     }
 
+    public boolean isFlag() {
+        return this.isFlag;
+    }
+
+    public boolean isPresenceFlag() {
+        return this.isFlag && toTypeName(this.parameter).equals(TypeName.BOOLEAN);
+    }
+
     public CodeBlock generateArgumentInitializer() {
         if (!this.isCommandArg) throw new UnsupportedOperationException("Non-command-arguments cannot have initializers");
 
         if (this.isFlag) {
-            return toTypeName(this.parameter).equals(TypeName.BOOLEAN)
+            return isPresenceFlag()
                     ? CodeBlock.of("$T.presence($S, '$L')", FlagArgument.class, this.name, this.shorthand)
                     : CodeBlock.of("$T.value($S, '$L', $L)", FlagArgument.class, this.name, this.shorthand, generateKeyInitializer());
         }

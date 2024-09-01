@@ -9,6 +9,7 @@ import grapefruit.command.dispatcher.auth.CommandAuthorizationException;
 import grapefruit.command.dispatcher.auth.CommandAuthorizer;
 import grapefruit.command.dispatcher.input.StringReader;
 import grapefruit.command.dispatcher.input.StringReaderImpl;
+import grapefruit.command.dispatcher.syntax.CommandSyntaxException;
 import grapefruit.command.dispatcher.syntax.DuplicateFlagException;
 import grapefruit.command.dispatcher.tree.CommandGraph;
 import grapefruit.command.util.FlagGroup;
@@ -93,16 +94,16 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         context.store(StandardContextKeys.COMMAND_INSTANCE, command);
 
         // Parse command arguments and store the results in the current context
-        processArguments(context, input, command.arguments());
+        processArguments(context, input, command);
 
         // Finally, invoke the command
         command.run(context);
     }
 
-    private void processArguments(CommandContext context, StringReader input, List<CommandArgument<?>> arguments) throws CommandException {
+    private void processArguments(CommandContext context, StringReader input, Command command) throws CommandException {
         // Collect flag arguments for later use
         @SuppressWarnings("rawtypes")
-        List<FlagArgument> flagArguments = arguments.stream()
+        List<FlagArgument> flagArguments = command.arguments().stream()
                 .filter(CommandArgument::isFlag)
                 .map(x -> (FlagArgument) x)
                 .toList();
@@ -120,7 +121,8 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                 input.readSingle();
                 // Process each flag in this group
                 for (FlagArgument<?> flag : flagGroup) {
-                    if (context.getSafe(flag.key()).isEmpty()) {
+                    System.out.println(flag);
+                    if (context.getSafe(flag.key()).isPresent()) {
                         // This means that the flag is already been set
                         throw new DuplicateFlagException(flag.name());
                     }
@@ -142,17 +144,33 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
             } else {
                 // Attempt to find the first unconsumed non-flag command argument
-                CommandArgument<?> firstArgument = arguments.stream()
+                CommandArgument<?> firstArgument = command.arguments().stream()
                         .filter(x -> !x.isFlag())
                         .filter(x -> context.getSafe(x.key()).isEmpty())
                         .findFirst()
                         // TODO figure out which exception to throw lol
                         .orElseThrow(CommandException::new);
 
+                System.out.println(firstArgument);
+
                 // Map and store argument value
                 mapAndStoreArgument(context, input, firstArgument);
             }
         }
+
+        /*
+         * Validate that all non-flag arguments have been parsed. The reason we
+         * only check non-flags is that flags are optional, so omitting them
+         * is perfectly valid.
+         */
+        for (CommandArgument<?> argument : command.arguments()) {
+            if (!argument.isFlag() && context.getSafe(argument.key()).isEmpty()) {
+                throw CommandSyntaxException.from(input, command, CommandSyntaxException.Reason.TOO_FEW_ARGUMENTS);
+            }
+        }
+
+        // Check if we have consumed all arguments
+        if (input.hasNext()) throw CommandSyntaxException.from(input, command, CommandSyntaxException.Reason.TOO_MANY_ARGUMENTS);
     }
 
     // TODO rework argument-key relationship to support named argument mappers

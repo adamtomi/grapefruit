@@ -3,8 +3,10 @@ package grapefruit.command.dispatcher.syntax;
 import grapefruit.command.Command;
 import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.input.StringReader;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Serial;
+import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
@@ -15,18 +17,18 @@ import static java.util.Objects.requireNonNull;
 public class CommandSyntaxException extends CommandException {
     @Serial
     private static final long serialVersionUID = -6615337831318406658L;
-    private final CommandSyntax correctSyntax;
+    private final @Nullable CommandSyntax correctSyntax;
     private final String originalInput;
     private final String consumedInput;
     private final Reason reason;
 
     private CommandSyntaxException(
-            CommandSyntax correctSyntax,
+            @Nullable CommandSyntax correctSyntax,
             String originalInput,
             String consumedInput,
             Reason reason
     ) {
-        this.correctSyntax = requireNonNull(correctSyntax, "correctSyntax");
+        this.correctSyntax = correctSyntax;
         this.originalInput = requireNonNull(originalInput, "originalInput");
         this.consumedInput = requireNonNull(consumedInput, "consumedInput");
         this.reason = requireNonNull(reason, "kind");
@@ -37,9 +39,9 @@ public class CommandSyntaxException extends CommandException {
      *
      * @param reader The reader to generate syntax from
      */
-    public static CommandSyntaxException from(StringReader reader, Command command, Reason reason) {
+    public static CommandSyntaxException from(StringReader reader, @Nullable Command command, Reason reason) {
         return new CommandSyntaxException(
-                CommandSyntax.create(command),
+                command != null ? CommandSyntax.create(command) : null,
                 reader.unwrap(),
                 reader.consumed(),
                 reason
@@ -47,12 +49,12 @@ public class CommandSyntaxException extends CommandException {
     }
 
     /**
-     * Retuns the pre-generated correct syntax.
+     * Retuns the pre-generated correct syntax, if it exists.
      *
      * @return The correct syntax
      */
-    public CommandSyntax correctSyntax() {
-        return this.correctSyntax;
+    public Optional<CommandSyntax> correctSyntax() {
+        return Optional.ofNullable(this.correctSyntax);
     }
 
     /**

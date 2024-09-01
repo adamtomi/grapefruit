@@ -9,14 +9,14 @@ public class CommandContext {
     private final Registry<Key<?>, Object> internalStore = Registry.create();
 
     // TODO
-    public <T> Optional<T> getSafe(Key<?> key) {
-        return Optional.empty();
+    @SuppressWarnings("unchecked")
+    public <T> Optional<T> getSafe(Key<T> key) {
+        return (Optional<T>) this.internalStore.get(key) ;
     }
 
     // TODO
-    @SuppressWarnings("unchecked")
-    public <T> T get(Key<?> key) {
-        return (T) getSafe(key).orElseThrow();
+    public <T> T get(Key<T> key) {
+        return getSafe(key).orElseThrow();
     }
 
     public <T> void store(Key<T> key, T instance) {

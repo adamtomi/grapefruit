@@ -9,7 +9,7 @@ public interface FlagArgument<T> extends CommandArgument<T> {
     boolean isPresenceFlag();
 
     static FlagArgument<Boolean> presence(String name, char shorthand) {
-        return new StandardFlagArgument<>(name, Key.of(Boolean.TYPE), shorthand, true);
+        return new StandardFlagArgument<>(name, Key.named(Boolean.class, name), shorthand, true);
     }
 
     static <T> FlagArgument<T> value(String name, char shorthand, Key<T> key) {

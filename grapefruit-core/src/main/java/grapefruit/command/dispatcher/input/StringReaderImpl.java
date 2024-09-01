@@ -24,11 +24,15 @@ public class StringReaderImpl implements StringReader {
 
     @Override
     public char next() throws CommandSyntaxException {
-        if (hasNext()) {
-            return this.input.charAt(this.cursor++);
-        }
+        if (hasNext()) return this.input.charAt(this.cursor++);
 
         throw generateException();
+    }
+
+    private char peek() {
+        if (hasNext()) return this.input.charAt(this.cursor);
+
+        return ' ';
     }
 
     @Override
@@ -47,7 +51,7 @@ public class StringReaderImpl implements StringReader {
     public String readSingle() throws CommandSyntaxException {
         skipWhitespace();
         int start = this.cursor;
-        readUntil(x -> !Character.isWhitespace(x));
+        readUntil(x -> !Character.isWhitespace(x) && hasNext());
         return this.input.substring(start, this.cursor);
     }
 
@@ -82,10 +86,7 @@ public class StringReaderImpl implements StringReader {
     }
 
     private void readUntil(CharPredicate condition) throws CommandSyntaxException {
-        char c;
-        do {
-            c = next();
-        } while (condition.test(c));
+        while (condition.test(peek())) next();
     }
 
     private void skipWhitespace() throws CommandSyntaxException {
@@ -95,7 +96,7 @@ public class StringReaderImpl implements StringReader {
     private CommandSyntaxException generateException() {
         return CommandSyntaxException.from(
                 this,
-                this.context.get(StandardContextKeys.COMMAND_INSTANCE),
+                this.context.getSafe(StandardContextKeys.COMMAND_INSTANCE).orElse(null),
                 CommandSyntaxException.Reason.TOO_FEW_ARGUMENTS
         );
     }

@@ -87,13 +87,14 @@ public class CommandDescriptor implements Decorator {
     }
 
     public CodeBlock generateInitializer() {
+        String permission = accessAnnotationValue(this.commandDef, "permission", String.class);
         return CodeBlock.of(
                 "$T.wrap($L(), $T.of($S, $S), $L)",
                 Command.class,
+                this.assembleArgsMethodName,
                 CommandMeta.class,
                 accessAnnotationValue(this.commandDef, "route", String.class),
-                accessAnnotationValue(this.commandDef, "permission", String.class),
-                this.assembleArgsMethodName,
+                permission.isBlank() ? null : permission,
                 generateCommandAction()
         );
     }
@@ -110,8 +111,21 @@ public class CommandDescriptor implements Decorator {
 
     private CodeBlock generateArgumentList() {
         return this.arguments.stream()
-                .map(x -> CodeBlock.of("$L.get($L)", Naming.CONTEXT_PARAM, x.keyFieldName()))
+                .map(this::generateArgument)
                 .collect(CodeBlock.joining(", "));
+    }
+
+    private CodeBlock generateArgument(ArgumentDescriptor argument) {
+        if (argument.isFlag()) {
+            return CodeBlock.of(
+                    "$L.getSafe($L).orElse($L)",
+                    Naming.CONTEXT_PARAM,
+                    argument.keyFieldName(),
+                    argument.isPresenceFlag() ? false : null
+            );
+        }
+
+        return CodeBlock.of("$L.get($L)", Naming.CONTEXT_PARAM, argument.keyFieldName());
     }
 
     private MethodSpec generateArgumentsMethod() {
