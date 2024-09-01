@@ -51,17 +51,22 @@ public class StringReaderImpl implements StringReader {
     public String readSingle() throws CommandSyntaxException {
         skipWhitespace();
         int start = this.cursor;
-        readUntil(x -> !Character.isWhitespace(x) && hasNext());
+        readWhile(x -> !Character.isWhitespace(x) && hasNext());
         return this.input.substring(start, this.cursor);
     }
 
     @Override
     public String readQuotable() throws CommandSyntaxException {
-        char next = next();
+        skipWhitespace();
+        char next = peek();
+        // This means we're dealing with a quoted string
         if (next == SINGLE_QUOTE || next == DOUBLE_QUOTE) {
+            next(); // Get rid of leading ("|')
             int start = this.cursor;
-            readUntil(x -> x == SINGLE_QUOTE || x == DOUBLE_QUOTE);
-            return this.input.substring(start, this.cursor);
+            readWhile(x -> x != SINGLE_QUOTE && x != DOUBLE_QUOTE);
+            String result = this.input.substring(start, this.cursor);
+            next(); // Get rid of trailing ("|')
+            return result;
         }
 
         return readSingle();
@@ -85,12 +90,12 @@ public class StringReaderImpl implements StringReader {
         return this.input;
     }
 
-    private void readUntil(CharPredicate condition) throws CommandSyntaxException {
+    private void readWhile(CharPredicate condition) throws CommandSyntaxException {
         while (condition.test(peek())) next();
     }
 
     private void skipWhitespace() throws CommandSyntaxException {
-        readUntil(Character::isWhitespace);
+        readWhile(Character::isWhitespace);
     }
 
     private CommandSyntaxException generateException() {
