@@ -215,7 +215,7 @@ public class CommandGraph {
             // The remaining (if any) aliases become secondary aliases
             Set<String> aliases = Arrays.stream(split).skip(1)
                     .map(String::trim)
-                    .filter(String::isBlank) // Filter out blank strings
+                    .filter(x -> !x.isBlank()) // Filter out blank strings
                     .collect(Collectors.toSet());
 
             return new RoutePart(primaryAlias, aliases);

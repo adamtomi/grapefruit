@@ -77,7 +77,7 @@ public class StringReaderImpl implements StringReader {
 
     @Override
     public String consumed() {
-        return this.input.substring(0, this.cursor - 1);
+        return this.input.substring(0, this.cursor);
     }
 
     @Override

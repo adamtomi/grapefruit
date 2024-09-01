@@ -121,7 +121,6 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                 input.readSingle();
                 // Process each flag in this group
                 for (FlagArgument<?> flag : flagGroup) {
-                    System.out.println(flag);
                     if (context.getSafe(flag.key()).isPresent()) {
                         // This means that the flag is already been set
                         throw new DuplicateFlagException(flag.name());
@@ -150,7 +149,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                         .findFirst()
                         // TODO figure out which exception to throw lol
                         .orElseThrow(CommandException::new);
-                
+
                 // Map and store argument value
                 mapAndStoreArgument(context, input, firstArgument);
             }

@@ -6,6 +6,7 @@ import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.dispatcher.auth.CommandAuthorizer;
 import grapefruit.command.util.Registry;
 import grapefruit.command.util.key.Key;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -19,7 +20,7 @@ public interface CommandDispatcher {
 
     List<String> suggestions(CommandContext context, String commandLine);
 
-    static CommandDispatcher create(CommandAuthorizer authorizer, Registry<Key<?>, ArgumentMapper<?>> argumentMappers) {
-        return new CommandDispatcherImpl(authorizer, argumentMappers, null);
+    static CommandDispatcher create(CommandAuthorizer authorizer, Registry<Key<?>, ArgumentMapper<?>> argumentMappers, @Nullable CommandRegistrationHandler registrationHandler) {
+        return new CommandDispatcherImpl(authorizer, argumentMappers, registrationHandler);
     }
 }
