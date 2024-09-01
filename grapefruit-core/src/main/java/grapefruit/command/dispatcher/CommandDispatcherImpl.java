@@ -150,9 +150,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                         .findFirst()
                         // TODO figure out which exception to throw lol
                         .orElseThrow(CommandException::new);
-
-                System.out.println(firstArgument);
-
+                
                 // Map and store argument value
                 mapAndStoreArgument(context, input, firstArgument);
             }
