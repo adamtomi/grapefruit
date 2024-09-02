@@ -63,7 +63,10 @@ public class StringReaderImpl implements StringReader {
         if (next == SINGLE_QUOTE || next == DOUBLE_QUOTE) {
             next(); // Get rid of leading ("|')
             int start = this.cursor;
-            readWhile(x -> x != SINGLE_QUOTE && x != DOUBLE_QUOTE);
+            // Require the argument to be surrounded by the same kind of
+            // quotation marks, meaning "some argument' for instance is
+            // invalid.
+            readWhile(x -> x != next);
             String result = this.input.substring(start, this.cursor);
             next(); // Get rid of trailing ("|')
             return result;
