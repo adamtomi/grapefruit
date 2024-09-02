@@ -9,7 +9,7 @@ import grapefruit.command.dispatcher.CommandContext;
 @FunctionalInterface
 public interface CommandAuthorizer {
     /* Always allow the user to run the command */
-    CommandAuthorizer ALWAYS_TRUE = (permission, context) -> true;
+    CommandAuthorizer ALWAYS_ALLOW = (permission, context) -> true;
 
     /**
      * Checks and returns whether the user is authorized

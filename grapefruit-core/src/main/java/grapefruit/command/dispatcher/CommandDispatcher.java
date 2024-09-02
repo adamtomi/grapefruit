@@ -4,6 +4,7 @@ import grapefruit.command.Command;
 import grapefruit.command.CommandException;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.dispatcher.auth.CommandAuthorizer;
+import grapefruit.command.dispatcher.config.DispatcherConfigurer;
 import grapefruit.command.util.Registry;
 import grapefruit.command.util.key.Key;
 import org.jetbrains.annotations.Nullable;
@@ -20,7 +21,7 @@ public interface CommandDispatcher {
 
     List<String> suggestions(CommandContext context, String commandLine);
 
-    static CommandDispatcher create(CommandAuthorizer authorizer, Registry<Key<?>, ArgumentMapper<?>> argumentMappers, @Nullable CommandRegistrationHandler registrationHandler) {
-        return new CommandDispatcherImpl(authorizer, argumentMappers, registrationHandler);
+    static CommandDispatcher using(DispatcherConfigurer... configurers) {
+        return new CommandDispatcherImpl(DispatcherConfigurer.merge(configurers));
     }
 }

@@ -7,6 +7,7 @@ import grapefruit.command.argument.FlagArgument;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.dispatcher.auth.CommandAuthorizationException;
 import grapefruit.command.dispatcher.auth.CommandAuthorizer;
+import grapefruit.command.dispatcher.config.DispatcherConfigurer;
 import grapefruit.command.dispatcher.input.StringReader;
 import grapefruit.command.dispatcher.input.StringReaderImpl;
 import grapefruit.command.dispatcher.syntax.CommandSyntaxException;
@@ -15,7 +16,6 @@ import grapefruit.command.dispatcher.tree.CommandGraph;
 import grapefruit.command.util.FlagGroup;
 import grapefruit.command.util.Registry;
 import grapefruit.command.util.key.Key;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,14 +30,11 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers;
     private final CommandRegistrationHandler registrationHandler;
 
-    CommandDispatcherImpl(
-            CommandAuthorizer authorizer,
-            Registry<Key<?>, ArgumentMapper<?>> argumentMappers,
-            @Nullable CommandRegistrationHandler registrationHandler
-    ) {
-        this.authorizer = requireNonNull(authorizer, "authorizer cannot be null");
-        this.argumentMappers = requireNonNull(argumentMappers, "argumentMappers cannot be null");
-        this.registrationHandler = registrationHandler != null ? registrationHandler : CommandRegistrationHandler.noop();
+    CommandDispatcherImpl(DispatcherConfigurer configurer) {
+        requireNonNull(configurer, "configurer");
+        this.authorizer = requireNonNull(configurer.authorizer(), "authorizer cannot be null");
+        this.argumentMappers = requireNonNull(configurer.argumentMappers(), "argumentMappers cannot be null");
+        this.registrationHandler = requireNonNull(configurer.registrationHandler(), "registrationHandler cannot be null");
     }
 
     @Override
