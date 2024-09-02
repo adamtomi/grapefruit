@@ -144,8 +144,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                         .filter(x -> !x.isFlag())
                         .filter(x -> context.getSafe(x.key()).isEmpty())
                         .findFirst()
-                        // TODO figure out which exception to throw lol
-                        .orElseThrow(CommandException::new);
+                        .orElseThrow(() -> CommandSyntaxException.from(input, command, CommandSyntaxException.Reason.TOO_MANY_ARGUMENTS));
 
                 // Map and store argument value
                 mapAndStoreArgument(context, input, firstArgument);
