@@ -1,9 +1,10 @@
 package grapefruit.command.dispatcher.config;
 
-import grapefruit.command.argument.mapper.standard.StringArgumentMapper;
-
-import static grapefruit.command.argument.mapper.standard.StringArgumentMapper.GREEDY_NAME;
-import static grapefruit.command.argument.mapper.standard.StringArgumentMapper.QUOTABLE_NAME;
+import static grapefruit.command.argument.mapper.standard.StringArgumentMapper.greedy;
+import static grapefruit.command.argument.mapper.standard.StringArgumentMapper.greedyName;
+import static grapefruit.command.argument.mapper.standard.StringArgumentMapper.quotable;
+import static grapefruit.command.argument.mapper.standard.StringArgumentMapper.quotableName;
+import static grapefruit.command.argument.mapper.standard.StringArgumentMapper.single;
 
 /**
  * This class provides basic dispatcher configuration.
@@ -20,8 +21,8 @@ public final class DefaultConfigurer extends DispatcherConfigurer {
     @Override
     public void configure() {
         // Configure argument mappers
-        map(String.class).using(StringArgumentMapper.SINGLE);
-        map(String.class).namedAs(QUOTABLE_NAME).using(StringArgumentMapper.QUOTABLE);
-        map(String.class).namedAs(GREEDY_NAME).using(StringArgumentMapper.GREEDY);
+        map(String.class).using(single());
+        map(String.class).namedAs(quotableName()).using(quotable());
+        map(String.class).namedAs(greedyName()).using(greedy());
     }
 }

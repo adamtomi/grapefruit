@@ -1,13 +1,70 @@
 package grapefruit.command.argument.mapper.standard;
 
+import grapefruit.command.CommandException;
 import grapefruit.command.argument.mapper.ArgumentMapper;
-import grapefruit.command.argument.mapper.WrappedArgumentMapper;
+import grapefruit.command.dispatcher.CommandContext;
+import grapefruit.command.dispatcher.input.StringReader;
 
-public interface StringArgumentMapper extends ArgumentMapper<String> {
-    ArgumentMapper<String> SINGLE = WrappedArgumentMapper.of((context, reader) -> reader.readSingle());
-    ArgumentMapper<String> QUOTABLE = WrappedArgumentMapper.of((context, reader) -> reader.readQuotable());
-    ArgumentMapper<String> GREEDY = WrappedArgumentMapper.of((context, reader) -> reader.readRemaining());
+import java.util.List;
 
-    String QUOTABLE_NAME = "__QUOTABLE__";
-    String GREEDY_NAME = "__GREEDY__";
+public abstract class StringArgumentMapper implements ArgumentMapper<String> {
+    public static StringArgumentMapper single() {
+        return Single.INSTANCE;
+    }
+
+    public static StringArgumentMapper quotable() {
+        return Quotable.INSTANCE;
+    }
+
+    public static String quotableName() {
+        return Quotable.NAME;
+    }
+
+    public static StringArgumentMapper greedy() {
+        return Greedy.INSTANCE;
+    }
+
+    public static String greedyName() {
+        return Greedy.NAME;
+    }
+
+    @Override
+    public List<String> listSuggestions(CommandContext context, String input) {
+        return List.of(input);
+    }
+
+    private static final class Single extends StringArgumentMapper {
+        private static final Single INSTANCE = new Single();
+
+        private Single() {}
+
+        @Override
+        public String tryMap(CommandContext context, StringReader input) throws CommandException {
+            return input.readSingle();
+        }
+    }
+
+    private static final class Quotable extends StringArgumentMapper {
+        private static final Quotable INSTANCE = new Quotable();
+        private static final String NAME = "__quotable__";
+
+        private Quotable() {}
+
+        @Override
+        public String tryMap(CommandContext context, StringReader input) throws CommandException {
+            return input.readQuotable();
+        }
+    }
+
+    private static final class Greedy extends StringArgumentMapper {
+        private static final Greedy INSTANCE = new Greedy();
+        private static final String NAME = "__greedy__";
+
+        private Greedy() {}
+
+        @Override
+        public String tryMap(CommandContext context, StringReader input) throws CommandException {
+            return input.readRemaining();
+        }
+    }
 }

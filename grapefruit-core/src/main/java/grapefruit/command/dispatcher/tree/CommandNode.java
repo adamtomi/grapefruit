@@ -20,7 +20,7 @@ public class CommandNode {
     private final String primaryAlias;
     private final Set<String> aliases;
     private final Set<CommandNode> children = new LinkedHashSet<>();
-    private CommandNode parent;
+    private final CommandNode parent;
     private Command command;
 
     public CommandNode(String primaryAlias, Set<String> aliases, @Nullable CommandNode parent, @Nullable Command command) {
@@ -44,6 +44,10 @@ public class CommandNode {
 
     public String primaryAlias() {
         return this.primaryAlias;
+    }
+
+    public Set<String> aliases() {
+        return Set.copyOf(this.aliases);
     }
 
     public Optional<Command> command() {

@@ -6,6 +6,7 @@ import grapefruit.command.dispatcher.syntax.CommandSyntaxException;
 import grapefruit.command.dispatcher.input.StringReader;
 
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -111,43 +112,43 @@ public class CommandGraph {
      * Attempts to find a {@link Command} instance attached to a
      * {@link CommandNode} based on user input.
      *
-     * @param reader The reader wrapping user input
+     * @param input The reader wrapping user input
      * @return The command if it was found
      * @throws CommandSyntaxException If there is nothing to read
      * from the reader
      * @throws NoSuchCommandException If no child {@link CommandNode}
      * exists with the provided name
      */
-    public Command search(StringReader reader) throws CommandException {
+    public SearchResult search(StringReader input) {
         CommandNode node = this.rootNode;
-        while (true) {
-            String name = reader.readSingle();
-            // Attempt to find a child node with this name
-            Optional<CommandNode> childCandidate = node.findChild(name);
-            if (childCandidate.isEmpty()) {
-                // There is no child node with the provided name, we throw an exception
-                throw new NoSuchCommandException(
-                        name,
-                        reader.consumed(),
-                        node.children().stream().map(CommandNode::primaryAlias).toList()
-                );
-            }
+        try {
+            while (true) {
+                String name = input.readSingle();
+                // Attempt to find a child node with this name
+                Optional<CommandNode> childCandidate = node.findChild(name);
+                if (childCandidate.isEmpty()) {
+                    // There is no child node with the provided name, we throw an exception
+                    throw new NoSuchCommandException(name, input.consumed());
+                }
 
-            node = childCandidate.orElseThrow();
-            if (node.isLeaf()) {
-                Optional<Command> command = node.command();
-                // Not using Optional#orElseThrow(String), because node isn't final
-                if (command.isPresent()) return command.orElseThrow();
+                node = childCandidate.orElseThrow();
+                if (node.isLeaf()) {
+                    Optional<Command> command = node.command();
+                    // Not using Optional#orElseThrow(String), because node isn't final
+                    if (command.isPresent()) return SearchResult.success(command.orElseThrow());
 
-                /*
-                 * If the node is a leaf node, we assume this is the command handler
-                 * we're looking for. Technically it should always exist, because
-                 * leaf nodes must have a command attached to them, and this#insert
-                 * makes sure of that. Just to be safe though, if the command handler
-                 * still happens to be missing.
-                 */
-                throw new IllegalStateException("CommandNode '%s' is a leaf node, but has no command attached to it.".formatted(node));
+                    /*
+                     * If the node is a leaf node, we assume this is the command handler
+                     * we're looking for. Technically it should always exist, because
+                     * leaf nodes must have a command attached to them, and this#insert
+                     * makes sure of that. Just to be safe though, if the command handler
+                     * still happens to be missing.
+                     */
+                    throw new IllegalStateException("CommandNode '%s' is a leaf node, but has no command attached to it.".formatted(node));
+                }
             }
+        } catch (CommandException ex) {
+            return SearchResult.failure(node, ex);
         }
     }
 
@@ -242,13 +243,11 @@ public class CommandGraph {
         private static final long serialVersionUID = 1581132770833148304L;
         private final String name;
         private final String consumedArgs;
-        private final List<String> options;
 
-        public NoSuchCommandException(String name, String consumedArgs, List<String> options) {
+        private NoSuchCommandException(String name, String consumedArgs) {
             super();
             this.name = requireNonNull(name, "name cannot be null");
             this.consumedArgs = requireNonNull(consumedArgs, "consumedArgs cannot be null");
-            this.options = requireNonNull(options, "options cannot be null");
         }
 
         /**
@@ -269,15 +268,77 @@ public class CommandGraph {
         public String consumedArgs() {
             return this.consumedArgs;
         }
+    }
+
+    /**
+     * Represents a command search result. Implementations provide
+     * more information.
+     */
+    public interface SearchResult {
 
         /**
-         * Returns valid options (in this case the name of the direct
-         * child nodes).
+         * Constructs a successful search result.
          *
-         * @return The valid options
+         * @param command The command instance
+         * @return The created search result
          */
-        public List<String> options() {
-            return this.options;
+        static SearchResult success(Command command) {
+            return new Success(command);
+        }
+
+        /**
+         * Constructs a failed search result.
+         *
+         * @param lastMatchedNode The last matched command node
+         * @param cause The cause of this failure
+         * @return The created search result
+         */
+        static SearchResult failure(CommandNode lastMatchedNode, CommandException cause) {
+            return new Failure(lastMatchedNode, cause);
+        }
+
+        /**
+         * Successful search result implementation.
+         */
+        record Success(Command command) implements SearchResult {
+            public Success {
+                requireNonNull(command, "command cannot be null");
+            }
+        }
+
+        /**
+         * Failed search result implementation.
+         */
+        record Failure(CommandNode lastMatchedNode, CommandException cause) implements SearchResult {
+            public Failure {
+                requireNonNull(lastMatchedNode, "lastMatchedNode cannot be null");
+                requireNonNull(cause, "cause cannot be null");
+            }
+
+            /**
+             * Creates a list of valid options, which in this context
+             * means the primary (and optionally secondary) aliases
+             * of all child nodes belonging to {@link this#lastMatchedNode}.
+             *
+             * @param includeSecondary Whether to include secondary aliases too
+             * @return The constructed list
+             */
+            public List<String> validOptions(boolean includeSecondary) {
+                if (includeSecondary) {
+                    List<String> options = new ArrayList<>();
+                    for (CommandNode child : lastMatchedNode().children()) {
+                        options.add(child.primaryAlias());
+                        options.addAll(child.aliases());
+                    }
+
+                    // Create an immutable copy so that we always return an immutable list in this method
+                    return List.copyOf(options);
+                }
+
+                return lastMatchedNode().children().stream()
+                        .map(CommandNode::primaryAlias)
+                        .toList();
+            }
         }
     }
 }

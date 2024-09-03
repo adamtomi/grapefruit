@@ -17,14 +17,17 @@ import grapefruit.command.util.FlagGroup;
 import grapefruit.command.util.Registry;
 import grapefruit.command.util.key.Key;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 
 final class CommandDispatcherImpl implements CommandDispatcher {
     private final CommandGraph commandGraph = new CommandGraph();
+    private final SuggestionsHelper suggestionsHelper = new SuggestionsHelper();
     private final CommandAuthorizer authorizer;
     private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers;
     private final CommandRegistrationHandler registrationHandler;
@@ -76,7 +79,11 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         // Construct a new reader from user input
         StringReader input = new StringReaderImpl(commandLine, context);
         // Find the command instance to execute
-        Command command = this.commandGraph.search(input);
+        CommandGraph.SearchResult search = this.commandGraph.search(input);
+        if (search instanceof CommandGraph.SearchResult.Failure failure) throw failure.cause();
+
+        // The search was successful, we can extract the command instance
+        Command command = ((CommandGraph.SearchResult.Success) search).command();
 
         // Check permissions
         Optional<String> permission = command.meta().permission();
@@ -179,6 +186,36 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
     @Override
     public List<String> suggestions(CommandContext context, String commandLine) {
-        return List.of();
+        requireNonNull(context, "context cannot be null");
+        requireNonNull(commandLine, "commandLine cannot be null");
+        // Construct a new reader from user input
+        StringReader input = new StringReaderImpl(commandLine, context);
+        // Find the command instance to create suggestions for
+        CommandGraph.SearchResult searchResult = this.commandGraph.search(input);
+
+        /*
+         * No command was matched, so we return the primary and
+         * secondary aliases of every single child node belonging
+         * to the last successfully matched CommandNode. If no
+         * CommandNode was matched, root command aliases will
+         * be returned.
+         */
+        if (searchResult instanceof CommandGraph.SearchResult.Failure failure) return failure.validOptions(true);
+
+        // Command can safely be extracted
+        Command command = ((CommandGraph.SearchResult.Success) searchResult).command();
+
+        // If we got this far, we've successfully found a command.
+        try {
+            // Process arguments
+            processArguments(context, input, command);
+
+            // If we successfully process every single argument, the
+            // command is complete, we don't need to suggest anything else.
+            return List.of();
+        } catch (CommandException ex) {
+            // Otherwise, our trusty suggestion helper can take over.
+            return this.suggestionsHelper.suggestions(context, input, command);
+        }
     }
 }

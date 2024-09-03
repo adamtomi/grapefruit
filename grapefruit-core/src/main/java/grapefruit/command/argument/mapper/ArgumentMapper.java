@@ -4,6 +4,8 @@ import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.StringReader;
 
+import java.util.List;
+
 /**
  * Argument mappers are responsible for parsing data from its
  * {@link String} representation into other data types.
@@ -17,10 +19,12 @@ public interface ArgumentMapper<T> {
      * into some other data type.
      *
      * @param context The current command context
-     * @param reader The reader reading user input
+     * @param input The reader reading user input
      * @return The mapped data
      * @throws CommandException If the reader fails
      * or the provided data is invalid.
      */
-    T tryMap(CommandContext context, StringReader reader) throws CommandException;
+    T tryMap(CommandContext context, StringReader input) throws CommandException;
+
+    List<String> listSuggestions(CommandContext context, String input);
 }

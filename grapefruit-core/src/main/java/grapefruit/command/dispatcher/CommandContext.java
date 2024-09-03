@@ -19,6 +19,10 @@ public class CommandContext {
         return getSafe(key).orElseThrow();
     }
 
+    public boolean has(Key<?> key) {
+        return this.internalStore.has(key);
+    }
+
     public <T> void store(Key<T> key, T instance) {
         if (this.internalStore.has(key)) throw new IllegalStateException("Key '%s' is already stored in this context".formatted(key));
         this.internalStore.store(key, instance);
