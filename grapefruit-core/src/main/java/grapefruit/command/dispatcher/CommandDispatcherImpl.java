@@ -20,7 +20,6 @@ import grapefruit.command.util.key.Key;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
 
 import static java.util.Objects.requireNonNull;
 
@@ -107,17 +106,16 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
         String arg;
         while ((arg = input.peekSingle()) != null) {
-            // Construct a new matcher to detect flags
-            Matcher flagMatcher = FlagGroup.VALID_PATTERN.matcher(arg);
-            // If flagMatcher.matches is true, that means we're dealing with at least one flag.
-            if (flagMatcher.matches()) {
-                FlagGroup flagGroup = FlagGroup.parse(flagMatcher, flagArguments);
+            // Attempt to parse "arg" into a group of flags
+            Optional<FlagGroup> flagGroup = FlagGroup.attemptParse(arg, flagArguments);
+            // Successfully parsed at least one flag
+            if (flagGroup.isPresent()) {
                 // Read a single argument from the input so that the flag argument's mapper
                 // can parse the next in the list (ensuring that the argument mapper doesn't
                 // process the --flagname input part).
                 input.readSingle();
                 // Process each flag in this group
-                for (FlagArgument<?> flag : flagGroup) {
+                for (FlagArgument<?> flag : flagGroup.orElseThrow()) {
                     if (context.getSafe(flag.key()).isPresent()) {
                         // This means that the flag is already been set
                         throw new DuplicateFlagException(flag.name());

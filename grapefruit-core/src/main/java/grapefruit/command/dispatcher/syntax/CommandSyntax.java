@@ -14,11 +14,16 @@ public interface CommandSyntax {
     /**
      * The expected prefix of flags in their short form.
      */
-    String SHORT_FLAG_PREFIX = "-";
+    char SHORT_FLAG_PREFIX_CH = '-';
+
+    /**
+     * String representation of the same character.
+     */
+    String SHORT_FLAG_PREFIX = String.valueOf(SHORT_FLAG_PREFIX_CH);
     /**
      * The expected prefix of flags in their long form.
      */
-    String LONG_FLAG_PREFIX = "--";
+    String LONG_FLAG_PREFIX = SHORT_FLAG_PREFIX.repeat(2);
 
     /**
      * Returns the route of the command that was being executed.
