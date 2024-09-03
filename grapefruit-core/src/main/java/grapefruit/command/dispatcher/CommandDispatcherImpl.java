@@ -17,17 +17,15 @@ import grapefruit.command.util.FlagGroup;
 import grapefruit.command.util.Registry;
 import grapefruit.command.util.key.Key;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 
 final class CommandDispatcherImpl implements CommandDispatcher {
     private final CommandGraph commandGraph = new CommandGraph();
-    private final SuggestionsHelper suggestionsHelper = new SuggestionsHelper();
+    private final SuggestionsHelper suggestionsHelper;
     private final CommandAuthorizer authorizer;
     private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers;
     private final CommandRegistrationHandler registrationHandler;
@@ -37,6 +35,8 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         this.authorizer = requireNonNull(configurer.authorizer(), "authorizer cannot be null");
         this.argumentMappers = requireNonNull(configurer.argumentMappers(), "argumentMappers cannot be null");
         this.registrationHandler = requireNonNull(configurer.registrationHandler(), "registrationHandler cannot be null");
+
+        this.suggestionsHelper = new SuggestionsHelper(this.argumentMappers);
     }
 
     @Override
@@ -113,6 +113,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
         String arg;
         while ((arg = input.peekSingle()) != null) {
+            context.suggestions().lastInput(arg);
             // Attempt to parse "arg" into a group of flags
             Optional<FlagGroup> flagGroup = FlagGroup.attemptParse(arg, flagArguments);
             // Successfully parsed at least one flag
@@ -123,6 +124,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                 input.readSingle();
                 // Process each flag in this group
                 for (FlagArgument<?> flag : flagGroup.orElseThrow()) {
+                    context.suggestions().lastArgument(flag).suggestFlagValue(true);
                     if (context.getSafe(flag.key()).isPresent()) {
                         // This means that the flag is already been set
                         throw new DuplicateFlagException(flag.name());
@@ -137,9 +139,11 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                          * if not.
                          */
                         context.store(key, true);
+                        context.suggestions().lastInput(null).suggestFlagValue(false).lastArgument(null);
                     } else {
                         // Map and store flag value
                         mapAndStoreArgument(context, input, flag);
+                        context.suggestions().lastInput(null).suggestFlagValue(false).lastArgument(null);
                     }
                 }
 
@@ -151,8 +155,10 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                         .findFirst()
                         .orElseThrow(() -> CommandSyntaxException.from(input, command, CommandSyntaxException.Reason.TOO_MANY_ARGUMENTS));
 
+                context.suggestions().lastArgument(firstArgument);
                 // Map and store argument value
                 mapAndStoreArgument(context, input, firstArgument);
+                context.suggestions().lastArgument(null).lastInput(null);
             }
         }
 

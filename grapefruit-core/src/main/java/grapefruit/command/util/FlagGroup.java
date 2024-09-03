@@ -68,6 +68,9 @@ public class FlagGroup implements Iterable<FlagArgument<?>> {
 
             // Find flags by their shorthands
             for (char c : shorthands) {
+                // TODO investigate this...
+                if (!Character.isAlphabetic(c)) return Optional.empty();
+
                 flags.add(selectFlag(
                         candidates,
                         x -> x.shorthand() == c,

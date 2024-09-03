@@ -30,7 +30,7 @@ public abstract class StringArgumentMapper implements ArgumentMapper<String> {
 
     @Override
     public List<String> listSuggestions(CommandContext context, String input) {
-        return List.of(input);
+        return List.of();
     }
 
     private static final class Single extends StringArgumentMapper {

@@ -5,8 +5,10 @@ import grapefruit.command.util.key.Key;
 
 import java.util.Optional;
 
+// TODO refactor command context
 public class CommandContext {
     private final Registry<Key<?>, Object> internalStore = Registry.create();
+    private final SuggestionContext suggestions = new SuggestionContext();
 
     // TODO
     @SuppressWarnings("unchecked")
@@ -26,5 +28,9 @@ public class CommandContext {
     public <T> void store(Key<T> key, T instance) {
         if (this.internalStore.has(key)) throw new IllegalStateException("Key '%s' is already stored in this context".formatted(key));
         this.internalStore.store(key, instance);
+    }
+
+    public SuggestionContext suggestions() {
+        return this.suggestions;
     }
 }

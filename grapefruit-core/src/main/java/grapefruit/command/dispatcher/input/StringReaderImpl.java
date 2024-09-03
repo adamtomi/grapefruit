@@ -77,7 +77,10 @@ public class StringReaderImpl implements StringReader {
 
     @Override
     public String readRemaining() throws CommandSyntaxException {
-        if (!hasNext()) throw generateException();
+        if (!hasNext()) {
+            System.out.println("hasNext, throwing error");
+            throw generateException();
+        }
         int start = this.cursor;
         this.cursor = this.input.length();
         return this.input.substring(start);
