@@ -4,6 +4,7 @@ import grapefruit.command.util.Registry;
 import grapefruit.command.util.key.Key;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
@@ -15,30 +16,7 @@ import static java.util.Objects.requireNonNull;
  * handler functions are able to retrieve these values.
  */
 public class CommandContext {
-    private final Registry<Key<?>, Object> internalStore = Registry.create();
-
-    // TODO
-    @SuppressWarnings("unchecked")
-    @Deprecated(forRemoval = true)
-    public <T> Optional<T> getSafe(Key<T> key) {
-        return (Optional<T>) this.internalStore.get(key) ;
-    }
-
-    // TODO
-    @Deprecated(forRemoval = true)
-    public <T> T _get(Key<T> key) {
-        return getSafe(key).orElseThrow();
-    }
-
-    public boolean has(Key<?> key) {
-        return this.internalStore.has(key);
-    }
-
-    @Deprecated(forRemoval = true)
-    public <T> void store(Key<T> key, T instance) {
-        if (this.internalStore.has(key)) throw new IllegalStateException("Key '%s' is already stored in this context".formatted(key));
-        this.internalStore.store(key, instance);
-    }
+    private final Registry<Key<?>, Object> internalStore = Registry.create(Registry.DuplicateStrategy.replace());
 
     /**
      * Finds and returns the value associated with the
@@ -65,7 +43,7 @@ public class CommandContext {
      * @return The found value
      * @throws IllegalArgumentException If nothing is mapped to the key
      */
-    public <T> T need(Key<T> key) {
+    public <T> T require(Key<T> key) {
         requireNonNull(key, "key cannot be null");
         // TODO probably need to throw a different exception. Maybe
         return get(key).orElseThrow(() -> new IllegalArgumentException("Nothing is mapped to key '%s'".formatted(key)));
@@ -86,5 +64,62 @@ public class CommandContext {
         return (T) this.internalStore.get(key);
     }
 
-    // TODO add remove, contains, asMap() and such
+    /**
+     * Checks whether the provided key is contained in
+     * {@link this#internalStore}.
+     *
+     * @param key The key to check
+     * @return Whether the key is contained by this
+     * context
+     */
+    public boolean contains(Key<?> key) {
+        return this.internalStore.has(requireNonNull(key, "key cannot be null"));
+    }
+
+    /**
+     * Stores the provided value in the internal map
+     * by the provided key.
+     *
+     * @param <T> The type of the value
+     * @param key The key
+     * @param value The value
+     * @param replace Whether to replace potentially
+     *                existin values.
+     * @throws IllegalStateException If the key is already
+     * in the map and 'replace' is set to false
+     */
+    public <T> void put(Key<T> key, T value, boolean replace) {
+        if (contains(key) && !replace) throw new IllegalStateException("A value is already associated with key '%s'".formatted(key));
+        this.internalStore.store(key, value);
+    }
+
+    /**
+     * @see this#put(Key, Object, boolean)
+     */
+    public <T> void put(Key<T> key, T value) {
+        put(key, value, false);
+    }
+
+    /**
+     * Removes and returns the value mapped to the
+     * provided key, or null, if no value was mapped
+     * to the key.
+     *
+     * @param <T> The expected type
+     * @param key The key
+     * @return The remove value, or null
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T remove(Key<T> key) {
+        return (T) this.internalStore.remove(key);
+    }
+
+    /**
+     * Returns an immutable map view of {@link this#internalStore}.
+     *
+     * @return The map view of the stored arguments
+     */
+    public Map<Key<?>, Object> asMap() {
+        return this.internalStore.asImmutableMap();
+    }
 }

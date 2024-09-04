@@ -32,7 +32,7 @@ import static java.util.Objects.requireNonNull;
 
 final class CommandDispatcherImpl implements CommandDispatcher {
     private final CommandGraph commandGraph = new CommandGraph();
-    private final Registry<Command, ArgumentChain> argumentChains = Registry.create();
+    private final Registry<Command, ArgumentChain> argumentChains = Registry.create(Registry.DuplicateStrategy.reject());
     private final CommandAuthorizer authorizer;
     private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers;
     private final CommandRegistrationHandler registrationHandler;
@@ -152,7 +152,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         if (!mayExecute) throw new CommandAuthorizationException(permission.orElseThrow());
 
         // Save the command instance so that we can retrieve it later if needed
-        context.store(StandardContextKeys.COMMAND_INSTANCE, command);
+        context.put(StandardContextKeys.COMMAND_INSTANCE, command);
 
         // Retrieve argument chain
         ArgumentChain argumentChain = needChain(command);
@@ -186,7 +186,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                         parseResult.argument = flag;
                         parseResult.suggestFlagValue = true;
 
-                        if (context.has(argument.key())) {
+                        if (context.contains(argument.key())) {
                             // This means that the flag is already been set
                             throw new DuplicateFlagException(argument.name());
                         }
@@ -199,7 +199,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                              * and presence flags are true if set and false
                              * if not.
                              */
-                            context.store(key, true);
+                            context.put(key, true);
                         } else {
                             // Map and store flag value
                             mapAndStoreArgument(context, input, flag);
@@ -210,7 +210,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                     // Attempt to find the first unconsumed positional command argument
                     BoundArgument.Positional<?> firstPositional = argumentChain.positional()
                             .stream()
-                            .filter(x -> !context.has(x.argument().key()))
+                            .filter(x -> !context.contains(x.argument().key()))
                             .findFirst()
                             .orElseThrow(() -> CommandSyntaxException.from(input, command, CommandSyntaxException.Reason.TOO_MANY_ARGUMENTS));
 
@@ -234,7 +234,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
              * is perfectly valid.
              */
             for (CommandArgument<?> argument : command.arguments()) {
-                if (!argument.isFlag() && context.getSafe(argument.key()).isEmpty()) {
+                if (!argument.isFlag() && !context.contains(argument.key())) {
                     throw CommandSyntaxException.from(input, command, CommandSyntaxException.Reason.TOO_FEW_ARGUMENTS);
                 }
             }
@@ -253,7 +253,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         Object mappedValue = binding.mapper().tryMap(context, input);
         @SuppressWarnings("unchecked")
         Key<Object> key = (Key<Object>) binding.argument().key();
-        context.store(key, mappedValue);
+        context.put(key, mappedValue);
     }
 
     @Override
@@ -304,14 +304,13 @@ final class CommandDispatcherImpl implements CommandDispatcher {
          */
         List<BoundArgument.Positional<?>> unseenPositional = argumentChain.positional()
                 .stream()
-                .filter(x -> !context.has(x.argument().key()))
+                .filter(x -> !context.contains(x.argument().key()))
                 .toList();
         // Store flags separately
         List<BoundArgument.Flag<?>> unseenFlags = argumentChain.flag()
                 .stream()
-                .filter(x -> context.has(x.argument().key()))
+                .filter(x -> context.contains(x.argument().key()))
                 .toList();
-
 
         String remaining;
         try {

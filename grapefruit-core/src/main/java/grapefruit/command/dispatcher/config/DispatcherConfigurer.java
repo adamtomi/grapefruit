@@ -17,7 +17,7 @@ import static java.util.Objects.requireNonNull;
  * This class is used to configure a {@link grapefruit.command.dispatcher.CommandDispatcher}.
  */
 public abstract class DispatcherConfigurer {
-    private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers = Registry.create();
+    private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers = Registry.create(Registry.DuplicateStrategy.reject());
     private CommandAuthorizer authorizer = null;
     private Supplier<Executor> executor = null;
     private CommandRegistrationHandler registrationHandler = null;

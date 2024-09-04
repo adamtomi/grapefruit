@@ -104,7 +104,7 @@ public class StringReaderImpl implements StringReader {
     private CommandSyntaxException generateException() {
         return CommandSyntaxException.from(
                 this,
-                this.context.getSafe(StandardContextKeys.COMMAND_INSTANCE).orElse(null),
+                this.context.nullable(StandardContextKeys.COMMAND_INSTANCE),
                 CommandSyntaxException.Reason.TOO_FEW_ARGUMENTS
         );
     }

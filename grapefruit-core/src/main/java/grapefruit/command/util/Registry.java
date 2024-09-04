@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static java.util.Objects.requireNonNull;
+
 public interface Registry<K, V> {
 
     void store(K key, V value);
@@ -13,31 +15,35 @@ public interface Registry<K, V> {
 
     boolean has(K key);
 
-    void remove(K key);
+    V remove(K key);
 
     Map<K, V> asImmutableMap();
 
     void merge(Registry<K, V> other);
 
-    static <K, V> Registry<K, V> create() {
-        return new Impl<>();
+    static <K, V> Registry<K, V> create(DuplicateStrategy<V> duplicateStrategy) {
+        return new Impl<>(duplicateStrategy);
     }
 
     final class Impl<K, V> implements Registry<K, V> {
         private final Map<K, V> internalMap = new HashMap<>();
         private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+        private final DuplicateStrategy<V> duplicateStrategy;
 
-        private Impl() {}
+        private Impl(DuplicateStrategy<V> duplicateStrategy) {
+            this.duplicateStrategy = requireNonNull(duplicateStrategy, "duplcateStrategy cannot be null");
+        }
 
         @Override
         public void store(K key, V value) {
             try {
                 this.lock.writeLock().lock();
-                if (this.internalMap.containsKey(key)) {
-                    throw new IllegalStateException("A value is already mapped to this key");
-                }
+                V existing = this.internalMap.get(key);
+                V newValue = existing != null
+                        ? this.duplicateStrategy.handle(existing, value)
+                        : value;
 
-                this.internalMap.put(key, value);
+                this.internalMap.put(key, newValue);
             } finally {
                 this.lock.writeLock().unlock();
             }
@@ -64,10 +70,10 @@ public interface Registry<K, V> {
         }
 
         @Override
-        public void remove(K key) {
+        public V remove(K key) {
             try {
                 this.lock.writeLock().lock();
-                this.internalMap.remove(key);
+                return this.internalMap.remove(key);
             } finally {
                 this.lock.writeLock().unlock();
             }
@@ -91,6 +97,32 @@ public interface Registry<K, V> {
             } finally {
                 this.lock.writeLock().unlock();
             }
+        }
+    }
+
+    /**
+     * Handles the insertion of duplicate entries.
+     */
+    @FunctionalInterface
+    interface DuplicateStrategy<T> {
+
+        /**
+         * Determines which value to keep, if any.
+         *
+         * @param oldValue The old value
+         * @param newValue The new value
+         * @return The value to store
+         */
+        T handle(T oldValue, T newValue);
+
+        static <T> DuplicateStrategy<T> replace() {
+            return (oldValue, newValue) -> newValue;
+        }
+
+        static <T> DuplicateStrategy<T> reject() {
+            return (oldValue, newValue) -> {
+                throw new UnsupportedOperationException("This registry does not support the replacement of values.");
+            };
         }
     }
 }
