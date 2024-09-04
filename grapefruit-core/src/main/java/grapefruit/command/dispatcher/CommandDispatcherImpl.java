@@ -16,6 +16,7 @@ import grapefruit.command.dispatcher.tree.CommandGraph;
 import grapefruit.command.util.FlagGroup;
 import grapefruit.command.util.Registry;
 import grapefruit.command.util.key.Key;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -97,7 +98,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         // Save the command instance so that we can retrieve it later if needed
         context.store(StandardContextKeys.COMMAND_INSTANCE, command);
         // Parse command arguments and store the results in the current context
-        CommandParseResult parseResult = parseArguments(context, input, command);
+        ParseResult parseResult = parseArguments(context, input, command);
         // Rethrow captured exception if it exists
         if (parseResult.capturedException != null) throw parseResult.capturedException;
 
@@ -107,8 +108,8 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         command.run(context);
     }
 
-    private CommandParseResult parseArguments(CommandContext context, StringReader input, Command command) {
-        CommandParseResult parseResult = new CommandParseResult();
+    private ParseResult parseArguments(CommandContext context, StringReader input, Command command) {
+        ParseResult parseResult = new ParseResult();
         try {
             // Collect flag arguments for later use
             @SuppressWarnings("rawtypes")
@@ -230,7 +231,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         Command command = ((CommandGraph.SearchResult.Success) searchResult).command();
 
         // Parse command
-        CommandParseResult parseResult = parseArguments(context, input, command);
+        ParseResult parseResult = parseArguments(context, input, command);
         if (parseResult.capturedException == null) {
             // If we successfully process every single argument, the
             // command is complete, we don't need to suggest anything else.
@@ -244,7 +245,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     // TODO Proper flag group suggestions
     private List<String> suggestions(
             CommandContext context,
-            CommandParseResult parseResult,
+            ParseResult parseResult,
             StringReader input,
             Command command
     ) {
@@ -324,5 +325,34 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                 .map(x -> List.of("%s%s".formatted(SHORT_FLAG_PREFIX, x.shorthand()), "%s%s".formatted(LONG_FLAG_PREFIX, x.name())))
                 .flatMap(Collection::stream)
                 .toList();
+    }
+
+    /**
+     * Stores information about the command currently being parsed.
+     */
+    private static final class ParseResult {
+        /* Last user input part that wasn't fully consumed. */
+        private @Nullable String input;
+        /* Last command argument that couldn't be processed */
+        private @Nullable CommandArgument<?> argument;
+        /*
+         * Stores whether the name of the flag - that was being
+         * processed - was consumed successfully (meaning that
+         * it was found to be valid both in format and in that
+         * a flag argument with that name was found). If this is
+         * true, and we're dealing with a value flag, the
+         * corresponding argument mapper will provide suggestions.
+         */
+        private boolean suggestFlagValue;
+        /* Exception causing the parse process to fail */
+        private @Nullable CommandException capturedException;
+
+        private ParseResult() {}
+
+        private void reset() {
+            this.input = null;
+            this.argument = null;
+            this.suggestFlagValue = false;
+        }
     }
 }
