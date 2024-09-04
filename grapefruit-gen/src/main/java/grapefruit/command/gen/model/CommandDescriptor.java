@@ -118,14 +118,14 @@ public class CommandDescriptor implements Decorator {
     private CodeBlock generateArgument(ArgumentDescriptor argument) {
         if (argument.isFlag()) {
             return CodeBlock.of(
-                    "$L.getSafe($L).orElse($L)",
+                    "$L.get($L).orElse($L)",
                     Naming.CONTEXT_PARAM,
                     argument.keyFieldName(),
                     argument.isPresenceFlag() ? false : null
             );
         }
 
-        return CodeBlock.of("$L.get($L)", Naming.CONTEXT_PARAM, argument.keyFieldName());
+        return CodeBlock.of("$L.require($L)", Naming.CONTEXT_PARAM, argument.keyFieldName());
     }
 
     private MethodSpec generateArgumentsMethod() {
