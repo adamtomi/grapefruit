@@ -4,6 +4,8 @@ import grapefruit.command.Command;
 import grapefruit.command.CommandException;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.argument.FlagArgument;
+import grapefruit.command.argument.chain.ArgumentChain;
+import grapefruit.command.argument.chain.BoundArgument;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.dispatcher.auth.CommandAuthorizationException;
 import grapefruit.command.dispatcher.auth.CommandAuthorizer;
@@ -30,6 +32,7 @@ import static java.util.Objects.requireNonNull;
 
 final class CommandDispatcherImpl implements CommandDispatcher {
     private final CommandGraph commandGraph = new CommandGraph();
+    private final Registry<Command, ArgumentChain> argumentChains = Registry.create();
     private final CommandAuthorizer authorizer;
     private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers;
     private final CommandRegistrationHandler registrationHandler;
@@ -45,10 +48,19 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     public void register(Iterable<Command> commands) {
         requireNonNull(commands, "commands cannot be null");
         changeRegistrationState(commands, command -> {
+            /*
+             * Create the argument chain first. This call will
+             * throw an error, if no mapper is available for
+             * the supplied mapper key, in which case we don't
+             * want to proceed with registration any further.
+             */
+            ArgumentChain argumentChain = createChain(command);
             // The registartion handler is invoked first
             this.registrationHandler.onRegister(command);
             // If the process wasn't interrupted, insert the command into the tree
             this.commandGraph.insert(command);
+            // Cache argument chain
+            this.argumentChains.store(command, argumentChain);
         });
     }
 
@@ -60,6 +72,8 @@ final class CommandDispatcherImpl implements CommandDispatcher {
             this.registrationHandler.onUnregister(command);
             // If the process wasn't interrupted, delete the command from the tree
             this.commandGraph.delete(command);
+            // Remove cached argument chain
+            this.argumentChains.remove(command);
         });
     }
 
@@ -72,6 +86,48 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                 // Interrupt was thrown, do nothing
             }
         }
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    // TODO investigate this, not a fan of raw types.
+    /* Create an argument chain from a command */
+    private ArgumentChain createChain(Command command) {
+        List<BoundArgument.Positional<?>> positional = new ArrayList<>();
+        List<BoundArgument.Flag<?>> flags = new ArrayList<>();
+
+        for (CommandArgument<?> argument : command.arguments()) {
+            // Use #mapperKey instead of #key to extract mappers
+            // Key<?> mapperKey = argument.mapperKey();
+            // TODO remove this.
+            Key<?> mapperKey = Key.of(argument.key().type());
+            /*
+             * Throw an exception if no argument mapper is bound to
+             * the provided key. This should not happen if the
+             * dispatcher was configured properly.
+             */
+            ArgumentMapper mapper = this.argumentMappers.get(mapperKey)
+                    .orElseThrow(() -> new IllegalStateException("Could not find argument mapper matching '%s'. Requested by: '%s'.".formatted(
+                            mapperKey,
+                            argument
+                    )));
+
+            if (argument.isFlag()) {
+                flags.add(BoundArgument.flag((FlagArgument<?>) argument, mapper));
+            } else {
+                positional.add(BoundArgument.arg(argument, mapper));
+            }
+        }
+
+        return ArgumentChain.create(positional, flags);
+    }
+
+    private ArgumentChain needChain(Command command) {
+        return this.argumentChains.get(command).orElseThrow(() -> new IllegalStateException(
+                "No argument chain was cached for command '%s' ('%s'). The dispatcher if not configured properly.".formatted(
+                        command,
+                        command.meta().route()
+                )
+        ));
     }
 
     @Override
@@ -97,32 +153,27 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
         // Save the command instance so that we can retrieve it later if needed
         context.store(StandardContextKeys.COMMAND_INSTANCE, command);
+
+        // Retrieve argument chain
+        ArgumentChain argumentChain = needChain(command);
+
         // Parse command arguments and store the results in the current context
-        ParseResult parseResult = parseArguments(context, input, command);
+        ParseResult parseResult = parseArguments(context, input, command, argumentChain);
         // Rethrow captured exception if it exists
         if (parseResult.capturedException != null) throw parseResult.capturedException;
-
-        //processArguments(context, input, command);
 
         // Finally, invoke the command
         command.run(context);
     }
 
-    private ParseResult parseArguments(CommandContext context, StringReader input, Command command) {
+    private ParseResult parseArguments(CommandContext context, StringReader input, Command command, ArgumentChain argumentChain) {
         ParseResult parseResult = new ParseResult();
         try {
-            // Collect flag arguments for later use
-            @SuppressWarnings("rawtypes")
-            List<FlagArgument> flagArguments = command.arguments().stream()
-                    .filter(CommandArgument::isFlag)
-                    .map(x -> (FlagArgument) x)
-                    .toList();
-
             String arg;
             while ((arg = input.peekSingle()) != null) {
                 parseResult.input = arg;
                 // Attempt to parse "arg" into a group of flags
-                Optional<FlagGroup> flagGroup = FlagGroup.attemptParse(arg, flagArguments);
+                Optional<FlagGroup> flagGroup = FlagGroup.attemptParse(arg, argumentChain.flag());
                 // Successfully parsed at least one flag
                 if (flagGroup.isPresent()) {
                     // Read a single argument from the input so that the flag argument's mapper
@@ -130,18 +181,19 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                     // process the --flagname input part).
                     input.readSingle();
                     // Process each flag in this group
-                    for (FlagArgument<?> flag : flagGroup.orElseThrow()) {
+                    for (BoundArgument.Flag<?> flag : flagGroup.orElseThrow()) {
+                        FlagArgument<?> argument = flag.argument();
                         parseResult.argument = flag;
                         parseResult.suggestFlagValue = true;
 
-                        if (context.has(flag.key())) {
+                        if (context.has(argument.key())) {
                             // This means that the flag is already been set
-                            throw new DuplicateFlagException(flag.name());
+                            throw new DuplicateFlagException(argument.name());
                         }
 
-                        if (flag.isPresenceFlag()) {
+                        if (argument.isPresenceFlag()) {
                             @SuppressWarnings("unchecked")
-                            Key<Object> key = (Key<Object>) flag.key();
+                            Key<Object> key = (Key<Object>) argument.key();
                             /*
                              * Set the value to true, since the flag was set
                              * and presence flags are true if set and false
@@ -155,16 +207,16 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                     }
 
                 } else {
-                    // Attempt to find the first unconsumed non-flag command argument
-                    CommandArgument<?> firstNonFlag = command.arguments().stream()
-                            .filter(x -> !x.isFlag())
-                            .filter(x -> !context.has(x.key()))
+                    // Attempt to find the first unconsumed positional command argument
+                    BoundArgument.Positional<?> firstPositional = argumentChain.positional()
+                            .stream()
+                            .filter(x -> !context.has(x.argument().key()))
                             .findFirst()
                             .orElseThrow(() -> CommandSyntaxException.from(input, command, CommandSyntaxException.Reason.TOO_MANY_ARGUMENTS));
 
-                    parseResult.argument = firstNonFlag;
+                    parseResult.argument = firstPositional;
                     // Map and store argument value
-                    mapAndStoreArgument(context, input, firstNonFlag);
+                    mapAndStoreArgument(context, input, firstPositional);
                 }
 
                 /*
@@ -197,15 +249,10 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     }
 
     // TODO rework argument-key relationship to support named argument mappers
-    private void mapAndStoreArgument(CommandContext context, StringReader input, CommandArgument<?> argument) throws CommandException {
-        Key<?> mapperKey = Key.of(argument.key().type());
-        // Get the argument mapper
-        ArgumentMapper<?> mapper = this.argumentMappers.get(mapperKey)
-                .orElseThrow(() -> new IllegalStateException("No argument mapper was found for key '%s'".formatted(mapperKey)));
-
-        Object mappedValue = mapper.tryMap(context, input);
+    private void mapAndStoreArgument(CommandContext context, StringReader input, BoundArgument<?, ?> binding) throws CommandException {
+        Object mappedValue = binding.mapper().tryMap(context, input);
         @SuppressWarnings("unchecked")
-        Key<Object> key = (Key<Object>) argument.key();
+        Key<Object> key = (Key<Object>) binding.argument().key();
         context.store(key, mappedValue);
     }
 
@@ -229,16 +276,18 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
         // Command can safely be extracted
         Command command = ((CommandGraph.SearchResult.Success) searchResult).command();
+        // Retrieve argument chain
+        ArgumentChain argumentChain = needChain(command);
 
         // Parse command
-        ParseResult parseResult = parseArguments(context, input, command);
+        ParseResult parseResult = parseArguments(context, input, command, argumentChain);
         if (parseResult.capturedException == null) {
             // If we successfully process every single argument, the
             // command is complete, we don't need to suggest anything else.
             return List.of();
         } else {
             // Return a list of suggestions based on the parse result.
-            return suggestions(context, parseResult, input, command);
+            return suggestions(context, parseResult, input, argumentChain);
         }
     }
 
@@ -247,28 +296,22 @@ final class CommandDispatcherImpl implements CommandDispatcher {
             CommandContext context,
             ParseResult parseResult,
             StringReader input,
-            Command command
+            ArgumentChain argumentChain
     ) {
         /*
          * First, gather a list of arguments that have not been
          * successfully parsed so far.
          */
-        List<CommandArgument<?>> unseenArgs = new ArrayList<>();
+        List<BoundArgument.Positional<?>> unseenPositional = argumentChain.positional()
+                .stream()
+                .filter(x -> !context.has(x.argument().key()))
+                .toList();
         // Store flags separately
-        List<FlagArgument<?>> unseenFlags = new ArrayList<>();
+        List<BoundArgument.Flag<?>> unseenFlags = argumentChain.flag()
+                .stream()
+                .filter(x -> context.has(x.argument().key()))
+                .toList();
 
-        // Gather arguments
-        for (CommandArgument<?> arg : command.arguments()) {
-            // It's been parsed, continue
-            if (context.has(arg.key())) continue;
-
-            // If we got to this point, the argument hasn't been parsed yet.
-            if (arg.isFlag()) {
-                unseenFlags.add((FlagArgument<?>) arg);
-            } else {
-                unseenArgs.add(arg);
-            }
-        }
 
         String remaining;
         try {
@@ -287,29 +330,30 @@ final class CommandDispatcherImpl implements CommandDispatcher {
             return List.of();
         }
 
-        CommandArgument<?> firstArg = !unseenArgs.isEmpty()
+        // Positional arguments take precedence over flags
+        /*CommandArgument<?> firstArg = !unseenArgs.isEmpty()
                 ? unseenArgs.get(0)
-                : unseenFlags.get(0);
+                : unseenFlags.get(0);*/
+        BoundArgument<?, ?> firstUnseen = unseenPositional.isEmpty()
+                ? unseenFlags.get(0)
+                : unseenPositional.get(0);
 
-        CommandArgument<?> argToParse = parseResult.argument != null
+        /*CommandArgument<?> argToParse = parseResult.argument != null
                 ? parseResult.argument
-                : firstArg;
+                : firstArg;*/
+        BoundArgument<?, ?> argToParse = parseResult.argument != null
+                ? parseResult.argument
+                : firstUnseen;
 
-        Key<?> key = Key.of(argToParse.key().type());
-
-        if (argToParse.isFlag()) {
+        if (argToParse instanceof BoundArgument.Flag<?>) {
             if (!parseResult.suggestFlagValue) {
                 return formatFlags(unseenFlags);
             } else {
-                return this.argumentMappers.get(key)
-                        .orElseThrow()
-                        .listSuggestions(context, arg);
+                return argToParse.mapper().listSuggestions(context, arg);
             }
         } else {
             // Make a mutable copy of the list
-            List<String> base = new ArrayList<>(this.argumentMappers.get(key)
-                    .orElseThrow()
-                    .listSuggestions(context, arg));
+            List<String> base = new ArrayList<>(argToParse.mapper().listSuggestions(context, arg));
 
             // If the current argument starts with '-', we list flags as well
             if (arg.startsWith(SHORT_FLAG_PREFIX)) {
@@ -320,8 +364,9 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         }
     }
 
-    private List<String> formatFlags(Collection<FlagArgument<?>> flags) {
+    private List<String> formatFlags(Collection<BoundArgument.Flag<?>> flags) {
         return flags.stream()
+                .map(BoundArgument::argument)
                 .map(x -> List.of("%s%s".formatted(SHORT_FLAG_PREFIX, x.shorthand()), "%s%s".formatted(LONG_FLAG_PREFIX, x.name())))
                 .flatMap(Collection::stream)
                 .toList();
@@ -334,7 +379,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         /* Last user input part that wasn't fully consumed. */
         private @Nullable String input;
         /* Last command argument that couldn't be processed */
-        private @Nullable CommandArgument<?> argument;
+        private @Nullable BoundArgument<?, ?> argument;
         /*
          * Stores whether the name of the flag - that was being
          * processed - was consumed successfully (meaning that

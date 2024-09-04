@@ -13,6 +13,8 @@ public interface Registry<K, V> {
 
     boolean has(K key);
 
+    void remove(K key);
+
     Map<K, V> asImmutableMap();
 
     void merge(Registry<K, V> other);
@@ -58,6 +60,16 @@ public interface Registry<K, V> {
                 return this.internalMap.containsKey(key);
             } finally {
                 this.lock.readLock().unlock();
+            }
+        }
+
+        @Override
+        public void remove(K key) {
+            try {
+                this.lock.writeLock().lock();
+                this.internalMap.remove(key);
+            } finally {
+                this.lock.writeLock().unlock();
             }
         }
 
