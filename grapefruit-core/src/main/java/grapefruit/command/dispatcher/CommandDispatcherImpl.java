@@ -112,9 +112,9 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                     )));
 
             if (argument.isFlag()) {
-                flags.add(BoundArgument.flag((FlagArgument<?>) argument, mapper));
+                flags.add((BoundArgument.Flag<?>) argument.bind(mapper));
             } else {
-                positional.add(BoundArgument.arg(argument, mapper));
+                positional.add((BoundArgument.Positional<?>) argument.bind(mapper));
             }
         }
 

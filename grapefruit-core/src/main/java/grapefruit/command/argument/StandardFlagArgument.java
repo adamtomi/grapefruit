@@ -1,5 +1,7 @@
 package grapefruit.command.argument;
 
+import grapefruit.command.argument.chain.BoundArgument;
+import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.util.key.Key;
 
 final class StandardFlagArgument<T> extends AbstractCommandArgument<T> implements FlagArgument<T> {
@@ -20,6 +22,11 @@ final class StandardFlagArgument<T> extends AbstractCommandArgument<T> implement
     @Override
     public boolean isPresenceFlag() {
         return this.isPresenceFlag;
+    }
+
+    @Override
+    public BoundArgument<T, ?> bind(ArgumentMapper<T> mapper) {
+        return BoundArgument.flag(this, mapper);
     }
 
     @Override

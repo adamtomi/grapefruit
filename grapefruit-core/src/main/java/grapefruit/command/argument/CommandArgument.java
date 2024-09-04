@@ -1,5 +1,7 @@
 package grapefruit.command.argument;
 
+import grapefruit.command.argument.chain.BoundArgument;
+import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.argument.modifier.ArgumentModifier;
 import grapefruit.command.util.key.Key;
 
@@ -61,4 +63,13 @@ public interface CommandArgument<T> {
     default Set<ArgumentModifier<T>> modifiers() {
         return Set.of();
     }
+
+    /**
+     * Binds this command argument to the supplied mapper
+     * and returns the resulting {@link BoundArgument}.
+     *
+     * @param mapper The mapper to bind this argument to
+     * @return The resulting bound argument instance
+     */
+    BoundArgument<T, ?> bind(ArgumentMapper<T> mapper);
 }
