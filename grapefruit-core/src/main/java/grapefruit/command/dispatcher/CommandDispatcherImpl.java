@@ -152,7 +152,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         if (!mayExecute) throw new CommandAuthorizationException(permission.orElseThrow());
 
         // Save the command instance so that we can retrieve it later if needed
-        context.put(StandardContextKeys.COMMAND_INSTANCE, command);
+        context.put(InternalContextKeys.COMMAND, command);
 
         // Retrieve argument chain
         ArgumentChain argumentChain = needChain(command);

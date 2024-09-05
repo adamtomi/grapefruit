@@ -1,7 +1,7 @@
 package grapefruit.command.dispatcher.input;
 
 import grapefruit.command.dispatcher.CommandContext;
-import grapefruit.command.dispatcher.StandardContextKeys;
+import grapefruit.command.dispatcher.InternalContextKeys;
 import grapefruit.command.dispatcher.syntax.CommandSyntaxException;
 import org.jetbrains.annotations.Nullable;
 
@@ -104,7 +104,7 @@ public class StringReaderImpl implements StringReader {
     private CommandSyntaxException generateException() {
         return CommandSyntaxException.from(
                 this,
-                this.context.nullable(StandardContextKeys.COMMAND_INSTANCE),
+                this.context.nullable(InternalContextKeys.COMMAND),
                 CommandSyntaxException.Reason.TOO_FEW_ARGUMENTS
         );
     }
