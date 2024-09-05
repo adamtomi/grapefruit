@@ -40,10 +40,7 @@ public interface CommandArgument<T> {
      *
      * @return The mapper key of this argument
      */
-    // TODO remove default, every argument needs to implement this.
-    default Key<T> mapperKey() {
-        return key();
-    }
+    Key<T> mapperKey();
 
     /**
      * Returns whether this argument is a flag argument.
@@ -66,7 +63,10 @@ public interface CommandArgument<T> {
 
     /**
      * Binds this command argument to the supplied mapper
-     * and returns the resulting {@link BoundArgument}.
+     * and returns the resulting {@link BoundArgument}. Binding
+     * is performed at the command registration stage and is done
+     * to avoid having to perform a lookup for the correct
+     * argument mapper every time an argument is being parsed.
      *
      * @param mapper The mapper to bind this argument to
      * @return The resulting bound argument instance
