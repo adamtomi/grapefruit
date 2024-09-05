@@ -114,10 +114,6 @@ public class CommandGraph {
      *
      * @param input The reader wrapping user input
      * @return The command if it was found
-     * @throws CommandSyntaxException If there is nothing to read
-     * from the reader
-     * @throws NoSuchCommandException If no child {@link CommandNode}
-     * exists with the provided name
      */
     public SearchResult search(StringReader input) {
         CommandNode node = this.rootNode;
