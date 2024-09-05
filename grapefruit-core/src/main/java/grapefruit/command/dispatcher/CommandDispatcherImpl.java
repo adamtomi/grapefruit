@@ -309,7 +309,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         // Store flags separately
         List<BoundArgument.Flag<?>> unseenFlags = argumentChain.flag()
                 .stream()
-                .filter(x -> context.contains(x.argument().key()))
+                .filter(x -> !context.contains(x.argument().key()))
                 .toList();
 
         String remaining;
@@ -329,17 +329,10 @@ final class CommandDispatcherImpl implements CommandDispatcher {
             return List.of();
         }
 
-        // Positional arguments take precedence over flags
-        /*CommandArgument<?> firstArg = !unseenArgs.isEmpty()
-                ? unseenArgs.get(0)
-                : unseenFlags.get(0);*/
         BoundArgument<?, ?> firstUnseen = unseenPositional.isEmpty()
                 ? unseenFlags.get(0)
                 : unseenPositional.get(0);
 
-        /*CommandArgument<?> argToParse = parseResult.argument != null
-                ? parseResult.argument
-                : firstArg;*/
         BoundArgument<?, ?> argToParse = parseResult.argument != null
                 ? parseResult.argument
                 : firstUnseen;
