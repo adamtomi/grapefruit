@@ -7,8 +7,7 @@ import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
-import grapefruit.command.argument.FlagArgument;
-import grapefruit.command.argument.StandardCommandArgument;
+import grapefruit.command.argument.CommandArguments;
 import grapefruit.command.argument.meta.Arg;
 import grapefruit.command.argument.meta.Flag;
 import grapefruit.command.gen.Naming;
@@ -130,11 +129,12 @@ public class ArgumentDescriptor implements Decorator {
 
         if (this.isFlag) {
             return isPresenceFlag()
-                    ? CodeBlock.of("$T.presence($S, '$L')", FlagArgument.class, this.name, this.shorthand)
-                    : CodeBlock.of("$T.value($S, '$L', $L)", FlagArgument.class, this.name, this.shorthand, generateKeyInitializer());
+                    ? CodeBlock.of("$T.presenceFlag($S, '$L', $L)", CommandArguments.class, this.name, this.shorthand, generateMapperKeyInitializer())
+                    : CodeBlock.of("$T.valueFlag($S, '$L', $L, $L)", CommandArguments.class, this.name, this.shorthand, generateKeyInitializer(),
+                        generateMapperKeyInitializer());
         }
 
-        return CodeBlock.of("new $T($S, $L)", StandardCommandArgument.class, this.name, generateKeyInitializer());
+        return CodeBlock.of("$T.standard($S, $L, $L)", CommandArguments.class, this.name, generateKeyInitializer(), generateMapperKeyInitializer());
     }
 
     private CodeBlock generateTypeToken() {
@@ -150,6 +150,12 @@ public class ArgumentDescriptor implements Decorator {
         return this.isCommandArg
                 ? CodeBlock.of("$T.named($L, $S)", Key.class, typeToken, this.name)
                 : CodeBlock.of("$T.of($L)", Key.class, typeToken);
+    }
+
+    // TODO named mapper support
+    private CodeBlock generateMapperKeyInitializer() {
+        CodeBlock typeToken = generateTypeToken();
+        return CodeBlock.of("$T.of($L)", Key.class, typeToken);
     }
 
     private FieldSpec generateKeyField() {
