@@ -28,9 +28,10 @@ public class CommandContext {
      * @param key The key
      * @return The found value, or an empty optional
      */
+    @SuppressWarnings("unchecked")
     public <T> Optional<T> get(Key<T> key) {
         requireNonNull(key, "key cannot be null");
-        return Optional.ofNullable(nullable(key));
+        return (Optional<T>) this.internalStore.get(key);
     }
 
     /**
@@ -58,10 +59,9 @@ public class CommandContext {
      * @param key The key
      * @return The value, or null
      */
-    @SuppressWarnings("unchecked")
     public <T> @Nullable T nullable(Key<T> key) {
         requireNonNull(key, "key cannot be null");
-        return (T) this.internalStore.get(key);
+        return get(key).orElse(null);
     }
 
     /**
