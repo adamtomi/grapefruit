@@ -102,6 +102,8 @@ public interface Registry<K, V> {
 
     /**
      * Handles the insertion of duplicate entries.
+     *
+     * @param <T> The value type of the registy
      */
     @FunctionalInterface
     interface DuplicateStrategy<T> {
@@ -115,10 +117,27 @@ public interface Registry<K, V> {
          */
         T handle(T oldValue, T newValue);
 
+        /**
+         * Creates a duplicate strategy that always
+         * replaces the old stored value with the
+         * new one.
+         *
+         * @param <T> The value type of the registry
+         * @return The created duplicate handler
+         */
         static <T> DuplicateStrategy<T> replace() {
             return (oldValue, newValue) -> newValue;
         }
 
+        /**
+         * Creates a duplicate strategy that always
+         * throws an error if duplicate entries
+         * are attempted to be inserted into the
+         * registry.
+         *
+         * @param <T> The value type of the registry
+         * @return The created duplicate handler
+         */
         static <T> DuplicateStrategy<T> reject() {
             return (oldValue, newValue) -> {
                 throw new UnsupportedOperationException("This registry does not support the replacement of values.");
