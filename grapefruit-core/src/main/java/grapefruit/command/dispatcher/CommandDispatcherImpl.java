@@ -16,6 +16,7 @@ import grapefruit.command.dispatcher.syntax.DuplicateFlagException;
 import grapefruit.command.dispatcher.tree.CommandGraph;
 import grapefruit.command.util.FlagGroup;
 import grapefruit.command.util.Registry;
+import grapefruit.command.util.ValueFactory;
 import grapefruit.command.util.key.Key;
 
 import java.util.ArrayList;
@@ -96,26 +97,27 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         for (CommandArgument<?> argument : command.arguments()) {
             // Use #mapperKey instead of #key to extract mappers
             Key<?> mapperKey = argument.mapperKey();
-            /*
-             * Throw an exception if no argument mapper is bound to
-             * the provided key. This should not happen if the
-             * dispatcher was configured properly.
-             */
-            // TODO presence flags will always fail, need to fix
-            ArgumentMapper mapper = this.argumentMappers.get(mapperKey)
-                    .orElseThrow(() -> new IllegalStateException("Could not find argument mapper matching '%s'. Requested by: '%s'.".formatted(
-                            mapperKey,
-                            argument
-                    )));
 
             if (argument.isFlag()) {
-                flags.add((BoundArgument.Flag<?>) argument.bind(mapper));
+                flags.add((BoundArgument.Flag<?>) argument.bind(
+                        ((FlagArgument<?>) argument).isPresenceFlag()
+                                ? (ValueFactory) ValueFactory.constant(true)
+                                : (ValueFactory) ValueFactory.mapBy(needMapper(mapperKey))
+                ));
             } else {
-                positional.add((BoundArgument.Positional<?>) argument.bind(mapper));
+                positional.add((BoundArgument.Positional<?>) argument.bind((ValueFactory) ValueFactory.mapBy(needMapper(mapperKey))));
             }
         }
 
         return ArgumentChain.create(positional, flags);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> ArgumentMapper<T> needMapper(Key<T> key) {
+        return (ArgumentMapper<T>) this.argumentMappers.get(key)
+                .orElseThrow(() -> new IllegalStateException("Could not find argument mapper matching '%s'".formatted(
+                        key
+                )));
     }
 
     private ArgumentChain needChain(Command command) {
@@ -162,7 +164,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         }
 
         // Finally, invoke the command
-        command.run(context);
+        command.execute(context);
     }
 
     private ParseInfo parseArguments(CommandContext context, StringReader input, Command command, ArgumentChain argumentChain) {
@@ -190,19 +192,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                             throw new DuplicateFlagException(argument.name());
                         }
 
-                        if (argument.isPresenceFlag()) {
-                            @SuppressWarnings("unchecked")
-                            Key<Object> key = (Key<Object>) argument.key();
-                            /*
-                             * Set the value to true, since the flag was set
-                             * and presence flags are true if set and false
-                             * if not.
-                             */
-                            context.put(key, true);
-                        } else {
-                            // Map and store flag value
-                            mapAndStoreArgument(context, input, flag);
-                        }
+                        flag.execute(context);
                     }
 
                 } else {
@@ -214,8 +204,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                             .orElseThrow(() -> CommandSyntaxException.from(input, command, CommandSyntaxException.Reason.TOO_MANY_ARGUMENTS));
 
                     parseInfo.argument(firstPositional);
-                    // Map and store argument value
-                    mapAndStoreArgument(context, input, firstPositional);
+                    firstPositional.execute(context);
                 }
 
                 /*
@@ -245,14 +234,6 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         }
 
         return parseInfo;
-    }
-
-    // TODO rework argument-key relationship to support named argument mappers
-    private void mapAndStoreArgument(CommandContext context, StringReader input, BoundArgument<?, ?> binding) throws CommandException {
-        Object mappedValue = binding.mapper().tryMap(context, input);
-        @SuppressWarnings("unchecked")
-        Key<Object> key = (Key<Object>) binding.argument().key();
-        context.put(key, mappedValue);
     }
 
     @Override
@@ -336,11 +317,12 @@ final class CommandDispatcherImpl implements CommandDispatcher {
             if (!parseInfo.suggestFlagValue()) {
                 return formatFlags(unseenFlags);
             } else {
-                return argToParse.mapper().listSuggestions(context, arg);
+                // return argToParse.mapper().listSuggestions(context, arg);
+                return List.of();
             }
         } else {
             // Make a mutable copy of the list
-            List<String> base = new ArrayList<>(argToParse.mapper().listSuggestions(context, arg));
+            List<String> base = new ArrayList<>(/* argToParse.mapper().listSuggestions(context, arg) */);
 
             // If the current argument starts with '-', we list flags as well
             if (arg.startsWith(SHORT_FLAG_PREFIX)) {

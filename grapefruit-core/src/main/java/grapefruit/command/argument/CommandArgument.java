@@ -1,8 +1,8 @@
 package grapefruit.command.argument;
 
 import grapefruit.command.argument.chain.BoundArgument;
-import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.argument.modifier.ArgumentModifier;
+import grapefruit.command.util.ValueFactory;
 import grapefruit.command.util.key.Key;
 
 import java.util.Set;
@@ -63,14 +63,14 @@ public interface CommandArgument<T> {
     }
 
     /**
-     * Binds this command argument to the supplied mapper
-     * and returns the resulting {@link BoundArgument}. Binding
+     * Binds this command argument to the supplied {@link ValueFactory}
+     * instance and returns the resulting {@link BoundArgument}. Binding
      * is performed at the command registration stage and is done
      * to avoid having to perform a lookup for the correct
      * argument mapper every time an argument is being parsed.
      *
-     * @param mapper The mapper to bind this argument to
-     * @return The resulting bound argument instance
+     * @param factory The value factory to bind this argument to
+     * @return The resulting {@link BoundArgument} instance
      */
-    BoundArgument<T, ?> bind(ArgumentMapper<T> mapper);
+    BoundArgument<T, ?> bind(ValueFactory<T> factory);
 }

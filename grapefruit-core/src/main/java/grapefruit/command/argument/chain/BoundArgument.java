@@ -1,16 +1,17 @@
 package grapefruit.command.argument.chain;
 
+import grapefruit.command.CommandExecutable;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.argument.FlagArgument;
-import grapefruit.command.argument.mapper.ArgumentMapper;
+import grapefruit.command.util.ValueFactory;
 
 /**
- * Represents a command argument bound to an argument mapper.
+ * Represents a command argument bound to a value factory.
  *
  * @param <T> The argument type
  * @param <C> The {@link CommandArgument} instance type
  */
-public interface BoundArgument<T, C extends CommandArgument<T>> {
+public interface BoundArgument<T, C extends CommandArgument<T>> extends CommandExecutable {
 
     /**
      * @return The contained argument
@@ -18,9 +19,10 @@ public interface BoundArgument<T, C extends CommandArgument<T>> {
     C argument();
 
     /**
-     * @return The mapper {@link this#argument()} is bound to.
+     * @return The value factory that {@link this#argument()}
+     * is bound to
      */
-    ArgumentMapper<T> mapper();
+    ValueFactory<T> valueFactory();
 
     /**
      * Constructs a new binding for positional
@@ -28,11 +30,11 @@ public interface BoundArgument<T, C extends CommandArgument<T>> {
      *
      * @param <T> The argument type
      * @param argument The argument itself
-     * @param mapper The mapper to bind to
+     * @param factory The value factory
      * @return The constructed argument
      */
-    static <T> Positional<T> arg(CommandArgument<T> argument, ArgumentMapper<T> mapper) {
-        return new Impl.PositionalBinding<>(argument, mapper);
+    static <T> Positional<T> arg(CommandArgument<T> argument, ValueFactory<T> factory) {
+        return new Impl.PositionalBinding<>(argument, factory);
     }
 
     /**
@@ -41,11 +43,11 @@ public interface BoundArgument<T, C extends CommandArgument<T>> {
      *
      * @param <T> The argument type
      * @param argument The argument itself
-     * @param mapper The mapper to bind to
+     * @param factory The value factory
      * @return The constructed argument
      */
-    static <T> Flag<T> flag(FlagArgument<T> argument, ArgumentMapper<T> mapper) {
-        return new Impl.FlagBinding<>(argument, mapper);
+    static <T> Flag<T> flag(FlagArgument<T> argument, ValueFactory<T> factory) {
+        return new Impl.FlagBinding<>(argument, factory);
     }
 
     interface Flag<T> extends BoundArgument<T, FlagArgument<T>> {}

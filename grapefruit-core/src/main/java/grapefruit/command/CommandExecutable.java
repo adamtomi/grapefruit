@@ -3,7 +3,7 @@ package grapefruit.command;
 import grapefruit.command.dispatcher.CommandContext;
 
 @FunctionalInterface
-public interface CommandAction {
+public interface CommandExecutable {
 
-    void run(CommandContext context) throws CommandException;
+    void execute(CommandContext context) throws CommandException;
 }

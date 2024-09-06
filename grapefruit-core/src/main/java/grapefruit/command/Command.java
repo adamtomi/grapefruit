@@ -7,13 +7,13 @@ import grapefruit.command.dispatcher.CommandMeta;
 
 import java.util.List;
 
-public interface Command extends CommandAction {
+public interface Command extends CommandExecutable {
 
     List<CommandArgument<?>> arguments();
 
     CommandMeta meta();
 
-    static Command wrap(List<CommandArgument<?>> arguments, CommandMeta meta, CommandAction action) {
+    static Command wrap(List<CommandArgument<?>> arguments, CommandMeta meta, CommandExecutable action) {
         return new Command() {
             @Override
             public List<CommandArgument<?>> arguments() {
@@ -26,9 +26,9 @@ public interface Command extends CommandAction {
             }
 
             @Override
-            public void run(CommandContext context) throws CommandException {
+            public void execute(CommandContext context) throws CommandException {
                 try {
-                    action.run(context);
+                    action.execute(context);
                 } catch (CommandException ex) {
                     throw ex;
                 } catch (Throwable ex) {
