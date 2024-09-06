@@ -10,7 +10,6 @@ import com.squareup.javapoet.WildcardTypeName;
 import grapefruit.command.Command;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.dispatcher.CommandSpec;
-import grapefruit.command.dispatcher.condition.CommandCondition;
 import grapefruit.command.gen.Naming;
 import grapefruit.command.gen.util.Decorator;
 import grapefruit.command.meta.CommandDefinition;
@@ -22,7 +21,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.google.auto.common.MoreElements.asExecutable;

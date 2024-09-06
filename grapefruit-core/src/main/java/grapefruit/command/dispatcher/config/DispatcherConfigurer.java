@@ -2,9 +2,9 @@ package grapefruit.command.dispatcher.config;
 
 import com.google.common.reflect.TypeToken;
 import grapefruit.command.argument.mapper.ArgumentMapper;
-import grapefruit.command.dispatcher.condition.CommandCondition;
 import grapefruit.command.dispatcher.CommandRegistrationHandler;
 import grapefruit.command.dispatcher.auth.CommandAuthorizer;
+import grapefruit.command.dispatcher.condition.CommandCondition;
 import grapefruit.command.util.Registry;
 import grapefruit.command.util.key.Key;
 
