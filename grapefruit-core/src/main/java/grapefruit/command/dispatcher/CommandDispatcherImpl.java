@@ -102,6 +102,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
              * the provided key. This should not happen if the
              * dispatcher was configured properly.
              */
+            // TODO presence flags will always fail, need to fix
             ArgumentMapper mapper = this.argumentMappers.get(mapperKey)
                     .orElseThrow(() -> new IllegalStateException("Could not find argument mapper matching '%s'. Requested by: '%s'.".formatted(
                             mapperKey,
