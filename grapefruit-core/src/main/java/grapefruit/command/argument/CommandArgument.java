@@ -8,9 +8,10 @@ import grapefruit.command.util.key.Key;
 import java.util.Set;
 
 /**
- * Describes an argument of a command.
+ * Describes an argument of a command. {@link CommandArgument#name()} needs to be
+ * unique per argument chain.
  *
- * @param <T> The type of argument.
+ * @param <T> The type of values to be supplied by the user to this argument
  * @see grapefruit.command.argument.mapper.ArgumentMapper
  */
 public interface CommandArgument<T> {
