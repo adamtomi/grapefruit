@@ -9,7 +9,8 @@ import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.WildcardTypeName;
 import grapefruit.command.Command;
 import grapefruit.command.argument.CommandArgument;
-import grapefruit.command.dispatcher.CommandMeta;
+import grapefruit.command.dispatcher.CommandSpec;
+import grapefruit.command.dispatcher.condition.CommandCondition;
 import grapefruit.command.gen.Naming;
 import grapefruit.command.gen.util.Decorator;
 import grapefruit.command.meta.CommandDefinition;
@@ -20,11 +21,14 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.google.auto.common.MoreElements.asExecutable;
 import static com.google.auto.common.MoreElements.asType;
 import static grapefruit.command.gen.util.AnnotationUtil.accessAnnotationValue;
+import static grapefruit.command.gen.util.AnnotationUtil.accessAnnotationValueList;
 import static grapefruit.command.gen.util.AnnotationUtil.assertAnnotation;
 import static java.util.Objects.requireNonNull;
 
@@ -88,13 +92,19 @@ public class CommandDescriptor implements Decorator {
 
     public CodeBlock generateInitializer() {
         String permission = accessAnnotationValue(this.commandDef, "permission", String.class);
+        List<TypeMirror> conditionClasses = accessAnnotationValueList(this.commandDef, "conditions", TypeMirror.class);
+        CodeBlock conditionsBlock = conditionClasses.stream()
+                .map(x -> CodeBlock.of("$T.class", x))
+                .collect(CodeBlock.joining(", "));
+
         return CodeBlock.of(
-                "$T.wrap($L(), $T.of($S, $S), $L)",
+                "$T.wrap($L(), $T.of($S, $S, $L), $L)",
                 Command.class,
                 this.assembleArgsMethodName,
-                CommandMeta.class,
+                CommandSpec.class,
                 accessAnnotationValue(this.commandDef, "route", String.class),
                 permission.isBlank() ? null : permission,
+                conditionsBlock,
                 generateCommandAction()
         );
     }

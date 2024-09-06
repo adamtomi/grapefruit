@@ -175,7 +175,7 @@ public class CommandGraph {
          * will become a command node in the tree if the registration
          * succeeds.
          */
-        return Arrays.stream(command.meta().route().split(" "))
+        return Arrays.stream(command.spec().route().split(" "))
                 .map(RoutePart::of)
                 .toList();
     }

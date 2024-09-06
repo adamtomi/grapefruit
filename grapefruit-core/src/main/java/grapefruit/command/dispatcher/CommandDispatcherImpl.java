@@ -9,6 +9,8 @@ import grapefruit.command.argument.chain.BoundArgument;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.dispatcher.auth.CommandAuthorizationException;
 import grapefruit.command.dispatcher.auth.CommandAuthorizer;
+import grapefruit.command.dispatcher.condition.CommandCondition;
+import grapefruit.command.dispatcher.condition.UnfulfilledConditionException;
 import grapefruit.command.dispatcher.config.DispatcherConfigurer;
 import grapefruit.command.dispatcher.input.StringReader;
 import grapefruit.command.dispatcher.syntax.CommandSyntaxException;
@@ -31,15 +33,17 @@ import static java.util.Objects.requireNonNull;
 
 final class CommandDispatcherImpl implements CommandDispatcher {
     private final CommandGraph commandGraph = new CommandGraph();
-    private final Registry<Command, ArgumentChain> argumentChains = Registry.create(Registry.DuplicateStrategy.reject());
+    private final Registry<Command, CommandInfo> knownCommands = Registry.create(Registry.DuplicateStrategy.reject());
     private final CommandAuthorizer authorizer;
     private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers;
+    private final Registry<Key<?>, CommandCondition> conditions;
     private final CommandRegistrationHandler registrationHandler;
 
     CommandDispatcherImpl(DispatcherConfigurer configurer) {
         requireNonNull(configurer, "configurer");
         this.authorizer = requireNonNull(configurer.authorizer(), "authorizer cannot be null");
         this.argumentMappers = requireNonNull(configurer.argumentMappers(), "argumentMappers cannot be null");
+        this.conditions = requireNonNull(configurer.conditions(), "conditions cannot be null");
         this.registrationHandler = requireNonNull(configurer.registrationHandler(), "registrationHandler cannot be null");
     }
 
@@ -48,18 +52,17 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         requireNonNull(commands, "commands cannot be null");
         changeRegistrationState(commands, command -> {
             /*
-             * Create the argument chain first. This call will
-             * throw an error, if no mapper is available for
-             * the supplied mapper key, in which case we don't
-             * want to proceed with registration any further.
+             * Gather the runtime command information first. If this
+             * fails due to a missing ArgumentMapper or CommandCondition,
+             * we don't want to proceed any further.
              */
-            ArgumentChain argumentChain = createChain(command);
+            CommandInfo commandInfo = buildCommand(command);
             // The registartion handler is invoked first
             this.registrationHandler.onRegister(command);
             // If the process wasn't interrupted, insert the command into the tree
             this.commandGraph.insert(command);
             // Cache argument chain
-            this.argumentChains.store(command, argumentChain);
+            this.knownCommands.store(command, commandInfo);
         });
     }
 
@@ -72,7 +75,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
             // If the process wasn't interrupted, delete the command from the tree
             this.commandGraph.delete(command);
             // Remove cached argument chain
-            this.argumentChains.remove(command);
+            this.knownCommands.remove(command);
         });
     }
 
@@ -85,6 +88,18 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                 // Interrupt was thrown, do nothing
             }
         }
+    }
+
+    private CommandInfo buildCommand(Command command) {
+        ArgumentChain argumentChain = createChain(command);
+        List<CommandCondition> conditions = command.spec()
+                .conditions()
+                .stream()
+                .map(x -> this.conditions.get(Key.of(x)))
+                .map(x -> x.orElseThrow(() -> new IllegalStateException("No condition was found for '%s'".formatted(x))))
+                .toList();
+
+        return new CommandInfo(command, argumentChain, conditions);
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -121,12 +136,9 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                 )));
     }
 
-    private ArgumentChain needChain(Command command) {
-        return this.argumentChains.get(command).orElseThrow(() -> new IllegalStateException(
-                "No argument chain was cached for command '%s' ('%s'). The dispatcher if not configured properly.".formatted(
-                        command,
-                        command.meta().route()
-                )
+    private CommandInfo requireInfo(Command command) {
+        return this.knownCommands.get(command).orElseThrow(() -> new IllegalStateException(
+                "No cached information was found for command '%s' The dispatcher is not configured properly.".formatted(command)
         ));
     }
 
@@ -144,7 +156,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         Command command = ((CommandGraph.SearchResult.Success) search).command();
 
         // Check permissions
-        Optional<String> permission = command.meta().permission();
+        Optional<String> permission = command.spec().permission();
         boolean mayExecute = permission.map(x -> this.authorizer.authorize(x, context))
                 .orElse(true);
 
@@ -154,11 +166,16 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         // Save the command instance so that we can retrieve it later if needed
         context.put(InternalContextKeys.COMMAND, command);
 
-        // Retrieve argument chain
-        ArgumentChain argumentChain = needChain(command);
+        // Retrieve command info
+        CommandInfo commandInfo = requireInfo(command);
+        // Check conditions
+        for (CommandCondition condition : commandInfo.conditions()) {
+            // If the result is false, we throw an exception.
+            if (!condition.evaluate(context)) throw new UnfulfilledConditionException(condition);
+        }
 
         // Parse command arguments and store the results in the current context
-        ParseInfo parseInfo = parseArguments(context, input, command, argumentChain);
+        ParseInfo parseInfo = parseArguments(context, input, command, commandInfo.argumentChain());
         // Rethrow captured exception if it exists
         if (parseInfo.capturedException().isPresent()) {
             throw parseInfo.capturedException().orElseThrow();
@@ -258,7 +275,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         // Command can safely be extracted
         Command command = ((CommandGraph.SearchResult.Success) searchResult).command();
         // Retrieve argument chain
-        ArgumentChain argumentChain = needChain(command);
+        ArgumentChain argumentChain = requireInfo(command).argumentChain();
 
         // Parse command
         ParseInfo parseInfo = parseArguments(context, input, command, argumentChain);

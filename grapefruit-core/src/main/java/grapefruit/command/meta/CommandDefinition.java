@@ -1,6 +1,7 @@
 package grapefruit.command.meta;
 
 import grapefruit.command.Command;
+import grapefruit.command.dispatcher.condition.CommandCondition;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -28,4 +29,12 @@ public @interface CommandDefinition {
      * permission is required by default.
      */
     String permission() default "";
+
+    /**
+     * The command conditions that need to be met before
+     * the command execution process can proceed. Empty
+     * array by default, meaning that no conditions
+     * need to be passed to execute the command.
+     */
+    Class<? extends CommandCondition>[] conditions() default {};
 }

@@ -2,12 +2,14 @@ package grapefruit.command.dispatcher.config;
 
 import com.google.common.reflect.TypeToken;
 import grapefruit.command.argument.mapper.ArgumentMapper;
+import grapefruit.command.dispatcher.condition.CommandCondition;
 import grapefruit.command.dispatcher.CommandRegistrationHandler;
 import grapefruit.command.dispatcher.auth.CommandAuthorizer;
 import grapefruit.command.util.Registry;
 import grapefruit.command.util.key.Key;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
@@ -18,6 +20,7 @@ import static java.util.Objects.requireNonNull;
  */
 public abstract class DispatcherConfigurer {
     private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers = Registry.create(Registry.DuplicateStrategy.reject());
+    private final Registry<Key<?>, CommandCondition> conditions = Registry.create(Registry.DuplicateStrategy.reject());
     private CommandAuthorizer authorizer = null;
     private Supplier<Executor> executor = null;
     private CommandRegistrationHandler registrationHandler = null;
@@ -58,6 +61,7 @@ public abstract class DispatcherConfigurer {
          * same type, the one held by "other" will take precedence.
          */
         root.argumentMappers.merge(other.argumentMappers);
+        root.conditions.merge(other.conditions);
         // Only copy properties that have been changed from their default values
         if (other.authorizer != null) root.authorizer = other.authorizer;
         if (other.executor != null) root.executor = other.executor;
@@ -132,6 +136,22 @@ public abstract class DispatcherConfigurer {
         return new MappingBuilderImpl<>(type, this.argumentMappers::store);
     }
 
+    /**
+     * @see this#conditions(Iterable)
+     */
+    protected void conditions(CommandCondition... conditions) {
+        conditions(List.of(conditions));
+    }
+
+    /**
+     * Registers the supplied conditions.
+     *
+     * @param conditions The conditions to register
+     */
+    protected void conditions(Iterable<CommandCondition> conditions) {
+        conditions.forEach(x -> this.conditions.store(Key.of(x.getClass()), x));
+    }
+
     // Getters
 
     /**
@@ -164,5 +184,13 @@ public abstract class DispatcherConfigurer {
      */
     public Registry<Key<?>, ArgumentMapper<?>> argumentMappers() {
         return this.argumentMappers;
+    }
+
+    /**
+     * Returns the registered conditions.
+     * For internal user.
+     */
+    public Registry<Key<?>, CommandCondition> conditions() {
+        return this.conditions;
     }
 }

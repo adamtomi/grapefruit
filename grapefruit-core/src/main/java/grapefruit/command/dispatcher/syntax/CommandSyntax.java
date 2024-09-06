@@ -71,6 +71,6 @@ public interface CommandSyntax {
             parts.add(new CommandSyntaxImpl.SyntaxPartImpl(format, kind));
         }
 
-        return new CommandSyntaxImpl(command.meta().route(), parts);
+        return new CommandSyntaxImpl(command.spec().route(), parts);
     }
 }

@@ -3,7 +3,7 @@ package grapefruit.command;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.CommandInvocationException;
-import grapefruit.command.dispatcher.CommandMeta;
+import grapefruit.command.dispatcher.CommandSpec;
 
 import java.util.List;
 
@@ -11,9 +11,9 @@ public interface Command extends CommandExecutable {
 
     List<CommandArgument<?>> arguments();
 
-    CommandMeta meta();
+    CommandSpec spec();
 
-    static Command wrap(List<CommandArgument<?>> arguments, CommandMeta meta, CommandExecutable action) {
+    static Command wrap(List<CommandArgument<?>> arguments, CommandSpec spec, CommandExecutable action) {
         return new Command() {
             @Override
             public List<CommandArgument<?>> arguments() {
@@ -21,8 +21,8 @@ public interface Command extends CommandExecutable {
             }
 
             @Override
-            public CommandMeta meta() {
-                return meta;
+            public CommandSpec spec() {
+                return spec;
             }
 
             @Override
