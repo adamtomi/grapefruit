@@ -11,7 +11,6 @@ import grapefruit.command.dispatcher.auth.CommandAuthorizationException;
 import grapefruit.command.dispatcher.auth.CommandAuthorizer;
 import grapefruit.command.dispatcher.config.DispatcherConfigurer;
 import grapefruit.command.dispatcher.input.StringReader;
-import grapefruit.command.dispatcher.input.StringReaderImpl;
 import grapefruit.command.dispatcher.syntax.CommandSyntaxException;
 import grapefruit.command.dispatcher.syntax.DuplicateFlagException;
 import grapefruit.command.dispatcher.tree.CommandGraph;
@@ -133,7 +132,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         requireNonNull(context, "context cannot be null");
         requireNonNull(commandLine, "commandLine cannot be null");
         // Construct a new reader from user input
-        StringReader input = new StringReaderImpl(commandLine, context);
+        StringReader input = context.createReader(commandLine);
         // Find the command instance to execute
         CommandGraph.SearchResult search = this.commandGraph.search(input);
         if (search instanceof CommandGraph.SearchResult.Failure failure) throw failure.cause();
@@ -167,7 +166,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     }
 
     private ParseInfo parseArguments(CommandContext context, StringReader input, Command command, ArgumentChain argumentChain) {
-        ParseInfo parseInfo = new ParseInfo();
+        ParseInfo parseInfo = context.createParseInfo();
         try {
             String arg;
             while ((arg = input.peekSingle()) != null) {
@@ -261,7 +260,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         requireNonNull(context, "context cannot be null");
         requireNonNull(commandLine, "commandLine cannot be null");
         // Construct a new reader from user input
-        StringReader input = new StringReaderImpl(commandLine, context);
+        StringReader input = context.createReader(commandLine);
         // Find the command instance to create suggestions for
         CommandGraph.SearchResult searchResult = this.commandGraph.search(input);
 
