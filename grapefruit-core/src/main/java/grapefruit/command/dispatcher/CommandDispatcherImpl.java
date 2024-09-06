@@ -24,7 +24,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import static grapefruit.command.dispatcher.syntax.CommandSyntax.LONG_FLAG_PREFIX;
+import static grapefruit.command.dispatcher.syntax.CommandSyntax.LONG_FLAG_FORMAT;
+import static grapefruit.command.dispatcher.syntax.CommandSyntax.SHORT_FLAG_FORMAT;
 import static grapefruit.command.dispatcher.syntax.CommandSyntax.SHORT_FLAG_PREFIX;
 import static java.util.Objects.requireNonNull;
 
@@ -294,6 +295,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
         String remaining;
         try {
+            // Attempt to read the remaining arguments
             remaining = input.readRemaining();
         } catch (CommandException ex) {
             remaining = "";
@@ -335,7 +337,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     private List<String> formatFlags(Collection<BoundArgument.Flag<?>> flags) {
         return flags.stream()
                 .map(BoundArgument::argument)
-                .map(x -> List.of("%s%s".formatted(SHORT_FLAG_PREFIX, x.shorthand()), "%s%s".formatted(LONG_FLAG_PREFIX, x.name())))
+                .map(x -> List.of(SHORT_FLAG_FORMAT.apply(x.shorthand()), LONG_FLAG_FORMAT.apply(x.name())))
                 .flatMap(Collection::stream)
                 .toList();
     }

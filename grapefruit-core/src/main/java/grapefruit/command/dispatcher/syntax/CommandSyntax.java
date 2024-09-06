@@ -5,6 +5,8 @@ import grapefruit.command.argument.CommandArgument;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * Holds basic command syntax information.
@@ -24,6 +26,16 @@ public interface CommandSyntax {
      * The expected prefix of flags in their long form.
      */
     String LONG_FLAG_PREFIX = SHORT_FLAG_PREFIX.repeat(2);
+
+    /**
+     * Function to format the shorthand of a flag.
+     */
+    Function<Character, String> SHORT_FLAG_FORMAT = shorthand -> SHORT_FLAG_PREFIX + shorthand;
+
+    /**
+     * Function to format the name of a flag.
+     */
+    UnaryOperator<String> LONG_FLAG_FORMAT = name -> LONG_FLAG_PREFIX + name;
 
     /**
      * Returns the route of the command that was being executed.
