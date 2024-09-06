@@ -97,9 +97,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
         for (CommandArgument<?> argument : command.arguments()) {
             // Use #mapperKey instead of #key to extract mappers
-            // Key<?> mapperKey = argument.mapperKey();
-            // TODO remove this.
-            Key<?> mapperKey = Key.of(argument.key().type());
+            Key<?> mapperKey = argument.mapperKey();
             /*
              * Throw an exception if no argument mapper is bound to
              * the provided key. This should not happen if the
