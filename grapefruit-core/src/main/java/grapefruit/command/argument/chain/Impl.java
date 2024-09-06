@@ -3,25 +3,26 @@ package grapefruit.command.argument.chain;
 import grapefruit.command.CommandException;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.argument.FlagArgument;
+import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.dispatcher.CommandContext;
-import grapefruit.command.util.ValueFactory;
 
 import java.util.List;
 
+import static grapefruit.command.dispatcher.InternalContextKeys.INPUT;
 import static java.util.Objects.requireNonNull;
 
 final class Impl {
     private Impl() {}
 
     static final class PositionalBinding<T> extends AbstractBoundArgument<T, CommandArgument<T>> implements BoundArgument.Positional<T> {
-        PositionalBinding(CommandArgument<T> argument, ValueFactory<T> factory) {
-            super(argument, factory);
+        PositionalBinding(CommandArgument<T> argument, ArgumentMapper<T> mapper) {
+            super(argument, mapper);
         }
     }
 
     static final class FlagBinding<T> extends AbstractBoundArgument<T, FlagArgument<T>> implements BoundArgument.Flag<T> {
-        FlagBinding(FlagArgument<T> argument, ValueFactory<T> factory) {
-            super(argument, factory);
+        FlagBinding(FlagArgument<T> argument, ArgumentMapper<T> mapper) {
+            super(argument, mapper);
         }
     }
 
@@ -37,11 +38,11 @@ final class Impl {
 
     private static abstract class AbstractBoundArgument<T, C extends CommandArgument<T>> implements BoundArgument<T, C> {
         private final C argument;
-        private final ValueFactory<T> factory;
+        private final ArgumentMapper<T> mapper;
 
-        AbstractBoundArgument(C argument, ValueFactory<T> factory) {
+        AbstractBoundArgument(C argument, ArgumentMapper<T> mapper) {
             this.argument = requireNonNull(argument, "argument cannot be null");
-            this.factory = requireNonNull(factory, "factory cannot be null");
+            this.mapper = requireNonNull(mapper, "mapper cannot be null");
         }
 
         @Override
@@ -50,13 +51,13 @@ final class Impl {
         }
 
         @Override
-        public ValueFactory<T> valueFactory() {
-            return this.factory;
+        public ArgumentMapper<T> mapper() {
+            return this.mapper;
         }
 
         @Override
         public void execute(CommandContext context) throws CommandException {
-            T value = valueFactory().compute(context);
+            T value = mapper().tryMap(context, context.require(INPUT));
             context.put(argument().key(), value);
         }
     }

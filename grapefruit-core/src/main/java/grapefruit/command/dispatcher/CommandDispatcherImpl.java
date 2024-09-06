@@ -16,7 +16,6 @@ import grapefruit.command.dispatcher.syntax.DuplicateFlagException;
 import grapefruit.command.dispatcher.tree.CommandGraph;
 import grapefruit.command.util.FlagGroup;
 import grapefruit.command.util.Registry;
-import grapefruit.command.util.ValueFactory;
 import grapefruit.command.util.key.Key;
 
 import java.util.ArrayList;
@@ -101,11 +100,11 @@ final class CommandDispatcherImpl implements CommandDispatcher {
             if (argument.isFlag()) {
                 flags.add((BoundArgument.Flag<?>) argument.bind(
                         ((FlagArgument<?>) argument).isPresenceFlag()
-                                ? (ValueFactory) ValueFactory.constant(true)
-                                : (ValueFactory) ValueFactory.mapBy(needMapper(mapperKey))
+                                ? (ArgumentMapper) ArgumentMapper.constant(true)
+                                : needMapper((Key) mapperKey, argument)
                 ));
             } else {
-                positional.add((BoundArgument.Positional<?>) argument.bind((ValueFactory) ValueFactory.mapBy(needMapper(mapperKey))));
+                positional.add((BoundArgument.Positional<?>) argument.bind(needMapper((Key) mapperKey, argument)));
             }
         }
 
@@ -113,10 +112,11 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> ArgumentMapper<T> needMapper(Key<T> key) {
+    private <T> ArgumentMapper<T> needMapper(Key<T> key, CommandArgument<T> argument) {
         return (ArgumentMapper<T>) this.argumentMappers.get(key)
-                .orElseThrow(() -> new IllegalStateException("Could not find argument mapper matching '%s'".formatted(
-                        key
+                .orElseThrow(() -> new IllegalStateException("Could not find argument mapper matching '%s'. Requested by: '%s'".formatted(
+                        key,
+                        argument
                 )));
     }
 
@@ -317,12 +317,11 @@ final class CommandDispatcherImpl implements CommandDispatcher {
             if (!parseInfo.suggestFlagValue()) {
                 return formatFlags(unseenFlags);
             } else {
-                // return argToParse.mapper().listSuggestions(context, arg);
-                return List.of();
+                return argToParse.mapper().listSuggestions(context, arg);
             }
         } else {
             // Make a mutable copy of the list
-            List<String> base = new ArrayList<>(/* argToParse.mapper().listSuggestions(context, arg) */);
+            List<String> base = new ArrayList<>(argToParse.mapper().listSuggestions(context, arg));
 
             // If the current argument starts with '-', we list flags as well
             if (arg.startsWith(SHORT_FLAG_PREFIX)) {

@@ -1,7 +1,7 @@
 package grapefruit.command.argument;
 
 import grapefruit.command.argument.chain.BoundArgument;
-import grapefruit.command.util.ValueFactory;
+import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.util.key.Key;
 
 /**
@@ -57,8 +57,8 @@ public final class CommandArguments {
         }
 
         @Override
-        public BoundArgument<T, ?> bind(ValueFactory<T> factory) {
-            return BoundArgument.arg(this, factory);
+        public BoundArgument<T, ?> bind(ArgumentMapper<T> mapper) {
+            return BoundArgument.arg(this, mapper);
         }
 
         @Override
@@ -88,8 +88,8 @@ public final class CommandArguments {
         }
 
         @Override
-        public BoundArgument<T, ?> bind(ValueFactory<T> factory) {
-            return BoundArgument.flag(this, factory);
+        public BoundArgument<T, ?> bind(ArgumentMapper<T> mapper) {
+            return BoundArgument.flag(this, mapper);
         }
 
         @Override

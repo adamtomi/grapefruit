@@ -3,7 +3,7 @@ package grapefruit.command.argument.chain;
 import grapefruit.command.CommandExecutable;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.argument.FlagArgument;
-import grapefruit.command.util.ValueFactory;
+import grapefruit.command.argument.mapper.ArgumentMapper;
 
 /**
  * Represents a command argument bound to a value factory.
@@ -22,7 +22,7 @@ public interface BoundArgument<T, C extends CommandArgument<T>> extends CommandE
      * @return The value factory that {@link this#argument()}
      * is bound to
      */
-    ValueFactory<T> valueFactory();
+    ArgumentMapper<T> mapper();
 
     /**
      * Constructs a new binding for positional
@@ -30,11 +30,11 @@ public interface BoundArgument<T, C extends CommandArgument<T>> extends CommandE
      *
      * @param <T> The argument type
      * @param argument The argument itself
-     * @param factory The value factory
+     * @param mapper The argument mapper
      * @return The constructed argument
      */
-    static <T> Positional<T> arg(CommandArgument<T> argument, ValueFactory<T> factory) {
-        return new Impl.PositionalBinding<>(argument, factory);
+    static <T> Positional<T> arg(CommandArgument<T> argument, ArgumentMapper<T> mapper) {
+        return new Impl.PositionalBinding<>(argument, mapper);
     }
 
     /**
@@ -43,11 +43,11 @@ public interface BoundArgument<T, C extends CommandArgument<T>> extends CommandE
      *
      * @param <T> The argument type
      * @param argument The argument itself
-     * @param factory The value factory
+     * @param mapper The argument mapper
      * @return The constructed argument
      */
-    static <T> Flag<T> flag(FlagArgument<T> argument, ValueFactory<T> factory) {
-        return new Impl.FlagBinding<>(argument, factory);
+    static <T> Flag<T> flag(FlagArgument<T> argument, ArgumentMapper<T> mapper) {
+        return new Impl.FlagBinding<>(argument, mapper);
     }
 
     interface Flag<T> extends BoundArgument<T, FlagArgument<T>> {}
