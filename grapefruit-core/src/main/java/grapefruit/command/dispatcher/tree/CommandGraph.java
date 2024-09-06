@@ -2,7 +2,6 @@ package grapefruit.command.dispatcher.tree;
 
 import grapefruit.command.Command;
 import grapefruit.command.CommandException;
-import grapefruit.command.dispatcher.syntax.CommandSyntaxException;
 import grapefruit.command.dispatcher.input.StringReader;
 
 import java.io.Serial;

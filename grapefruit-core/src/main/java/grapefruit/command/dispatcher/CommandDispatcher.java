@@ -2,12 +2,7 @@ package grapefruit.command.dispatcher;
 
 import grapefruit.command.Command;
 import grapefruit.command.CommandException;
-import grapefruit.command.argument.mapper.ArgumentMapper;
-import grapefruit.command.dispatcher.auth.CommandAuthorizer;
 import grapefruit.command.dispatcher.config.DispatcherConfigurer;
-import grapefruit.command.util.Registry;
-import grapefruit.command.util.key.Key;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
