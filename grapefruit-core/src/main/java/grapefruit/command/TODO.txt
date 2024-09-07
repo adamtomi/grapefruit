@@ -64,3 +64,11 @@
 - Implement "standard" argument mappers for java primitive types (maybe not boolean though, because
   please use presence flags instead?), and perhaps a few other builtin java types (such types could
   be UUID, Duration, some form of Date (maybe the newer LocalDateTime thingy instead).
+
+- Update @Flag so that "name" and "shorthand" are optional. By default, name should the parameter name
+  and shorthand should be name.charAt(0).
+
+- Introduce description system. @CommandDefinition, @Arg, and @Flag annotations should have a "description"
+  parameter ("" by default), and if a command syntax exception is thrown, these descriptions should be included
+  so that they can be printed to the user. Optionally, we might want to have description lookup/provider system,
+  which could be used for the localization of descriptions.
