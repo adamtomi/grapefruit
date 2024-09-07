@@ -1,0 +1,66 @@
+- Argument modifiers. Not sure how to go about them, the goal is to be able
+  to pass data to the modifiers. So an annotation is annotated with @Modifier
+  and that annotation is then placed onto a method parameter annotated with
+  either @Arg or @Flag. For instance @Regex("[0-9a-z]+"). That value needs to
+  be passed to the argument modifier instance. Or an alternative is that the
+  corresponding argument mapper would get access to this data and would apply
+  the same logic to the already mapped value.
+
+- Named mappers. This is simple, we can introduce a @MappedBy(String) annotation
+  which would change the #mapperKey of the command argument. Instead of using
+  Key.of(<ArgumentType>), the key would become Key.named(<ArgumentType>, <MapperName>).
+  This is simple so far, another thing to consider is that maybe this is not the
+  most convenient way. Maybe we need to allow annotations to be annotated with this
+  annotation, for instance: @Greedy itself would be annotated with @MappedBy("__greedy__"),
+  and so annotating a parameter with @Greedy and @MappedBy("__greedy__") would have
+  the same effect, except the first is a lot mor convenient.
+
+- @InjectedBy annotation. At the moment non-argument parameters are allowed, but only
+  one per type. So if a command method has the following parameters: (String x, @Arg int y, @Arg int z),
+  we assume that a value for x will be in the context store mapped to Key.of(String). This
+  doesn't allow us to inject multiple arguments of type String. I'm unsure if this is a problem
+  or not, the only use-case I can think of right now is minecraft command senders. Or
+  perhaps command cost values and stuff like that. But still, maybe having a similar system
+  to the mapped by stuff described above would make sense. Let's say we create a new annotation
+  called @InjectedBy(String) (not @Inject as that would conflict with DI frameworks), the string
+  argument would refer to a key name, and then we could either annotate a parameter or an
+  annotation with this. So if maybe we have a cost modifier on our command (minecraft...), we
+  could inject it into the function either by (...params, @InjectedBy("__command_cost__") float cost), or
+  (...params, @Cost float cost), assuming that @Cost itself is annotated with @InjectedBy("__command_cost__").
+  And while we're at it, we could also set the nullability of the value to be injected, so that
+  the appropriate command context method is used. something like: @InjectedBy(value = "something", nullable = true);
+  the field "nullable" could be false by default (in which case CommandContext#require is used, otherwise
+  CommandContext#nullable).
+
+- Command call listeners existed in grapefruit 1, I'd like to have them in this version too, maybe
+  having more stages to register call listeners to. Maybe [ PRE_PARSE, PRE_EXECUTION, POST_EXECUTION, FAILED ].
+  Unlike the first version, this time they could actually get access to the current CommandContext
+  instance as that's already created when CommandDispatcher#dispatch is called. The registration shall
+  happen in DispatcherConfigurer as that's where every bit of configuration is done.
+
+- RoutePart should probably be extracted from CommandGraph and should live in CommandSpec instead.
+  This way we would only need to parse the route once, when the spec is created, the graph could
+  already access it when the #insert method is called, and could access it again when #delete
+  is called (right now it needs to parse the route again, which is suboptimal). This way registration
+  handlers could also operate on the processed route parts as opposed to the raw string
+  representation, which would simplify registering commands on third party platforms.
+
+- CommandSpec builder system. Not yet sure if it's really necessary, but if @CommandDefinition ends up
+  having more stuff on it, so will CommandSpec too, and at that point #of may not be enough.
+
+- Rewrite codegen module. Right now it's a bit barebones and if we'd like to have everything listed above,
+  it'll have handle a lot more. And also it's just messy right now.
+
+- Add more documentation.
+
+- Add tests.
+
+- Message system? Right now we don't have one, and I'm actually glad about that. We do throw a lot
+  of exceptions though that are up to the user to handle, but right now I think that works. Probably
+  in the long run too. Maybe we could have an extension package to grapefruit, and that could take
+  care of printing the appropriate messages to users based on exceptions. Maybe. If not, then we'll
+  need to have a lot more flexible message system than what was implemented in grapefruit 1.
+
+- Implement "standard" argument mappers for java primitive types (maybe not boolean though, because
+  please use presence flags instead?), and perhaps a few other builtin java types (such types could
+  be UUID, Duration, some form of Date (maybe the newer LocalDateTime thingy instead).
