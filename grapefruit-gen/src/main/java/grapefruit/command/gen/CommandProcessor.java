@@ -2,9 +2,9 @@ package grapefruit.command.gen;
 
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.JavaFile;
+import grapefruit.command.annotation.CommandDefinition;
 import grapefruit.command.gen.model.CommandDescriptor;
 import grapefruit.command.gen.model.FactoryDescriptor;
-import grapefruit.command.meta.CommandDefinition;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;
@@ -22,7 +22,7 @@ import java.util.Set;
 import static java.util.stream.Collectors.groupingBy;
 
 @AutoService(Processor.class)
-@SupportedAnnotationTypes("grapefruit.command.meta.CommandDefinition")
+@SupportedAnnotationTypes("grapefruit.command.annotation.CommandDefinition")
 public class CommandProcessor extends AbstractProcessor {
 
     @Override

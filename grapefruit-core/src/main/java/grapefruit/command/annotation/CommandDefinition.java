@@ -1,4 +1,4 @@
-package grapefruit.command.meta;
+package grapefruit.command.annotation;
 
 import grapefruit.command.Command;
 import grapefruit.command.dispatcher.condition.CommandCondition;

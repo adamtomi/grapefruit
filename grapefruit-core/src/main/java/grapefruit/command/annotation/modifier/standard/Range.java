@@ -1,6 +1,6 @@
-package grapefruit.command.argument.modifier.standard;
+package grapefruit.command.annotation.modifier.standard;
 
-import grapefruit.command.argument.modifier.Modifier;
+import grapefruit.command.annotation.modifier.Modifier;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -10,4 +10,9 @@ import java.lang.annotation.Target;
 @Modifier
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-public @interface Quotable {}
+public @interface Range {
+
+    double min();
+
+    double max();
+}
