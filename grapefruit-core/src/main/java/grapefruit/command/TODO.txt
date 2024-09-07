@@ -72,3 +72,6 @@
   parameter ("" by default), and if a command syntax exception is thrown, these descriptions should be included
   so that they can be printed to the user. Optionally, we might want to have description lookup/provider system,
   which could be used for the localization of descriptions.
+
+- Figure out whether ArgumentChain is still needed. Now that CommandInfo is a thing, we could just put
+  the two list of bound arguments onto it and simplify things a little bit.
