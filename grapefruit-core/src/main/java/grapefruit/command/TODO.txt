@@ -68,6 +68,9 @@
 - Update @Flag so that "name" and "shorthand" are optional. By default, name should the parameter name
   and shorthand should be name.charAt(0).
 
+- @Arg has been updated, a new "name" field has been introduced. The argument descriptor in the codegen module
+  needs to be updated to reflect this.
+
 - Introduce description system. @CommandDefinition, @Arg, and @Flag annotations should have a "description"
   parameter ("" by default), and if a command syntax exception is thrown, these descriptions should be included
   so that they can be printed to the user. Optionally, we might want to have description lookup/provider system,
@@ -75,3 +78,16 @@
 
 - Figure out whether ArgumentChain is still needed. Now that CommandInfo is a thing, we could just put
   the two list of bound arguments onto it and simplify things a little bit.
+
+- Configurable "man" command or "--help -h -?" flags for printing command and argument descriptions as
+  well as the correct command syntax.
+
+- Investigate if having a @Suggestions(String[]) annotation to provide custom suggestions for a command
+  argument is a good idea. Maybe it is, maybe it isn't.
+
+- Investigate if it's possible to move to [Geantyref](https://github.com/leangen/geantyref) from google's
+  TypeToken system. An attempt was made in v1, but some bug (which I don't remember exactly anymore) prevented
+  it at that time. However, since we aren't invoking methods via reflection anymore, we only need a fraction
+  of what either type lib can offer, so we should be good with either of them (hopefully). The real benefit of
+  not using google's lib is that grapefruit wouldn't have to rely on such a big library for only such a small
+  feature.
