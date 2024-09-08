@@ -9,7 +9,7 @@ import java.util.List;
 public final class TypeNameUtil {
     private TypeNameUtil() {}
 
-    public static List<TypeName> collectParameterizedTypeNames(TypeName type) {
+    public static List<TypeName> flattenTypeNames(TypeName type) {
         return type instanceof ParameterizedTypeName parameterized
                 ? parameterized.typeArguments
                 : List.of(type);

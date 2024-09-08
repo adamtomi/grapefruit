@@ -53,7 +53,7 @@ public class ArgumentDescriptor implements Decorator {
         this.shorthand = shorthand;
         this.isCommandArg = isCommandArg;
         this.isFlag = isFlag;
-        String partialKeyFieldName = TypeNameUtil.collectParameterizedTypeNames(toTypeName(parameter)).stream()
+        String partialKeyFieldName = TypeNameUtil.flattenTypeNames(toTypeName(parameter)).stream()
                 .map(TypeName::toString)
                 .map(x -> x.replaceAll("\\.", "_"))
                 .collect(Collectors.joining("_")) + Naming.KEY_FIELD_SUFFIX;
