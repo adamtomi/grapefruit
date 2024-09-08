@@ -9,10 +9,16 @@ import java.util.Set;
 import static java.util.Objects.requireNonNull;
 
 public class GeneratorContext {
+    /* Name of the generator */
+    private final String generator;
     /* We don't want duplicates, but care about the order */
     private final Set<FieldSpec> fields = new LinkedHashSet<>();
     private final Set<MethodSpec> methods = new LinkedHashSet<>();
     private final Set<StaticImport> staticImports = new LinkedHashSet<>();
+
+    public GeneratorContext(String generator) {
+        this.generator = requireNonNull(generator, "generator cannot be null");
+    }
 
     public void include(FieldSpec field) {
         requireNonNull(field, "field cannot be null");
@@ -38,6 +44,10 @@ public class GeneratorContext {
 
     public Set<StaticImport> staticImports() {
         return this.staticImports;
+    }
+
+    public String generator() {
+        return this.generator;
     }
 
     public record StaticImport(Class<?> from, String method) {

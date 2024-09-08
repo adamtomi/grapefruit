@@ -66,7 +66,7 @@ public class CommandProcessor extends AbstractProcessor {
                 .collect(groupingBy(x -> (TypeElement) x.getEnclosingElement())); // And that also means that the enclosing element is a class
 
         for (Map.Entry<TypeElement, List<ExecutableElement>> entry : commandsByContainer.entrySet()) {
-            GeneratorContext context = new GeneratorContext();
+            GeneratorContext context = new GeneratorContext(getClass().getCanonicalName());
             ContainerGenerator generator = new ContainerGenerator(entry.getKey(), entry.getValue());
 
             JavaFile file = generator.generate(context);
