@@ -1,4 +1,4 @@
-package grapefruit.command.gen.util;
+package grapefruit.command.codegen.util;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;

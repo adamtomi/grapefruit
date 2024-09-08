@@ -1,4 +1,4 @@
-package grapefruit.command.gen.model;
+package grapefruit.command.codegen.model;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -10,9 +10,9 @@ import com.squareup.javapoet.WildcardTypeName;
 import grapefruit.command.Command;
 import grapefruit.command.annotation.CommandDefinition;
 import grapefruit.command.argument.CommandArgument;
+import grapefruit.command.codegen.Naming;
+import grapefruit.command.codegen.util.Decorator;
 import grapefruit.command.dispatcher.CommandSpec;
-import grapefruit.command.gen.Naming;
-import grapefruit.command.gen.util.Decorator;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -25,9 +25,9 @@ import java.util.List;
 
 import static com.google.auto.common.MoreElements.asExecutable;
 import static com.google.auto.common.MoreElements.asType;
-import static grapefruit.command.gen.util.AnnotationUtil.accessAnnotationValue;
-import static grapefruit.command.gen.util.AnnotationUtil.accessAnnotationValueList;
-import static grapefruit.command.gen.util.AnnotationUtil.assertAnnotation;
+import static grapefruit.command.codegen.util.AnnotationUtil.accessAnnotationValue;
+import static grapefruit.command.codegen.util.AnnotationUtil.accessAnnotationValueList;
+import static grapefruit.command.codegen.util.AnnotationUtil.assertAnnotation;
 import static java.util.Objects.requireNonNull;
 
 public class CommandDescriptor implements Decorator {

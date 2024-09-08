@@ -1,4 +1,4 @@
-package grapefruit.command.gen.model;
+package grapefruit.command.codegen.model;
 
 import com.google.common.reflect.TypeToken;
 import com.squareup.javapoet.ClassName;
@@ -10,9 +10,9 @@ import com.squareup.javapoet.TypeSpec;
 import grapefruit.command.annotation.arg.Arg;
 import grapefruit.command.annotation.arg.Flag;
 import grapefruit.command.argument.CommandArguments;
-import grapefruit.command.gen.Naming;
-import grapefruit.command.gen.util.Decorator;
-import grapefruit.command.gen.util.TypeNameUtil;
+import grapefruit.command.codegen.Naming;
+import grapefruit.command.codegen.util.Decorator;
+import grapefruit.command.codegen.util.TypeNameUtil;
 import grapefruit.command.util.key.Key;
 
 import javax.lang.model.element.AnnotationMirror;
@@ -22,8 +22,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.google.auto.common.MoreElements.getAnnotationMirror;
-import static grapefruit.command.gen.util.AnnotationUtil.accessAnnotationValue;
-import static grapefruit.command.gen.util.TypeNameUtil.toTypeName;
+import static grapefruit.command.codegen.util.AnnotationUtil.accessAnnotationValue;
+import static grapefruit.command.codegen.util.TypeNameUtil.toTypeName;
 import static java.util.Objects.requireNonNull;
 
 public class ArgumentDescriptor implements Decorator {

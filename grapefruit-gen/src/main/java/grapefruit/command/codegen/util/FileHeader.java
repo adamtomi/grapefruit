@@ -1,4 +1,4 @@
-package grapefruit.command.gen.util;
+package grapefruit.command.codegen.util;
 
 public final class FileHeader {
     public static final String CORNER = "+";

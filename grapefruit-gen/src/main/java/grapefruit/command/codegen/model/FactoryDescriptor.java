@@ -1,4 +1,4 @@
-package grapefruit.command.gen.model;
+package grapefruit.command.codegen.model;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -9,7 +9,7 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
 import grapefruit.command.Command;
 import grapefruit.command.CommandFactory;
-import grapefruit.command.gen.Naming;
+import grapefruit.command.codegen.Naming;
 
 import javax.annotation.processing.Processor;
 import javax.lang.model.element.Modifier;
@@ -21,14 +21,14 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static com.google.auto.common.MoreElements.getPackage;
-import static grapefruit.command.gen.util.FileHeader.LINE_1;
-import static grapefruit.command.gen.util.FileHeader.LINE_2;
-import static grapefruit.command.gen.util.FileHeader.LINE_3;
-import static grapefruit.command.gen.util.FileHeader.LINE_4;
-import static grapefruit.command.gen.util.FileHeader.writeBlank;
-import static grapefruit.command.gen.util.FileHeader.writeHorizontal;
-import static grapefruit.command.gen.util.FileHeader.writeLine;
-import static grapefruit.command.gen.util.TypeNameUtil.toTypeName;
+import static grapefruit.command.codegen.util.FileHeader.LINE_1;
+import static grapefruit.command.codegen.util.FileHeader.LINE_2;
+import static grapefruit.command.codegen.util.FileHeader.LINE_3;
+import static grapefruit.command.codegen.util.FileHeader.LINE_4;
+import static grapefruit.command.codegen.util.FileHeader.writeBlank;
+import static grapefruit.command.codegen.util.FileHeader.writeHorizontal;
+import static grapefruit.command.codegen.util.FileHeader.writeLine;
+import static grapefruit.command.codegen.util.TypeNameUtil.toTypeName;
 import static java.util.Objects.requireNonNull;
 
 public class FactoryDescriptor {

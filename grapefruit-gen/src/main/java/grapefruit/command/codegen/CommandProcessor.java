@@ -1,10 +1,10 @@
-package grapefruit.command.gen;
+package grapefruit.command.codegen;
 
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.JavaFile;
 import grapefruit.command.annotation.CommandDefinition;
-import grapefruit.command.gen.model.CommandDescriptor;
-import grapefruit.command.gen.model.FactoryDescriptor;
+import grapefruit.command.codegen.model.CommandDescriptor;
+import grapefruit.command.codegen.model.FactoryDescriptor;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;

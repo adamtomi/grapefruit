@@ -1,4 +1,4 @@
-package grapefruit.command.gen;
+package grapefruit.command.codegen;
 
 public final class Naming {
     public static final String ARGUMENTS_METHOD_SUFFIX = "_arguments";
