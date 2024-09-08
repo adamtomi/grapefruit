@@ -16,17 +16,10 @@ public abstract class StringArgumentMapper implements ArgumentMapper<String> {
         return Quotable.INSTANCE;
     }
 
-    public static String quotableName() {
-        return Quotable.NAME;
-    }
-
     public static StringArgumentMapper greedy() {
         return Greedy.INSTANCE;
     }
 
-    public static String greedyName() {
-        return Greedy.NAME;
-    }
 
     @Override
     public List<String> listSuggestions(CommandContext context, String input) {
@@ -46,7 +39,6 @@ public abstract class StringArgumentMapper implements ArgumentMapper<String> {
 
     private static final class Quotable extends StringArgumentMapper {
         private static final Quotable INSTANCE = new Quotable();
-        private static final String NAME = "__quotable__";
 
         private Quotable() {}
 
@@ -58,7 +50,6 @@ public abstract class StringArgumentMapper implements ArgumentMapper<String> {
 
     private static final class Greedy extends StringArgumentMapper {
         private static final Greedy INSTANCE = new Greedy();
-        private static final String NAME = "__greedy__";
 
         private Greedy() {}
 
