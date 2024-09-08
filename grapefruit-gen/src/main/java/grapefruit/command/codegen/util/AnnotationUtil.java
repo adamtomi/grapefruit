@@ -3,11 +3,14 @@ package grapefruit.command.codegen.util;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.SimpleAnnotationValueVisitor8;
 import java.lang.annotation.Annotation;
 import java.util.List;
+import java.util.Optional;
 
 import static com.google.auto.common.AnnotationMirrors.getAnnotationValue;
+import static com.google.auto.common.MoreElements.asType;
 import static com.google.auto.common.MoreElements.getAnnotationMirror;
 import static java.util.Objects.requireNonNull;
 
@@ -59,5 +62,24 @@ public final class AnnotationUtil {
                     .map(x -> accessAnnotationValue(x, this.type))
                     .toList();
         }
+    }
+
+    public static Optional<AnnotationMirror> findAnnotation(Element element, Class<? extends Annotation> annotation) {
+        String name = annotation.getCanonicalName();
+        // Check all annotations
+        for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
+
+            TypeElement typeElement = asType(annotationMirror.getAnnotationType().asElement());
+
+            // Return the annotation mirror, if it's a match
+            if (typeElement.getQualifiedName().contentEquals(name)) return Optional.of(annotationMirror);
+
+            // Check if the annotation itself is annotated with the type we're looking for. If so,
+            // return it.
+            Optional<AnnotationMirror> annotated = getAnnotationMirror(typeElement, annotation).toJavaUtil();
+            if (annotated.isPresent()) return annotated;
+        }
+
+        return Optional.empty();
     }
 }

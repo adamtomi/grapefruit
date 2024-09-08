@@ -1,6 +1,5 @@
 package grapefruit.command.codegen.model;
 
-import com.google.common.reflect.TypeToken;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
@@ -9,8 +8,10 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import grapefruit.command.annotation.arg.Arg;
 import grapefruit.command.annotation.arg.Flag;
+import grapefruit.command.annotation.mapper.MappedBy;
 import grapefruit.command.argument.CommandArguments;
 import grapefruit.command.codegen.Naming;
+import grapefruit.command.codegen.util.CodeBlockUtil;
 import grapefruit.command.codegen.util.Decorator;
 import grapefruit.command.codegen.util.TypeNameUtil;
 import grapefruit.command.util.key.Key;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 
 import static com.google.auto.common.MoreElements.getAnnotationMirror;
 import static grapefruit.command.codegen.util.AnnotationUtil.accessAnnotationValue;
+import static grapefruit.command.codegen.util.AnnotationUtil.findAnnotation;
 import static grapefruit.command.codegen.util.TypeNameUtil.toTypeName;
 import static java.util.Objects.requireNonNull;
 
@@ -40,19 +42,23 @@ public class ArgumentDescriptor implements Decorator {
     private final boolean isFlag;
     private final String keyFieldName;
     private final TypeName boxedType;
+    private final String mapperName;
 
     private ArgumentDescriptor(
             VariableElement parameter,
             String name,
             char shorthand,
             boolean isCommandArg,
-            boolean isFlag
+            boolean isFlag,
+            String mapperName
     ) {
         this.parameter = requireNonNull(parameter, "parameter cannot be null");
         this.name = requireNonNull(name, "name cannot be null");
         this.shorthand = shorthand;
         this.isCommandArg = isCommandArg;
         this.isFlag = isFlag;
+        // Mapper name is nullable
+        this.mapperName = mapperName;
         String partialKeyFieldName = TypeNameUtil.flattenTypeNames(toTypeName(parameter)).stream()
                 .map(TypeName::toString)
                 .map(x -> x.replaceAll("\\.", "_"))
@@ -89,16 +95,23 @@ public class ArgumentDescriptor implements Decorator {
         } else if (flagMirror.isPresent()) {
             isCommandArg = true;
             isFlag = true;
-            name = accessAnnotationValue(flagMirror.orElseThrow(), "name", String.class);
-            shorthand = accessAnnotationValue(flagMirror.orElseThrow(), "shorthand", Character.class);
+            String foundName = accessAnnotationValue(flagMirror.orElseThrow(), "name", String.class);
+            if (!foundName.isBlank()) name = foundName;
+            char foundShorthand = accessAnnotationValue(flagMirror.orElseThrow(), "shorthand", Character.class);
+            shorthand = Character.isAlphabetic(foundShorthand) ? foundShorthand : name.charAt(0);
         }
+
+        Optional<String> mapperName = isCommandArg
+                ? findAnnotation(parameter, MappedBy.class).map(x -> accessAnnotationValue(x, "value", String.class))
+                : Optional.empty();
 
         return new ArgumentDescriptor(
                 parameter,
                 name,
                 shorthand,
                 isCommandArg,
-                isFlag
+                isFlag,
+                mapperName.orElse(null)
         );
     }
 
@@ -137,25 +150,12 @@ public class ArgumentDescriptor implements Decorator {
         return CodeBlock.of("$T.standard($S, $L, $L)", CommandArguments.class, this.name, generateKeyInitializer(), generateMapperKeyInitializer());
     }
 
-    private CodeBlock generateTypeToken() {
-        String typeTokenInit = this.boxedType instanceof ParameterizedTypeName
-                ? "new $T<$T>() {}"
-                : "$T.of($T.class)";
-
-        return CodeBlock.of(typeTokenInit, TypeToken.class, this.boxedType);
-    }
-
     private CodeBlock generateKeyInitializer() {
-        CodeBlock typeToken = generateTypeToken();
-        return this.isCommandArg
-                ? CodeBlock.of("$T.named($L, $S)", Key.class, typeToken, this.name)
-                : CodeBlock.of("$T.of($L)", Key.class, typeToken);
+        return CodeBlockUtil.key(this.boxedType, this.isCommandArg ? this.name : null);
     }
 
-    // TODO named mapper support
     private CodeBlock generateMapperKeyInitializer() {
-        CodeBlock typeToken = generateTypeToken();
-        return CodeBlock.of("$T.of($L)", Key.class, typeToken);
+        return CodeBlockUtil.key(this.boxedType, this.mapperName);
     }
 
     private FieldSpec generateKeyField() {
