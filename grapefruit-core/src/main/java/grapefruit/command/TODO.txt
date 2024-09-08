@@ -91,3 +91,6 @@
   of what either type lib can offer, so we should be good with either of them (hopefully). The real benefit of
   not using google's lib is that grapefruit wouldn't have to rely on such a big library for only such a small
   feature.
+
+- See if we can get rid of the whole function stuff in CommandFactory. Instead, we could have a CommandFactory#generate
+  that doesn't take arguments. Maybe.
