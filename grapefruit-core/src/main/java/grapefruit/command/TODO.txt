@@ -94,3 +94,6 @@
 
 - See if we can get rid of the whole function stuff in CommandFactory. Instead, we could have a CommandFactory#generate
   that doesn't take arguments. Maybe.
+
+- Returning a result from a command handler could be cool. Generate code so that if the annotated method's return type
+  isn't void, we store the result in the correct command context mapped to COMMAND_RESULT_KEY or something.
