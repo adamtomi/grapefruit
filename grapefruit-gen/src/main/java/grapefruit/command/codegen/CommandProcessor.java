@@ -67,7 +67,7 @@ public class CommandProcessor extends AbstractProcessor {
 
         for (Map.Entry<TypeElement, List<ExecutableElement>> entry : commandsByContainer.entrySet()) {
             GeneratorContext context = new GeneratorContext(getClass().getCanonicalName());
-            ContainerGenerator generator = new ContainerGenerator(entry.getKey(), entry.getValue());
+            ContainerGenerator generator = ContainerGenerator.create(entry.getKey(), entry.getValue());
 
             JavaFile file = generator.generate(context);
             try {

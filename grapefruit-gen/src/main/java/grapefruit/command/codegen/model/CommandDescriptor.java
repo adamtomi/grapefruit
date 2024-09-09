@@ -47,7 +47,7 @@ public class CommandDescriptor implements Decorator {
         this.parent = requireNonNull(parent, "parent cannot be null");
         this.commandDef = requireNonNull(commandDef, "commandDef cannot be null");
         this.arguments = requireNonNull(arguments, "arguments cannot be null");
-        this.assembleArgsMethodName = method.getSimpleName() + Naming.ARGUMENTS_METHOD_SUFFIX;
+        this.assembleArgsMethodName = Naming.ARGUMENTS_METHOD_SUFFIX.apply(method);
     }
 
     public static CommandDescriptor create(Element candidate) {
