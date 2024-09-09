@@ -19,6 +19,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeMirror;
 import java.util.List;
+import java.util.Objects;
 
 import static grapefruit.command.codegen.Naming.ACTION_METHOD_SUFFIX;
 import static grapefruit.command.codegen.Naming.ARGUMENTS_METHOD_SUFFIX;
@@ -97,7 +98,7 @@ public class CommandGenerator implements Generator<CodeBlock> {
         context.importStatic(Command.class, "wrap");
 
         return CodeBlock.of(
-                "wrap($L, $L, this::$L)",
+                "wrap($L(), $L, this::$L)",
                 ARGUMENTS_METHOD_SUFFIX.apply(this.method),
                 generateCommandSpec(),
                 ACTION_METHOD_SUFFIX.apply(this.method)
@@ -111,6 +112,7 @@ public class CommandGenerator implements Generator<CodeBlock> {
                 .indent()
                 .add(parameters.stream()
                         .map(ParameterGenerator.Result::initializer)
+                        .filter(Objects::nonNull)
                         .collect(CodeBlock.joining(",\n")))
                 .unindent()
                 .add("\n)")
@@ -120,8 +122,8 @@ public class CommandGenerator implements Generator<CodeBlock> {
         return MethodSpec.methodBuilder(ARGUMENTS_METHOD_SUFFIX.apply(this.method))
                 .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
                 .returns(COMMAND_ARG_LIST)
-                .addCode(initializer)
-                .addStatement("return $L", RESULT)
+                .addStatement(initializer)
+                .addStatement(CodeBlock.of("return $L", RESULT))
                 .build();
     }
 
@@ -129,7 +131,7 @@ public class CommandGenerator implements Generator<CodeBlock> {
     private MethodSpec generateActionMethod(List<ParameterGenerator.Result> parameters) {
         // Generate code block calling the original command method
         CodeBlock call = CodeBlock.builder()
-                .add("this.$L.$L(", REFERENCE_PARAM, this.method.getSimpleName())
+                .add("this.$L.$L(\n", REFERENCE_PARAM, this.method.getSimpleName())
                 .indent()
                 .add(parameters.stream()
                         .map(ParameterGenerator.Result::valueExtractor)
@@ -142,7 +144,7 @@ public class CommandGenerator implements Generator<CodeBlock> {
         return MethodSpec.methodBuilder(ACTION_METHOD_SUFFIX.apply(this.method))
                 .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
                 .addParameter(CommandContext.class, CONTEXT_PARAM)
-                .addCode(call)
+                .addStatement(call)
                 .build();
     }
 

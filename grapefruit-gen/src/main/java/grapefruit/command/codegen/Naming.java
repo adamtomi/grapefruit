@@ -6,7 +6,7 @@ import java.util.function.Function;
 
 public final class Naming {
     public static final Function<ExecutableElement, String> ACTION_METHOD_SUFFIX = method -> "%s$action".formatted(method.getSimpleName());
-    public static final Function<ExecutableElement, String> ARGUMENTS_METHOD_SUFFIX = method -> "%s$arguments";
+    public static final Function<ExecutableElement, String> ARGUMENTS_METHOD_SUFFIX = method -> "%s$arguments".formatted(method.getSimpleName());
     public static final String COMMANDS = "commands";
     public static final Function<TypeElement, String> CONTAINER_CLASS_SUFFIX = clazz -> "%s_Container".formatted(clazz.getSimpleName());
     public static final String CONTEXT_PARAM = "context";

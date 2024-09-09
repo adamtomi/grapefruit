@@ -117,14 +117,14 @@ public class ContainerGenerator implements Generator<JavaFile> {
     private MethodSpec generateConstructor() {
         return MethodSpec.constructorBuilder()
                 .addParameter(toTypeName(this.container), REFERENCE_PARAM)
-                .addCode("this.$L = requireNonNull($L, $S)", REFERENCE_PARAM, REFERENCE_PARAM, "reference cannot be null")
+                .addStatement("this.$L = requireNonNull($L, $S)", REFERENCE_PARAM, REFERENCE_PARAM, "reference cannot be null")
                 .build();
     }
 
     private MethodSpec generateCommandsMethod(List<CodeBlock> commands) {
         // Generate initializer that will hold the set of commands
         CodeBlock initializer = CodeBlock.builder()
-                .add("$T $L = $T.of(", COMMAND_SET, RESULT, Set.class)
+                .add("$T $L = $T.of(\n", COMMAND_SET, RESULT, Set.class)
                 .indent()
                 .add(commands.stream().collect(CodeBlock.joining(",\n")))
                 .unindent()
@@ -136,7 +136,7 @@ public class ContainerGenerator implements Generator<JavaFile> {
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .returns(COMMAND_SET)
-                .addCode(initializer)
+                .addStatement(initializer)
                 .addStatement("return $L", RESULT)
                 .build();
     }
