@@ -6,15 +6,6 @@
   corresponding argument mapper would get access to this data and would apply
   the same logic to the already mapped value.
 
-- Named mappers. This is simple, we can introduce a @MappedBy(String) annotation
-  which would change the #mapperKey of the command argument. Instead of using
-  Key.of(<ArgumentType>), the key would become Key.named(<ArgumentType>, <MapperName>).
-  This is simple so far, another thing to consider is that maybe this is not the
-  most convenient way. Maybe we need to allow annotations to be annotated with this
-  annotation, for instance: @Greedy itself would be annotated with @MappedBy("__greedy__"),
-  and so annotating a parameter with @Greedy and @MappedBy("__greedy__") would have
-  the same effect, except the first is a lot mor convenient.
-
 - @InjectedBy annotation. At the moment non-argument parameters are allowed, but only
   one per type. So if a command method has the following parameters: (String x, @Arg int y, @Arg int z),
   we assume that a value for x will be in the context store mapped to Key.of(String). This
@@ -48,9 +39,6 @@
 - CommandSpec builder system. Not yet sure if it's really necessary, but if @CommandDefinition ends up
   having more stuff on it, so will CommandSpec too, and at that point #of may not be enough.
 
-- Rewrite codegen module. Right now it's a bit barebones and if we'd like to have everything listed above,
-  it'll have handle a lot more. And also it's just messy right now.
-
 - Add more documentation.
 
 - Add tests.
@@ -65,11 +53,6 @@
   please use presence flags instead?), and perhaps a few other builtin java types (such types could
   be UUID, Duration, some form of Date (maybe the newer LocalDateTime thingy instead).
 
-- Update @Flag so that "name" and "shorthand" are optional. By default, name should the parameter name
-  and shorthand should be name.charAt(0).
-
-- @Arg has been updated, a new "name" field has been introduced. The argument descriptor in the codegen module
-  needs to be updated to reflect this.
 
 - Introduce description system. @CommandDefinition, @Arg, and @Flag annotations should have a "description"
   parameter ("" by default), and if a command syntax exception is thrown, these descriptions should be included
@@ -97,3 +80,6 @@
 
 - Returning a result from a command handler could be cool. Generate code so that if the annotated method's return type
   isn't void, we store the result in the correct command context mapped to COMMAND_RESULT_KEY or something.
+
+- [23:36:10 WARN]: com.tomushimano.lib.command.dispatcher.CommandInvocationException: java.lang.NullPointerException: Cannot invoke "java.lang.Integer.intValue()" because the return value of "com.tomushimano.lib.command.dispatcher.CommandContext.nullable(com.tomushimano.lib.command.util.key.Key)" is null
+  \_ Fix that!
