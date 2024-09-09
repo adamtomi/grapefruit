@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
  * Indicates that the argument is to be mapped by {@link StringArgumentMapper#greedy()}
  */
 @MappedBy(Greedy.NAME)
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.PARAMETER)
 public @interface Greedy {
     String NAME = "__greedy__";
