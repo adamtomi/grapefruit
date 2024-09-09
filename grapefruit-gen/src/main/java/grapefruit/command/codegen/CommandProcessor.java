@@ -6,8 +6,6 @@ import com.squareup.javapoet.JavaFile;
 import grapefruit.command.annotation.CommandDefinition;
 import grapefruit.command.codegen.generator.ContainerGenerator;
 import grapefruit.command.codegen.generator.GeneratorContext;
-import grapefruit.command.codegen.model.CommandDescriptor;
-import grapefruit.command.codegen.model.FactoryDescriptor;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;
@@ -32,30 +30,6 @@ public class CommandProcessor extends AbstractProcessor {
     @Override
     public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latestSupported();
-    }
-
-    // @Override
-    public boolean _process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        Set<? extends Element> commandMethods = roundEnv.getElementsAnnotatedWith(CommandDefinition.class);
-        Map<TypeElement, List<CommandDescriptor>> knownCommands = commandMethods.stream()
-                .map(CommandDescriptor::create)
-                .collect(groupingBy(CommandDescriptor::parent));
-
-        for (Map.Entry<TypeElement, List<CommandDescriptor>> entry : knownCommands.entrySet()) {
-            FactoryDescriptor descriptor = new FactoryDescriptor(entry.getKey(), entry.getValue(), getClass());
-            JavaFile file = descriptor.generateFile();
-
-            try {
-                file.writeTo(this.processingEnv.getFiler());
-            } catch (IOException ex) {
-                this.processingEnv.getMessager().printMessage(
-                        Diagnostic.Kind.ERROR,
-                        "Failed to write Java file to: '%s'".formatted(file)
-                );
-            }
-        }
-
-        return true;
     }
 
     @Override
