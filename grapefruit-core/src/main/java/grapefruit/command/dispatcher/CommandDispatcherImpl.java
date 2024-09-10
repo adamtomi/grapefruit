@@ -385,7 +385,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                 .stream()
                 .filter(x -> !context.contains(x.argument().key()))
                 .toList();
-
+        
         // Select first unseen argument. Required arguments take precedence over flags.
         BoundArgument<?, ?> firstUnseen = unseenRequireds.isEmpty()
                 ? unseenFlags.get(0)
@@ -432,29 +432,6 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
             // If the current argument starts with '-', we list flags as well
             if (arg.startsWith(SHORT_FLAG_PREFIX)) {
-                System.out.println("could be a flag group");
-                System.out.println("LENGTH: " + arg.length());
-                System.out.println("ARG: " + arg);
-
-                // See, if this is a flag group.
-                if (arg.length() > 1) { // This means that the argument isn't just '-' literally.
-                    System.out.println("length is ok");
-                    // Extract the first char after '-'
-                    char next = arg.charAt(1);
-                    System.out.println("NEXT: '%s'".formatted(next));
-                    // If it's alphabetic, this argument can be interpreted as a flag group,
-                    // so let's just try to complete it assuming it is.
-                    if (Character.isAlphabetic(next)) {
-                        System.out.println("It's alphabetic, fantastic!");
-                        System.out.println("flag group");
-                        unseenFlags.stream()
-                                .map(x -> x.argument().shorthand())
-                                .filter(x -> arg.indexOf(x) == -1) // Only want to suggest flags that aren't already present in the group
-                                .map(x -> "%s%s".formatted(arg, x))
-                                .forEach(base::add);
-                    }
-                }
-
                 base.addAll(formatFlags(unseenFlags));
             }
 
