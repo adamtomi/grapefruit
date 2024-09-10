@@ -1,6 +1,6 @@
 package grapefruit.command.argument;
 
-import grapefruit.command.argument.chain.BoundArgument;
+import grapefruit.command.argument.binding.BoundArgument;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.argument.modifier.ArgumentModifier;
 import grapefruit.command.util.key.Key;
@@ -52,6 +52,15 @@ public interface CommandArgument<T> {
     boolean isFlag();
 
     /**
+     * Casts this command argument to {@link FlagArgument},
+     * if possible.
+     *
+     * @return This cast to {@link FlagArgument}
+     * @see FlagArgument
+     */
+    FlagArgument<T> asFlag();
+
+    /**
      * Returns a set of modifiers associated with this
      * argument.
      *
@@ -72,5 +81,5 @@ public interface CommandArgument<T> {
      * @param mapper The argument mapper to bind to
      * @return The resulting {@link BoundArgument} instance
      */
-    BoundArgument<T, ?> bind(ArgumentMapper<T> mapper);
+    BoundArgument<T> bind(ArgumentMapper<T> mapper);
 }

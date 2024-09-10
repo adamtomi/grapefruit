@@ -1,7 +1,5 @@
 package grapefruit.command.argument;
 
-import grapefruit.command.argument.chain.BoundArgument;
-import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.util.key.Key;
 
 /**
@@ -57,8 +55,8 @@ public final class CommandArguments {
         }
 
         @Override
-        public BoundArgument<T, ?> bind(ArgumentMapper<T> mapper) {
-            return BoundArgument.arg(this, mapper);
+        public FlagArgument<T> asFlag() {
+            throw new UnsupportedOperationException("Attempted to cast a non-flag argument");
         }
 
         @Override
@@ -88,8 +86,8 @@ public final class CommandArguments {
         }
 
         @Override
-        public BoundArgument<T, ?> bind(ArgumentMapper<T> mapper) {
-            return BoundArgument.flag(this, mapper);
+        public FlagArgument<T> asFlag() {
+            return this;
         }
 
         @Override

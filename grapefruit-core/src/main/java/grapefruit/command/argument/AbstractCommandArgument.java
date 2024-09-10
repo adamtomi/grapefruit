@@ -1,5 +1,7 @@
 package grapefruit.command.argument;
 
+import grapefruit.command.argument.binding.BoundArgument;
+import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.util.key.Key;
 
 import static java.util.Objects.requireNonNull;
@@ -35,5 +37,10 @@ abstract class AbstractCommandArgument<T> implements CommandArgument<T> {
     @Override
     public boolean isFlag() {
         return this.isFlag;
+    }
+
+    @Override
+    public BoundArgument<T> bind(ArgumentMapper<T> mapper) {
+        return BoundArgument.of(this, mapper);
     }
 }

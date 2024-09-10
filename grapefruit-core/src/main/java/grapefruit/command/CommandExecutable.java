@@ -5,7 +5,6 @@ import grapefruit.command.dispatcher.CommandContext;
 /**
  * An executable part of a command.
  * @see Command#execute(CommandContext)
- * @see grapefruit.command.argument.chain.BoundArgument#execute(CommandContext)
  */
 @FunctionalInterface
 public interface CommandExecutable {

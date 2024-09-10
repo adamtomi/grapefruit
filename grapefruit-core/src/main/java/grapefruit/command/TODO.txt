@@ -59,9 +59,6 @@
   so that they can be printed to the user. Optionally, we might want to have description lookup/provider system,
   which could be used for the localization of descriptions.
 
-- Figure out whether ArgumentChain is still needed. Now that CommandInfo is a thing, we could just put
-  the two list of bound arguments onto it and simplify things a little bit.
-
 - Configurable "man" command or "--help -h -?" flags for printing command and argument descriptions as
   well as the correct command syntax.
 
@@ -84,6 +81,10 @@
 - [23:36:10 WARN]: com.tomushimano.lib.command.dispatcher.CommandInvocationException: java.lang.NullPointerException: Cannot invoke "java.lang.Integer.intValue()" because the return value of "com.tomushimano.lib.command.dispatcher.CommandContext.nullable(com.tomushimano.lib.command.util.key.Key)" is null
   \_ Fix that!
 
-- More consistent naming of argument times. Flags are fine, but required arguments are named inconsistently (standard, required, positional). We should stick to one.
+- More consistent naming of argument types. Flags are fine, but required arguments are named inconsistently (standard, required, positional). We should stick to one.
 
 - Codegen module: collectRelevantAnnotations (per parameter)
+
+- [code-gen]: See what happens, if nested classes have command methods in them. They probably work fine, but the container class will be
+  named after the original class's parent class, so if we have command methods in both the parent and nested class, the container names
+  will clash.

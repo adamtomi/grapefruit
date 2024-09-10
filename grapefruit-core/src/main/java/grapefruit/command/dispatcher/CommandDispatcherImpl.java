@@ -3,9 +3,7 @@ package grapefruit.command.dispatcher;
 import grapefruit.command.Command;
 import grapefruit.command.CommandException;
 import grapefruit.command.argument.CommandArgument;
-import grapefruit.command.argument.FlagArgument;
-import grapefruit.command.argument.chain.ArgumentChain;
-import grapefruit.command.argument.chain.BoundArgument;
+import grapefruit.command.argument.binding.BoundArgument;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.dispatcher.auth.CommandAuthorizationException;
 import grapefruit.command.dispatcher.auth.CommandAuthorizer;
@@ -13,6 +11,7 @@ import grapefruit.command.dispatcher.condition.CommandCondition;
 import grapefruit.command.dispatcher.condition.UnfulfilledConditionException;
 import grapefruit.command.dispatcher.config.DispatcherConfigurer;
 import grapefruit.command.dispatcher.input.StringReader;
+import grapefruit.command.dispatcher.input.StringReaderImpl;
 import grapefruit.command.dispatcher.syntax.CommandSyntaxException;
 import grapefruit.command.dispatcher.syntax.DuplicateFlagException;
 import grapefruit.command.dispatcher.tree.CommandGraph;
@@ -23,6 +22,7 @@ import grapefruit.command.util.key.Key;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -31,6 +31,7 @@ import static grapefruit.command.dispatcher.syntax.CommandSyntax.SHORT_FLAG_FORM
 import static grapefruit.command.dispatcher.syntax.CommandSyntax.SHORT_FLAG_PREFIX;
 import static grapefruit.command.util.StringUtil.startsWithIgnoreCase;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.partitioningBy;
 
 final class CommandDispatcherImpl implements CommandDispatcher {
     private final CommandGraph commandGraph = new CommandGraph();
@@ -91,8 +92,15 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         }
     }
 
+    // Gather the runtime information of a command
     private CommandInfo buildCommand(Command command) {
-        ArgumentChain argumentChain = createChain(command);
+        // Bind command arguments to argument mappers
+        Map<Boolean, List<BoundArgument<?>>> argumentBindings = command.arguments()
+                .stream()
+                .map(this::bindArgument)
+                .collect(partitioningBy(x -> x.argument().isFlag()));
+
+        // Collect command conditions
         List<CommandCondition> conditions = command.spec()
                 .conditions()
                 .stream()
@@ -100,41 +108,26 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                 .map(x -> x.orElseThrow(() -> new IllegalStateException("No condition was found for '%s'".formatted(x))))
                 .toList();
 
-        return new CommandInfo(command, argumentChain, conditions);
+        return new CommandInfo(command, argumentBindings.get(false), argumentBindings.get(true), conditions);
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    // TODO investigate this, not a fan of raw types.
-    /* Create an argument chain from a command */
-    private ArgumentChain createChain(Command command) {
-        List<BoundArgument.Positional<?>> positional = new ArrayList<>();
-        List<BoundArgument.Flag<?>> flags = new ArrayList<>();
-
-        for (CommandArgument<?> argument : command.arguments()) {
-            // Use #mapperKey instead of #key to extract mappers
-            Key<?> mapperKey = argument.mapperKey();
-
-            if (argument.isFlag()) {
-                flags.add((BoundArgument.Flag<?>) argument.bind(
-                        ((FlagArgument<?>) argument).isPresenceFlag()
-                                ? (ArgumentMapper) ArgumentMapper.constant(true)
-                                : needMapper((Key) mapperKey, argument)
-                ));
-            } else {
-                positional.add((BoundArgument.Positional<?>) argument.bind(needMapper((Key) mapperKey, argument)));
-            }
-        }
-
-        return ArgumentChain.create(positional, flags);
-    }
-
+    // This method exists to make working with generics less of a pain.
     @SuppressWarnings("unchecked")
-    private <T> ArgumentMapper<T> needMapper(Key<T> key, CommandArgument<T> argument) {
-        return (ArgumentMapper<T>) this.argumentMappers.get(key)
+    private <T> BoundArgument<T> bindArgument(CommandArgument<T> argument) {
+        /*
+         * Retrieve argument mapper. A correct mapper is assumed to be present
+         * in the registry, hence we throw an error if that turns out not to be
+         * the case. No mapper being present for this argument's mapper key would
+         * indicate an improper/incomplete dispatcher configurer, which is a user
+         * error.
+         */
+        ArgumentMapper<T> mapper = (ArgumentMapper<T>) this.argumentMappers.get(argument.mapperKey())
                 .orElseThrow(() -> new IllegalStateException("Could not find argument mapper matching '%s'. Requested by: '%s'".formatted(
-                        key,
-                        argument
+                        argument.mapperKey(), argument
                 )));
+
+        // Return resulting bound argument.
+        return argument.bind(mapper);
     }
 
     private CommandInfo requireInfo(Command command) {
@@ -148,7 +141,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         requireNonNull(context, "context cannot be null");
         requireNonNull(commandLine, "commandLine cannot be null");
         // Construct a new reader from user input
-        StringReader input = context.createReader(commandLine);
+        StringReader input = new StringReaderImpl(commandLine, context);
         // Find the command instance to execute
         CommandGraph.SearchResult search = this.commandGraph.search(input);
         if (search instanceof CommandGraph.SearchResult.Failure failure) throw failure.cause();
@@ -176,7 +169,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         }
 
         // Parse command arguments and store the results in the current context
-        ParseInfo parseInfo = parseArguments(context, input, command, commandInfo.argumentChain());
+        ParseInfo parseInfo = parseArguments(context, input, commandInfo);
         // Rethrow captured exception if it exists
         if (parseInfo.capturedException().isPresent()) {
             throw parseInfo.capturedException().orElseThrow();
@@ -186,15 +179,16 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         command.execute(context);
     }
 
-    private ParseInfo parseArguments(CommandContext context, StringReader input, Command command, ArgumentChain argumentChain) {
-        ParseInfo parseInfo = context.createParseInfo();
+    private ParseInfo parseArguments(CommandContext context, StringReader input, CommandInfo commandInfo) {
+        ParseInfo parseInfo = new ParseInfo();
+        Command command = commandInfo.command();
         try {
             String arg;
             while ((arg = input.peekSingle()) != null) {
                 parseInfo.reset();
                 parseInfo.input(arg);
                 // Attempt to parse "arg" into a group of flags
-                Optional<FlagGroup> flagGroup = FlagGroup.attemptParse(arg, argumentChain.flag());
+                Optional<FlagGroup> flagGroup = FlagGroup.attemptParse(arg, commandInfo.flags());
                 // Successfully parsed at least one flag
                 if (flagGroup.isPresent()) {
                     // Read a single argument from the input so that the flag argument's mapper
@@ -202,9 +196,18 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                     // process the --flagname input part).
                     input.readSingle();
                     // Process each flag in this group
-                    for (BoundArgument.Flag<?> flag : flagGroup.orElseThrow()) {
-                        FlagArgument<?> argument = flag.argument();
+                    for (BoundArgument<?> flag : flagGroup.orElseThrow()) {
+                        CommandArgument<?> argument = flag.argument();
                         parseInfo.argument(flag);
+                        // TODO I think we can safely remove this (thank fuck). It is always set to true, if
+                        // we're dealing with a flag, which means that in this#suggestions, the
+                        /*
+                         * if (isFlag) {
+                         *   if (suggestFlagValue && suggestNext) {}
+                         * }
+                         */
+                        // is technically if (isFlag) { if (true && suggestNext) }, so this is
+                        // entirely pointless
                         parseInfo.suggestFlagValue(true);
 
                         if (context.contains(argument.key())) {
@@ -212,19 +215,19 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                             throw new DuplicateFlagException(argument.name());
                         }
 
-                        flag.execute(context);
+                        flag.consume(context, input);
                     }
 
                 } else {
                     // Attempt to find the first unconsumed positional command argument
-                    BoundArgument.Positional<?> firstPositional = argumentChain.positional()
+                    BoundArgument<?> firstPositional = commandInfo.arguments()
                             .stream()
                             .filter(x -> !context.contains(x.argument().key()))
                             .findFirst()
                             .orElseThrow(() -> CommandSyntaxException.from(input, command, CommandSyntaxException.Reason.TOO_MANY_ARGUMENTS));
 
                     parseInfo.argument(firstPositional);
-                    firstPositional.execute(context);
+                    firstPositional.consume(context, input);
                 }
             }
 
@@ -253,7 +256,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         requireNonNull(context, "context cannot be null");
         requireNonNull(commandLine, "commandLine cannot be null");
         // Construct a new reader from user input
-        StringReader input = context.createReader(commandLine);
+        StringReader input = new StringReaderImpl(commandLine, context);
         // Find the command instance to create suggestions for
         CommandGraph.SearchResult searchResult = this.commandGraph.search(input);
 
@@ -269,26 +272,18 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         // Command can safely be extracted
         Command command = ((CommandGraph.SearchResult.Success) searchResult).command();
         // Retrieve argument chain
-        ArgumentChain argumentChain = requireInfo(command).argumentChain();
+        CommandInfo commandInfo = requireInfo(command);
 
         // Parse command
-        ParseInfo parseInfo = parseArguments(context, input, command, argumentChain);
-        /*if (parseInfo.capturedException().isEmpty()) {
-            // If we successfully process every single argument, the
-            // command is complete, we don't need to suggest anything else.
-            return List.of();
-        } else {
-            // Return a list of suggestions based on the parse result.
-            return suggestions(context, parseInfo, input, argumentChain);
-        }*/
-        return suggestions(context, parseInfo, input, argumentChain);
+        ParseInfo parseInfo = parseArguments(context, input, commandInfo);
+        return suggestions(context, parseInfo, input, commandInfo);
     }
 
     private List<String> suggestions(
             CommandContext context,
             ParseInfo parseInfo,
             StringReader input,
-            ArgumentChain argumentChain
+            CommandInfo commandInfo
     ) {
         System.out.println("------------- SUGGESTIONS ------------------");
         // First, attempt to read the remaining arguments.
@@ -309,17 +304,17 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         System.out.println("suggestNext: " + suggestNext);
 
         // Collect unseen required and flag arguments
-        List<BoundArgument.Positional<?>> unseenRequireds = argumentChain.positional()
+        List<BoundArgument<?>> unseenRequireds = commandInfo.arguments()
                 .stream()
                 .filter(x -> !context.contains(x.argument().key()))
                 .toList();
-        List<BoundArgument.Flag<?>> unseenFlags = argumentChain.flag()
+        List<BoundArgument<?>> unseenFlags = commandInfo.flags()
                 .stream()
                 .filter(x -> !context.contains(x.argument().key()))
                 .toList();
 
         // Select first unseen argument. Required arguments take precedence over flags.
-        BoundArgument<?, ?> firstUnseen = unseenRequireds.isEmpty()
+        BoundArgument<?> firstUnseen = unseenRequireds.isEmpty()
                 ? unseenFlags.get(0)
                 : unseenRequireds.get(0);
 
@@ -332,7 +327,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
          * otherwise prefer that over firstUnseen, if it's present.
          */
 
-        BoundArgument<?, ?> argument = suggestNext
+        BoundArgument<?> argument = suggestNext
                 ? firstUnseen
                 : parseInfo.argument().orElse(firstUnseen);
 
@@ -344,34 +339,28 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         // Accumulate suggestions into this list
         List<String> base = new ArrayList<>();
 
-        if (argument instanceof BoundArgument.Flag<?>) {
+        if (argument.argument().isFlag()) {
             System.out.println("is flag");
             if (parseInfo.suggestFlagValue() && suggestNext) {
                 System.out.println("suggesting flag values (if possible)");
-                // return argument.mapper().listSuggestions(context, arg);
                 base.addAll(argument.mapper().listSuggestions(context, arg));
             } else {
                 System.out.println("suggest flag names");
-                // Create mutable copy
-                // List<String> base =  new ArrayList<>(formatFlags(unseenFlags));
                 base.addAll(formatFlags(unseenFlags));
                 // Flag shorthand is used
                 if (arg.length() > 1 && Character.isAlphabetic(arg.charAt(1))) {
                     System.out.println("looks like a shorthand was used, completing flag group...");
                     // Start completing a flag group
                     unseenFlags.stream()
-                            .map(x -> x.argument().shorthand())
+                            .map(x -> x.argument().asFlag().shorthand())
                             .filter(x -> arg.indexOf(x) == -1) // Only want to suggest flags that aren't already present in the group
                             .map(x -> "%s%s".formatted(arg, x))
                             .forEach(base::add);
                 }
 
-                // return base;
             }
         } else {
             System.out.println("not a flag argument");
-            // Make a mutable copy of the list
-            // List<String> base = new ArrayList<>(argument.mapper().listSuggestions(context, arg));
             base.addAll(argument.mapper().listSuggestions(context, arg));
 
             // If the current argument starts with '-', we list flags as well
@@ -389,9 +378,10 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         return filtered;
     }
 
-    private List<String> formatFlags(Collection<BoundArgument.Flag<?>> flags) {
+    private List<String> formatFlags(Collection<BoundArgument<?>> flags) {
         return flags.stream()
                 .map(BoundArgument::argument)
+                .map(CommandArgument::asFlag)
                 .map(x -> List.of(SHORT_FLAG_FORMAT.apply(x.shorthand()), LONG_FLAG_FORMAT.apply(x.name())))
                 .flatMap(Collection::stream)
                 .toList();

@@ -1,7 +1,7 @@
 package grapefruit.command.dispatcher;
 
 import grapefruit.command.CommandException;
-import grapefruit.command.argument.chain.BoundArgument;
+import grapefruit.command.argument.binding.BoundArgument;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -15,7 +15,7 @@ public class ParseInfo {
     /* The input currently being consumed */
     private @Nullable String input;
     /* The argument that couldn't be parsed */
-    private @Nullable BoundArgument<?, ?> argument;
+    private @Nullable BoundArgument<?> argument;
     /*
      * Stores whether the name of the flag - that was being
      * processed - was consumed successfully (meaning that
@@ -42,11 +42,11 @@ public class ParseInfo {
         this.input = input;
     }
 
-    public Optional<BoundArgument<?, ?>> argument() {
+    public Optional<BoundArgument<?>> argument() {
         return Optional.ofNullable(this.argument);
     }
 
-    public void argument(BoundArgument<?, ?> argument) {
+    public void argument(BoundArgument<?> argument) {
         this.argument = argument;
     }
 
