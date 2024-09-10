@@ -85,3 +85,5 @@
   \_ Fix that!
 
 - More consistent naming of argument times. Flags are fine, but required arguments are named inconsistently (standard, required, positional). We should stick to one.
+
+- Codegen module: collectRelevantAnnotations (per parameter)
