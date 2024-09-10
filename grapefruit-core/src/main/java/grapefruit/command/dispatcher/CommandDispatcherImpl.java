@@ -283,7 +283,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     }
 
     // TODO Proper flag group suggestions
-    private List<String> suggestions(
+    private List<String> _suggestions(
             CommandContext context,
             ParseInfo parseInfo,
             StringReader input,
@@ -347,6 +347,114 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
             // If the current argument starts with '-', we list flags as well
             if (arg.startsWith(SHORT_FLAG_PREFIX)) {
+                base.addAll(formatFlags(unseenFlags));
+            }
+
+            return base;
+        }
+    }
+
+    private List<String> suggestions(
+            CommandContext context,
+            ParseInfo parseInfo,
+            StringReader input,
+            ArgumentChain argumentChain
+    ) {
+        // First, attempt to read the remaining arguments.
+        String remaining;
+        try {
+            remaining = input.readRemaining();
+        } catch (CommandException ex) {
+            // There's nothing to read, default to empty string
+            remaining = "";
+        }
+
+        /*
+         * Indicates whether to suggest the next command argument instead of
+         * ParseInfo#argument. This will only evaluate to true, if remaining
+         * is whitespace, but not an empty string.
+         */
+        boolean suggestNext = remaining.isBlank() && !remaining.isEmpty();
+
+        // Collect unseen required and flag arguments
+        List<BoundArgument.Positional<?>> unseenRequireds = argumentChain.positional()
+                .stream()
+                .filter(x -> !context.contains(x.argument().key()))
+                .toList();
+        List<BoundArgument.Flag<?>> unseenFlags = argumentChain.flag()
+                .stream()
+                .filter(x -> !context.contains(x.argument().key()))
+                .toList();
+
+        // Select first unseen argument. Required arguments take precedence over flags.
+        BoundArgument<?, ?> firstUnseen = unseenRequireds.isEmpty()
+                ? unseenFlags.get(0)
+                : unseenRequireds.get(0);
+
+        /*
+         * Select argument to create suggestions for. If suggestNext evaluates
+         * to true (explained above), we don't care about the ParseInfo#argument,
+         * otherwise prefer that over firstUnseen, if it's present.
+         */
+        BoundArgument<?, ?> argument = suggestNext
+                ? firstUnseen
+                : parseInfo.argument().orElse(firstUnseen);
+
+        // The user input to create suggestions based on.
+        String arg = suggestNext ? remaining : parseInfo.input().orElse(remaining);
+
+        if (argument instanceof BoundArgument.Flag<?>) {
+            System.out.println("is flag");
+            if (parseInfo.suggestFlagValue() && suggestNext) {
+                System.out.println("suggesting flag values (if possible)");
+                return argument.mapper().listSuggestions(context, arg);
+            } else {
+                System.out.println("suggest flag names");
+                // Create mutable copy
+                List<String> base =  new ArrayList<>(formatFlags(unseenFlags));
+                // Flag shorthand is used
+                if (Character.isAlphabetic(arg.charAt(1))) {
+                    System.out.println("looks like a shorthand was used, completing flag group...");
+                    // Start completing a flag group
+                    unseenFlags.stream()
+                            .map(x -> x.argument().shorthand())
+                            .filter(x -> arg.indexOf(x) == -1) // Only want to suggest flags that aren't already present in the group
+                            .map(x -> "%s%s".formatted(arg, x))
+                            .forEach(base::add);
+                }
+
+                return base;
+            }
+        } else {
+            System.out.println("not a flag argument");
+            // Make a mutable copy of the list
+            List<String> base = new ArrayList<>(argument.mapper().listSuggestions(context, arg));
+
+            // If the current argument starts with '-', we list flags as well
+            if (arg.startsWith(SHORT_FLAG_PREFIX)) {
+                System.out.println("could be a flag group");
+                System.out.println("LENGTH: " + arg.length());
+                System.out.println("ARG: " + arg);
+
+                // See, if this is a flag group.
+                if (arg.length() > 1) { // This means that the argument isn't just '-' literally.
+                    System.out.println("length is ok");
+                    // Extract the first char after '-'
+                    char next = arg.charAt(1);
+                    System.out.println("NEXT: '%s'".formatted(next));
+                    // If it's alphabetic, this argument can be interpreted as a flag group,
+                    // so let's just try to complete it assuming it is.
+                    if (Character.isAlphabetic(next)) {
+                        System.out.println("It's alphabetic, fantastic!");
+                        System.out.println("flag group");
+                        unseenFlags.stream()
+                                .map(x -> x.argument().shorthand())
+                                .filter(x -> arg.indexOf(x) == -1) // Only want to suggest flags that aren't already present in the group
+                                .map(x -> "%s%s".formatted(arg, x))
+                                .forEach(base::add);
+                    }
+                }
+
                 base.addAll(formatFlags(unseenFlags));
             }
 
