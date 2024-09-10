@@ -224,14 +224,6 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                     parseInfo.argument(firstPositional);
                     firstPositional.execute(context);
                 }
-
-                /*
-                 * Since we got to this point, we can safely assume that there were
-                 * no errors during the parsing of arguments in this iteration. Thus
-                 * we can call reset() and fill in the result in with new data during
-                 * the next iteration.
-                 */
-                parseInfo.reset();
             }
 
             /*
@@ -279,14 +271,15 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
         // Parse command
         ParseInfo parseInfo = parseArguments(context, input, command, argumentChain);
-        if (parseInfo.capturedException().isEmpty()) {
+        /*if (parseInfo.capturedException().isEmpty()) {
             // If we successfully process every single argument, the
             // command is complete, we don't need to suggest anything else.
             return List.of();
         } else {
             // Return a list of suggestions based on the parse result.
             return suggestions(context, parseInfo, input, argumentChain);
-        }
+        }*/
+        return suggestions(context, parseInfo, input, argumentChain);
     }
 
     // TODO Proper flag group suggestions
@@ -314,23 +307,33 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         try {
             // Attempt to read the remaining arguments
             remaining = input.readRemaining();
+            System.out.println("Remaining is: '%s'".formatted(remaining));
         } catch (CommandException ex) {
+            System.out.println("no remaining string");
             remaining = "";
         }
 
-        String arg = parseInfo.input().orElse(remaining);
+        String arg0 = parseInfo.input().orElse(remaining);
+        System.out.println("Arg is: '%s'".formatted(arg0));
 
-        if (arg.isEmpty()) {
+        if (arg0.isEmpty()) {
+            System.out.println("Returning empty list, can't do anything else.");
             // The space hasn't been pressed yet. So the input is something like:
             // 'some route arg0 arg1'. Don't suggest anything.
             return List.of();
         }
 
+        String arg = remaining.isBlank() ? remaining : arg0;
         BoundArgument<?, ?> firstUnseen = unseenPositional.isEmpty()
                 ? unseenFlags.get(0)
                 : unseenPositional.get(0);
 
-        BoundArgument<?, ?> argToParse = parseInfo.argument().orElse(firstUnseen);
+        BoundArgument<?, ?> argToParse = parseInfo.argument()
+                .filter(x -> arg.isBlank() && !arg.isEmpty() ? x.equals(firstUnseen) : true)
+                .orElse(firstUnseen);
+
+        System.out.println("unseen: " + firstUnseen.argument());
+        System.out.println("final: " + argToParse.argument());
 
         if (argToParse instanceof BoundArgument.Flag<?>) {
             if (!parseInfo.suggestFlagValue()) {
