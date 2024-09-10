@@ -191,6 +191,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         try {
             String arg;
             while ((arg = input.peekSingle()) != null) {
+                parseInfo.reset();
                 parseInfo.input(arg);
                 // Attempt to parse "arg" into a group of flags
                 Optional<FlagGroup> flagGroup = FlagGroup.attemptParse(arg, argumentChain.flag());
@@ -289,6 +290,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
             StringReader input,
             ArgumentChain argumentChain
     ) {
+        System.out.println("------------- SUGGESTIONS ------------------");
         // First, attempt to read the remaining arguments.
         String remaining;
         try {
@@ -304,6 +306,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
          * is whitespace, but not an empty string.
          */
         boolean suggestNext = remaining.isBlank() && !remaining.isEmpty();
+        System.out.println("suggestNext: " + suggestNext);
 
         // Collect unseen required and flag arguments
         List<BoundArgument.Positional<?>> unseenRequireds = argumentChain.positional()
@@ -320,6 +323,8 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                 ? unseenFlags.get(0)
                 : unseenRequireds.get(0);
 
+        System.out.println("firstUnseen: " + firstUnseen.argument());
+
         // TODO this could fail, if all argument have been consumed successfully (-> suggest for parameter.argument() is present)
         /*
          * Select argument to create suggestions for. If suggestNext evaluates
@@ -330,6 +335,8 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         BoundArgument<?, ?> argument = suggestNext
                 ? firstUnseen
                 : parseInfo.argument().orElse(firstUnseen);
+
+        System.out.println("argument: " + argument.argument());
 
         // The user input to create suggestions based on.
         String arg = suggestNext ? remaining : parseInfo.input().orElse(remaining);
