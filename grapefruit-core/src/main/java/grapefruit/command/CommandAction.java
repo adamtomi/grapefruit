@@ -4,10 +4,10 @@ import grapefruit.command.dispatcher.CommandContext;
 
 /**
  * An executable part of a command.
- * @see Command#execute(CommandContext)
+ * @see Command#run(CommandContext)
  */
 @FunctionalInterface
-public interface CommandExecutable {
+public interface CommandAction {
 
     /**
      * Executes this part of the comand chain using the
@@ -17,5 +17,5 @@ public interface CommandExecutable {
      * @throws CommandException If anything goes wrong during
      * the execution
      */
-    void execute(CommandContext context) throws CommandException;
+    void run(CommandContext context) throws CommandException;
 }

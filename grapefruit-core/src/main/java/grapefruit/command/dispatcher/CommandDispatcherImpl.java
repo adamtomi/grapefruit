@@ -176,7 +176,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         }
 
         // Finally, invoke the command
-        command.execute(context);
+        command.run(context);
     }
 
     private ParseInfo parseArguments(CommandContext context, StringReader input, CommandInfo commandInfo) {

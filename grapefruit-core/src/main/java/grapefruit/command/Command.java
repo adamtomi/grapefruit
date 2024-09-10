@@ -18,11 +18,11 @@ import java.util.List;
  * </ul>
  *
  * The code generator module will take command methods annotated with {@link grapefruit.command.annotation.CommandDefinition}
- * and through the use of {@link Command#wrap(List, CommandSpec, CommandExecutable)} will generate
+ * and through the use of {@link Command#wrap(List, CommandSpec, CommandAction)} will generate
  * executable command instances. These commands can be invoked without relying on the use of
  * reflection, increasing performance.
  */
-public interface Command extends CommandExecutable {
+public interface Command extends CommandAction {
 
     /**
      * Returns an immutable list view of the arguments
@@ -49,7 +49,7 @@ public interface Command extends CommandExecutable {
      * @param action The action to execute
      * @return The created command
      */
-    static Command wrap(List<CommandArgument<?>> arguments, CommandSpec spec, CommandExecutable action) {
+    static Command wrap(List<CommandArgument<?>> arguments, CommandSpec spec, CommandAction action) {
         return new Command() {
             @Override
             public List<CommandArgument<?>> arguments() {
@@ -62,9 +62,9 @@ public interface Command extends CommandExecutable {
             }
 
             @Override
-            public void execute(CommandContext context) throws CommandException {
+            public void run(CommandContext context) throws CommandException {
                 try {
-                    action.execute(context);
+                    action.run(context);
                 } catch (CommandException ex) {
                     throw ex;
                 } catch (Throwable ex) {
