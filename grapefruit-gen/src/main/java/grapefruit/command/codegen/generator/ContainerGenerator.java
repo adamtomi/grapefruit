@@ -122,13 +122,13 @@ public class ContainerGenerator implements Generator<JavaFile> {
     }
 
     private MethodSpec generateCommandsMethod(List<CodeBlock> commands) {
-        // Generate initializer that will hold the set of commands
+        // Generate return block that will hold the set of commands
         CodeBlock initializer = CodeBlock.builder()
-                .add("$T $L = $T.of(\n", COMMAND_SET, RESULT, Set.class)
+                .add("return $T.of(", Set.class)
                 .indent()
                 .add(commands.stream().collect(CodeBlock.joining(",\n")))
                 .unindent()
-                .add("\n)")
+                .add(")")
                 .build();
 
         // Generate the actual method
@@ -137,7 +137,6 @@ public class ContainerGenerator implements Generator<JavaFile> {
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .returns(COMMAND_SET)
                 .addStatement(initializer)
-                .addStatement("return $L", RESULT)
                 .build();
     }
 

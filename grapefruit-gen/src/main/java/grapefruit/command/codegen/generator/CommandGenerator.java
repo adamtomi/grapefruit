@@ -107,23 +107,22 @@ public class CommandGenerator implements Generator<CodeBlock> {
 
     private MethodSpec generateArgumentsMethod(List<ParameterGenerator.Result> parameters) {
         // Build the actual code block holding the list of command arguments
-        CodeBlock initializer = CodeBlock.builder()
-                .add("$T $L = $T.of(\n", COMMAND_ARG_LIST, RESULT, List.class)
+        CodeBlock returnBlock = CodeBlock.builder()
+                .add("return $T.of(", List.class)
                 .indent()
                 .add(parameters.stream()
                         .map(ParameterGenerator.Result::initializer)
                         .filter(Objects::nonNull)
                         .collect(CodeBlock.joining(",\n")))
                 .unindent()
-                .add("\n)")
+                .add(")")
                 .build();
 
         // Build the method. This will be called by Command#wrap later.
         return MethodSpec.methodBuilder(ARGUMENTS_METHOD_SUFFIX.apply(this.method))
                 .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
                 .returns(COMMAND_ARG_LIST)
-                .addStatement(initializer)
-                .addStatement(CodeBlock.of("return $L", RESULT))
+                .addStatement(returnBlock)
                 .build();
     }
 
@@ -131,13 +130,13 @@ public class CommandGenerator implements Generator<CodeBlock> {
     private MethodSpec generateActionMethod(List<ParameterGenerator.Result> parameters) {
         // Generate code block calling the original command method
         CodeBlock call = CodeBlock.builder()
-                .add("this.$L.$L(\n", REFERENCE_PARAM, this.method.getSimpleName())
+                .add("this.$L.$L(", REFERENCE_PARAM, this.method.getSimpleName())
                 .indent()
                 .add(parameters.stream()
                         .map(ParameterGenerator.Result::valueExtractor)
                         .collect(CodeBlock.joining(",\n")))
                 .unindent()
-                .add("\n)")
+                .add(")")
                 .build();
 
         // Build the method. This will be passed to Command#wrap later.
