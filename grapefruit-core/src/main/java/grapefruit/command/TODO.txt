@@ -83,3 +83,5 @@
 
 - [23:36:10 WARN]: com.tomushimano.lib.command.dispatcher.CommandInvocationException: java.lang.NullPointerException: Cannot invoke "java.lang.Integer.intValue()" because the return value of "com.tomushimano.lib.command.dispatcher.CommandContext.nullable(com.tomushimano.lib.command.util.key.Key)" is null
   \_ Fix that!
+
+- More consistent naming of argument times. Flags are fine, but required arguments are named inconsistently (standard, required, positional). We should stick to one.
