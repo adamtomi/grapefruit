@@ -15,7 +15,6 @@ import grapefruit.command.util.key.Key;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
-
 import java.util.Optional;
 import java.util.stream.Collectors;
 

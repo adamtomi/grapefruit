@@ -15,7 +15,6 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
-
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -26,7 +25,6 @@ import static com.google.auto.common.MoreElements.getPackage;
 import static grapefruit.command.codegen.Naming.COMMANDS;
 import static grapefruit.command.codegen.Naming.CONTAINER_CLASS_SUFFIX;
 import static grapefruit.command.codegen.Naming.REFERENCE_PARAM;
-import static grapefruit.command.codegen.Naming.RESULT;
 import static grapefruit.command.codegen.util.FileHeader.LINE_1;
 import static grapefruit.command.codegen.util.FileHeader.LINE_2;
 import static grapefruit.command.codegen.util.FileHeader.LINE_3;

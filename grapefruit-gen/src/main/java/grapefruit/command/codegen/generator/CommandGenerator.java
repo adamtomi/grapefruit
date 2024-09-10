@@ -25,7 +25,6 @@ import static grapefruit.command.codegen.Naming.ACTION_METHOD_SUFFIX;
 import static grapefruit.command.codegen.Naming.ARGUMENTS_METHOD_SUFFIX;
 import static grapefruit.command.codegen.Naming.CONTEXT_PARAM;
 import static grapefruit.command.codegen.Naming.REFERENCE_PARAM;
-import static grapefruit.command.codegen.Naming.RESULT;
 import static grapefruit.command.codegen.util.AnnotationUtil.accessAnnotationValue;
 import static grapefruit.command.codegen.util.AnnotationUtil.accessAnnotationValueList;
 import static grapefruit.command.codegen.util.AnnotationUtil.assertAnnotation;
