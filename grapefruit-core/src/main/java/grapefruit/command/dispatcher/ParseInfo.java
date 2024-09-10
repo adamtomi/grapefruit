@@ -14,7 +14,7 @@ import java.util.Optional;
 public class ParseInfo {
     /* The input currently being consumed */
     private @Nullable String input;
-    /* The argument the couldn't be parsed */
+    /* The argument that couldn't be parsed */
     private @Nullable BoundArgument<?, ?> argument;
     /*
      * Stores whether the name of the flag - that was being
