@@ -312,6 +312,8 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         // The user input to create suggestions based on.
         String arg = suggestNext ? remaining : parseResult.lastInput().orElse(remaining);
 
+        if (arg.isEmpty()) return List.of();
+
         // Accumulate suggestions into this list
         List<String> base = new ArrayList<>();
 
