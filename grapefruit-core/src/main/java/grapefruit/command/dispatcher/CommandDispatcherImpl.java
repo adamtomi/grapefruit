@@ -171,9 +171,6 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         // Parse command arguments and store the results in the current context
         ParseResult parseResult = parseArguments(context, input, commandInfo);
         // Rethrow captured exception if it exists
-        /*if (parseResult.capturedException().isPresent()) {
-            throw parseResult.capturedException().orElseThrow();
-        }*/
         parseResult.rethrowCaptured();
 
         // Finally, invoke the command
@@ -181,14 +178,11 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     }
 
     private ParseResult parseArguments(CommandContext context, StringReader input, CommandInfo commandInfo) {
-        System.out.println("----------------- PARSE_ARGS ----------------- ");
         ParseResult.Builder builder = ParseResult.parsing(commandInfo);
         Command command = commandInfo.command();
         try {
             String arg;
             while ((arg = input.peekSingle()) != null) {
-                /*parseInfo.reset();
-                parseInfo.input(arg);*/
                 builder.consumed().consuming(arg);
                 // Attempt to parse "arg" into a group of flags
                 Optional<FlagGroup> flagGroup = FlagGroup.attemptParse(arg, commandInfo.flags());
@@ -201,18 +195,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                     // Process each flag in this group
                     for (BoundArgument<?> flag : flagGroup.orElseThrow()) {
                         CommandArgument<?> argument = flag.argument();
-                        // parseInfo.argument(flag);
                         builder.consuming(flag);
-                        // TODO I think we can safely remove this (thank fuck). It is always set to true, if
-                        // we're dealing with a flag, which means that in this#suggestions, the
-                        /*
-                         * if (isFlag) {
-                         *   if (suggestFlagValue && suggestNext) {}
-                         * }
-                         */
-                        // is technically if (isFlag) { if (true && suggestNext) }, so this is
-                        // entirely pointless
-                        // parseInfo.suggestFlagValue(true);
 
                         if (context.contains(argument.key())) {
                             // This means that the flag is already been set
@@ -230,8 +213,6 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                             .findFirst()
                             .orElseThrow(() -> CommandSyntaxException.from(input, command, CommandSyntaxException.Reason.TOO_MANY_ARGUMENTS));
 
-                    System.out.println(firstPositional);
-                    // parseInfo.argument(firstPositional);
                     builder.consuming(firstPositional);
                     firstPositional.consume(context, input);
                 }
@@ -251,7 +232,6 @@ final class CommandDispatcherImpl implements CommandDispatcher {
             // Check if we have consumed all arguments
             if (input.hasNext()) throw CommandSyntaxException.from(input, command, CommandSyntaxException.Reason.TOO_MANY_ARGUMENTS);
         } catch (CommandException ex) {
-            // parseInfo.capturedException(ex);
             builder.capture(ex);
         }
 
@@ -300,7 +280,6 @@ final class CommandDispatcherImpl implements CommandDispatcher {
             StringReader input,
             CommandInfo commandInfo
     ) {
-        System.out.println("------------- SUGGESTIONS ------------------");
         // First, attempt to read the remaining arguments.
         String remaining;
         try {
@@ -316,40 +295,20 @@ final class CommandDispatcherImpl implements CommandDispatcher {
          * is whitespace, but not an empty string.
          */
         boolean suggestNext = remaining.isBlank() && !remaining.isEmpty();
-        System.out.println("suggestNext: " + suggestNext);
 
-        // Collect unseen required and flag arguments
-        /*List<BoundArgument<?>> unseenRequireds = commandInfo.arguments()
-                .stream()
-                .filter(x -> !context.contains(x.argument().key()))
-                .toList();
-        List<BoundArgument<?>> unseenFlags = commandInfo.flags()
-                .stream()
-                .filter(x -> !context.contains(x.argument().key()))
-                .toList();*/
-
-        // Select first unseen argument. Required arguments take precedence over flags.
-        /*BoundArgument<?> firstUnseen = unseenRequireds.isEmpty()
-                ? unseenFlags.get(0)
-                : unseenRequireds.get(0);*/
+        // Select the first unseen argument. Required arguments take precedence over flags.
         BoundArgument<?> firstUnseen = parseResult.remaining().isEmpty()
                 ? parseResult.remainingFlags().get(0)
                 : parseResult.remaining().get(0);
 
-        System.out.println("firstUnseen: " + firstUnseen.argument());
-
-        // TODO this could fail, if all argument have been consumed successfully (-> suggest for parameter.argument() is present)
         /*
          * Select argument to create suggestions for. If suggestNext evaluates
          * to true (explained above), we don't care about the ParseInfo#argument,
          * otherwise prefer that over firstUnseen, if it's present.
          */
-
         BoundArgument<?> argument = suggestNext
                 ? firstUnseen
                 : parseResult.lastUnsuccessfulArgument().orElse(firstUnseen);
-
-        System.out.println("argument: " + argument.argument());
 
         // The user input to create suggestions based on.
         String arg = suggestNext ? remaining : parseResult.lastInput().orElse(remaining);
@@ -358,16 +317,12 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         List<String> base = new ArrayList<>();
 
         if (argument.argument().isFlag()) {
-            System.out.println("is flag");
             if (argument.argument().asFlag().isPresenceFlag() && suggestNext) {
-                System.out.println("suggesting flag values (if possible)");
                 base.addAll(argument.mapper().listSuggestions(context, arg));
             } else {
-                System.out.println("suggest flag names");
                 base.addAll(formatFlags(parseResult.remainingFlags()));
                 // Flag shorthand is used
                 if (arg.length() > 1 && Character.isAlphabetic(arg.charAt(1))) {
-                    System.out.println("looks like a shorthand was used, completing flag group...");
                     // Start completing a flag group
                     parseResult.remainingFlags().stream()
                             .map(x -> x.argument().asFlag().shorthand())
@@ -378,22 +333,17 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
             }
         } else {
-            System.out.println("not a flag argument");
             base.addAll(argument.mapper().listSuggestions(context, arg));
 
             // If the current argument starts with '-', we list flags as well
             if (arg.startsWith(SHORT_FLAG_PREFIX)) {
                 base.addAll(formatFlags(parseResult.remainingFlags()));
             }
-
-            // return base;
         }
 
-        List<String> filtered = base.stream()
+        return base.stream()
                 .filter(x -> startsWithIgnoreCase(x, arg.trim()))
                 .toList();
-        System.out.println("Normal: %d, filtered: %d".formatted(base.size(), filtered.size()));
-        return filtered;
     }
 
     private List<String> formatFlags(Collection<BoundArgument<?>> flags) {
