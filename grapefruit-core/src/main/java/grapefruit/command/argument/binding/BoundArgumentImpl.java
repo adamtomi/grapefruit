@@ -6,6 +6,8 @@ import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.StringReader;
 
+import java.util.Objects;
+
 import static java.util.Objects.requireNonNull;
 
 final class BoundArgumentImpl<T> implements BoundArgument<T> {
@@ -38,5 +40,18 @@ final class BoundArgumentImpl<T> implements BoundArgument<T> {
     @Override
     public String toString() {
         return "BoundArgumentImpl(argument=%s, mapper=%s)".formatted(this.argument, this.mapper);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BoundArgumentImpl<?> that = (BoundArgumentImpl<?>) o;
+        return Objects.equals(this.argument, that.argument) && Objects.equals(this.mapper, that.mapper);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.argument, this.mapper);
     }
 }
