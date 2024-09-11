@@ -37,6 +37,6 @@ final class BoundArgumentImpl<T> implements BoundArgument<T> {
 
     @Override
     public String toString() {
-        return "BoundArgument(argument=%s, mapper=%s)".formatted(this.argument, this.mapper);
+        return "BoundArgumentImpl(argument=%s, mapper=%s)".formatted(this.argument, this.mapper);
     }
 }
