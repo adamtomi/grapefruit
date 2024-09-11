@@ -271,14 +271,13 @@ final class CommandDispatcherImpl implements CommandDispatcher {
          */
         if (parseResult.fullyConsumed()) return List.of();
 
-        return suggestions(context, parseResult, input, commandInfo);
+        return suggestions(context, parseResult, input);
     }
 
     private List<String> suggestions(
             CommandContext context,
             ParseResult parseResult,
-            StringReader input,
-            CommandInfo commandInfo
+            StringReader input
     ) {
         // First, attempt to read the remaining arguments.
         String remaining;
