@@ -175,7 +175,7 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
 
         @Override
         protected CodeBlock generateInitializer() {
-            return CodeBlock.of("standard($S, $L, $L)", this.name, this.keyFieldName, generateMapperKey());
+            return CodeBlock.of("required($S, $L, $L)", this.name, this.keyFieldName, generateMapperKey());
         }
 
         @Override
@@ -185,7 +185,7 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
 
         @Override
         public Result generate(GeneratorContext context) {
-            context.importStatic(CommandArguments.class, "standard");
+            context.importStatic(CommandArguments.class, "required");
             return super.generate(context);
         }
     }

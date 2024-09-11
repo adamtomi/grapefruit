@@ -3,8 +3,7 @@ package grapefruit.command.argument;
 /**
  * A flag argument is a special type of {@link CommandArgument}.
  * Flags have a few key differences compared to regular
- * (also referred to as standard, required, or positional
- * arguments):
+ * (aka required) arguments:
  * <ul>
  *     <li>They are optional</li>
  *     <li>They are denoted by --{@link FlagArgument#name()} (long form) or -{@link FlagArgument#shorthand()} (short form)</li>

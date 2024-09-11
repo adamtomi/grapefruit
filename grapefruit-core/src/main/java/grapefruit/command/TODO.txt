@@ -53,7 +53,6 @@
   please use presence flags instead?), and perhaps a few other builtin java types (such types could
   be UUID, Duration, some form of Date (maybe the newer LocalDateTime thingy instead).
 
-
 - Introduce description system. @CommandDefinition, @Arg, and @Flag annotations should have a "description"
   parameter ("" by default), and if a command syntax exception is thrown, these descriptions should be included
   so that they can be printed to the user. Optionally, we might want to have description lookup/provider system,
@@ -72,16 +71,11 @@
   not using google's lib is that grapefruit wouldn't have to rely on such a big library for only such a small
   feature.
 
-- See if we can get rid of the whole function stuff in CommandFactory. Instead, we could have a CommandFactory#generate
-  that doesn't take arguments. Maybe.
-
 - Returning a result from a command handler could be cool. Generate code so that if the annotated method's return type
   isn't void, we store the result in the correct command context mapped to COMMAND_RESULT_KEY or something.
 
 - [23:36:10 WARN]: com.tomushimano.lib.command.dispatcher.CommandInvocationException: java.lang.NullPointerException: Cannot invoke "java.lang.Integer.intValue()" because the return value of "com.tomushimano.lib.command.dispatcher.CommandContext.nullable(com.tomushimano.lib.command.util.key.Key)" is null
   \_ Fix that!
-
-- More consistent naming of argument types. Flags are fine, but required arguments are named inconsistently (standard, required, positional). We should stick to one.
 
 - Codegen module: collectRelevantAnnotations (per parameter)
 

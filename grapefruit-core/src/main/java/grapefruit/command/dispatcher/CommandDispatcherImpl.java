@@ -206,20 +206,20 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                     }
 
                 } else {
-                    // Attempt to find the first unconsumed positional command argument
-                    BoundArgument<?> firstPositional = commandInfo.arguments()
+                    // Attempt to find the first unconsumed required command argument
+                    BoundArgument<?> firstRequired = commandInfo.arguments()
                             .stream()
                             .filter(x -> !context.contains(x.argument().key()))
                             .findFirst()
                             .orElseThrow(() -> CommandSyntaxException.from(input, command, CommandSyntaxException.Reason.TOO_MANY_ARGUMENTS));
 
-                    builder.consuming(firstPositional);
-                    firstPositional.consume(context, input);
+                    builder.consuming(firstRequired);
+                    firstRequired.consume(context, input);
                 }
             }
 
             /*
-             * Validate that all non-flag arguments have been parsed. The reason we
+             * Verify that all non-flag arguments have been parsed. The reason we
              * only check non-flags is that flags are optional, so omitting them
              * is perfectly valid.
              */

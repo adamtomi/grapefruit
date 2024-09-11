@@ -43,4 +43,52 @@ abstract class AbstractCommandArgument<T> implements CommandArgument<T> {
     public BoundArgument<T> bind(ArgumentMapper<T> mapper) {
         return BoundArgument.of(this, mapper);
     }
+
+    static final class Required<T> extends AbstractCommandArgument<T> {
+        Required(String name, Key<T> key, Key<T> mapperKey) {
+            super(name, key, mapperKey, false);
+        }
+
+        @Override
+        public FlagArgument<T> asFlag() {
+            throw new UnsupportedOperationException("Attempted to cast a non-flag argument");
+        }
+
+        @Override
+        public String toString() {
+            return "AbstractCommandArgument$Required(name=%s)".formatted(this.name);
+        }
+    }
+
+    static final class Flag<T> extends AbstractCommandArgument<T> implements FlagArgument<T> {
+        private final char shorthand;
+        private final boolean isPresenceFlag;
+
+        Flag(String name, Key<T> key, Key<T> mapperKey, char shorthand, boolean isPresenceFlag) {
+            super(name, key, mapperKey, true);
+            this.shorthand = shorthand;
+            this.isPresenceFlag = isPresenceFlag;
+        }
+
+        @Override
+        public char shorthand() {
+            return this.shorthand;
+        }
+
+        @Override
+        public boolean isPresenceFlag() {
+            return this.isPresenceFlag;
+        }
+
+        @Override
+        public FlagArgument<T> asFlag() {
+            return this;
+        }
+
+        @Override
+        public String toString() {
+            return "CommandArguments.Flag(name=%s, shorthand=%s, isPresenceFlag=%b)"
+                    .formatted(this.name, this.shorthand, this.isPresenceFlag);
+        }
+    }
 }
