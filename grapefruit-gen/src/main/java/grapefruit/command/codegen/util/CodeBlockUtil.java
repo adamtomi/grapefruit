@@ -1,10 +1,10 @@
 package grapefruit.command.codegen.util;
 
-import com.google.common.reflect.TypeToken;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import grapefruit.command.util.key.Key;
+import io.leangen.geantyref.TypeToken;
 
 public final class CodeBlockUtil {
     private CodeBlockUtil() {}
@@ -12,7 +12,7 @@ public final class CodeBlockUtil {
     public static CodeBlock typeToken(TypeName typeName) {
         String body = typeName instanceof ParameterizedTypeName
                 ? "new $T<$T>() {}"
-                : "$T.of($T.class)";
+                : "$T.get($T.class)";
         return CodeBlock.of(body, TypeToken.class, typeName);
     }
 

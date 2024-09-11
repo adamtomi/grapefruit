@@ -1,12 +1,12 @@
 package grapefruit.command.dispatcher.config;
 
-import com.google.common.reflect.TypeToken;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.dispatcher.CommandRegistrationHandler;
 import grapefruit.command.dispatcher.auth.CommandAuthorizer;
 import grapefruit.command.dispatcher.condition.CommandCondition;
 import grapefruit.command.util.Registry;
 import grapefruit.command.util.key.Key;
+import io.leangen.geantyref.TypeToken;
 
 import java.util.Arrays;
 import java.util.List;
@@ -126,7 +126,7 @@ public abstract class DispatcherConfigurer {
      * @return The new builer instance
      */
     protected <T> MappingBuilder<T> map(Class<T> type) {
-        return map(TypeToken.of(type));
+        return map(TypeToken.get(type));
     }
 
     /**

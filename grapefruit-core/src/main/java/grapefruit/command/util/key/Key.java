@@ -1,6 +1,6 @@
 package grapefruit.command.util.key;
 
-import com.google.common.reflect.TypeToken;
+import io.leangen.geantyref.TypeToken;
 
 public interface Key<T> {
 
@@ -12,7 +12,7 @@ public interface Key<T> {
     }
 
     static <T> Key<T> of(Class<T> type) {
-        return of(TypeToken.of(type));
+        return of(TypeToken.get(type));
     }
 
     static <T> Key<T> of(TypeToken<T> type) {
@@ -20,7 +20,7 @@ public interface Key<T> {
     }
 
     static <T> Key<T> named(Class<T> type, String name) {
-        return named(TypeToken.of(type), name);
+        return named(TypeToken.get(type), name);
     }
 
     static <T> Key<T> named(TypeToken<T> type, String name) {

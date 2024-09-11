@@ -11,15 +11,7 @@ repositories {
 
 dependencies {
     compileOnly("org.jetbrains:annotations:23.0.0")
-    implementation("com.google.guava:guava:31.0.1-jre") {
-        exclude("gson")
-        exclude(module = "error_prone_annotations")
-        exclude(module = "jsr305")
-        exclude(module = "failureaccess")
-        exclude(module = "listenablefuture")
-        exclude(module = "j2objc-annotation")
-        exclude(module = "checker-qual")
-    }
+    implementation("io.leangen.geantyref:geantyref:2.0.0")
 }
 
 

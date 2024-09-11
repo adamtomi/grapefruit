@@ -1,6 +1,6 @@
 package grapefruit.command.util.key;
 
-import com.google.common.reflect.TypeToken;
+import io.leangen.geantyref.TypeToken;
 
 import java.util.Objects;
 

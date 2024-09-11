@@ -64,13 +64,6 @@
 - Investigate if having a @Suggestions(String[]) annotation to provide custom suggestions for a command
   argument is a good idea. Maybe it is, maybe it isn't.
 
-- Investigate if it's possible to move to [Geantyref](https://github.com/leangen/geantyref) from google's
-  TypeToken system. An attempt was made in v1, but some bug (which I don't remember exactly anymore) prevented
-  it at that time. However, since we aren't invoking methods via reflection anymore, we only need a fraction
-  of what either type lib can offer, so we should be good with either of them (hopefully). The real benefit of
-  not using google's lib is that grapefruit wouldn't have to rely on such a big library for only such a small
-  feature.
-
 - Returning a result from a command handler could be cool. Generate code so that if the annotated method's return type
   isn't void, we store the result in the correct command context mapped to COMMAND_RESULT_KEY or something.
 

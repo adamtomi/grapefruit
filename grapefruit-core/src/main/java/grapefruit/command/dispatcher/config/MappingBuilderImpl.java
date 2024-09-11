@@ -1,8 +1,8 @@
 package grapefruit.command.dispatcher.config;
 
-import com.google.common.reflect.TypeToken;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.util.key.Key;
+import io.leangen.geantyref.TypeToken;
 
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
