@@ -1,7 +1,6 @@
 package grapefruit.command.dispatcher;
 
 import grapefruit.command.Command;
-import grapefruit.command.dispatcher.input.StringReader;
 import grapefruit.command.util.key.Key;
 
 /**
