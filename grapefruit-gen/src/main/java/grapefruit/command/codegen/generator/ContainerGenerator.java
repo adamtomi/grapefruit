@@ -64,7 +64,7 @@ public class ContainerGenerator implements Generator<JavaFile> {
 
     public static ContainerGenerator create(TypeElement container, List<ExecutableElement> commandMethods) {
         // Check element
-        PREDICATE.ensure(container);
+        PREDICATE.enforce(container);
 
         // Collect commands
         List<CommandGenerator> commands = commandMethods.stream()

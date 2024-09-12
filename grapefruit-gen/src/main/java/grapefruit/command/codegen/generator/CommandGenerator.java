@@ -67,7 +67,7 @@ public class CommandGenerator implements Generator<CodeBlock> {
 
     public static CommandGenerator create(ExecutableElement method) {
         // Check element
-        PREDICATE.ensure(method);
+        PREDICATE.enforce(method);
 
         // Collect parameters
         List<ParameterGenerator> parameters = method.getParameters()

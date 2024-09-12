@@ -27,7 +27,7 @@ public class ElementPredicate implements Predicate<Element> {
                 && element.getKind().equals(this.expectedKind);
     }
 
-    public void ensure(Element element) {
+    public void enforce(Element element) {
         if (!test(element)) {
             throw new IllegalStateException("Element '%s' is expected to be a(n) '%s', and cannot have the following modifiers: %s".formatted(
                     toTypeName(element),
