@@ -5,14 +5,14 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
-public interface ModifierPreset {
+public interface ModifierBlueprint {
 
     Key<?> key();
 
     @Nullable
     ContextualModifier.Context context();
 
-    static ModifierPreset of(Class<?> clazz, Map<String, Object> values) {
-        return new ModifierImpl.ModifierPresetImpl(Key.of(clazz), ContextualModifier.Context.of(values));
+    static ModifierBlueprint of(Class<?> clazz, Map<String, Object> values) {
+        return new ModifierImpl.ModifierBlueprintImpl(Key.of(clazz), ContextualModifier.Context.of(values));
     }
 }

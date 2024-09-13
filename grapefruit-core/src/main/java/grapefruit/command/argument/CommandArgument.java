@@ -3,7 +3,7 @@ package grapefruit.command.argument;
 import grapefruit.command.argument.binding.BoundArgument;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.argument.modifier.ModifierChain;
-import grapefruit.command.argument.modifier.ModifierPreset;
+import grapefruit.command.argument.modifier.ModifierBlueprint;
 import grapefruit.command.util.key.Key;
 
 import java.util.List;
@@ -66,9 +66,9 @@ public interface CommandArgument<T> {
      * argument.
      *
      * @return Modifiers associated with this argument
-     * @see ModifierPreset
+     * @see ModifierBlueprint
      */
-    default List<ModifierPreset> modifiers() {
+    default List<ModifierBlueprint> modifiers() {
         return List.of();
     }
 

@@ -17,9 +17,9 @@ final class ModifierImpl {
 
     static final class ModifierChainImpl<T> implements ModifierChain<T> {
         private final List<ArgumentModifier<T>> bakedModifiers = new ArrayList<>();
-        private final List<ModifierPreset> modifiers;
+        private final List<ModifierBlueprint> modifiers;
 
-        ModifierChainImpl(List<ModifierPreset> modifiers) {
+        ModifierChainImpl(List<ModifierBlueprint> modifiers) {
             this.modifiers = requireNonNull(modifiers, "modifiers cannot be null");
         }
 
@@ -32,9 +32,9 @@ final class ModifierImpl {
 
         @Override
         @SuppressWarnings("unchecked")
-        public void bake(Function<ModifierPreset, ArgumentModifier<?>> modifierAccess) {
+        public void bake(Function<ModifierBlueprint, ArgumentModifier<?>> modifierAccess) {
             if (!this.bakedModifiers.isEmpty()) return;
-            for (ModifierPreset modifier : this.modifiers) this.bakedModifiers.add((ArgumentModifier<T>) modifierAccess.apply(modifier));
+            for (ModifierBlueprint modifier : this.modifiers) this.bakedModifiers.add((ArgumentModifier<T>) modifierAccess.apply(modifier));
         }
     }
 
@@ -56,8 +56,8 @@ final class ModifierImpl {
         }
     }
 
-    record ModifierPresetImpl(Key<?> key, @Nullable ContextualModifier.Context context) implements ModifierPreset {
-        ModifierPresetImpl {
+    record ModifierBlueprintImpl(Key<?> key, @Nullable ContextualModifier.Context context) implements ModifierBlueprint {
+        ModifierBlueprintImpl {
             requireNonNull(key, "key cannot be null");
         }
     }
