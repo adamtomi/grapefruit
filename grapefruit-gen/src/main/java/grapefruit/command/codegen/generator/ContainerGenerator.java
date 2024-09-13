@@ -114,6 +114,7 @@ public class ContainerGenerator implements Generator<JavaFile> {
 
     private MethodSpec generateConstructor() {
         return MethodSpec.constructorBuilder()
+                .addModifiers(Modifier.PUBLIC)
                 .addParameter(toTypeName(this.container), REFERENCE_PARAM)
                 .addStatement("this.$L = requireNonNull($L, $S)", REFERENCE_PARAM, REFERENCE_PARAM, "reference cannot be null")
                 .build();
