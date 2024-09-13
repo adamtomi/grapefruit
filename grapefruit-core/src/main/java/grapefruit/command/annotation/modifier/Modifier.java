@@ -1,5 +1,8 @@
 package grapefruit.command.annotation.modifier;
 
+import grapefruit.command.argument.modifier.ArgumentModifier;
+import grapefruit.command.argument.modifier.ContextualModifier;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -7,4 +10,14 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.ANNOTATION_TYPE)
-public @interface Modifier {}
+public @interface Modifier {
+
+    Class<? extends ArgumentModifier<?>> value();
+
+    @Retention(RetentionPolicy.SOURCE)
+    @Target(ElementType.ANNOTATION_TYPE)
+    @interface Factory {
+
+        Class<? extends ContextualModifier.Factory<?>> value();
+    }
+}

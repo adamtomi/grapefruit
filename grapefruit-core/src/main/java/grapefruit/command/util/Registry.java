@@ -11,6 +11,8 @@ public interface Registry<K, V> {
 
     void store(K key, V value);
 
+    void storeEntries(Map<K, V> entries);
+
     Optional<V> get(K key);
 
     boolean has(K key);
@@ -38,12 +40,26 @@ public interface Registry<K, V> {
         public void store(K key, V value) {
             try {
                 this.lock.writeLock().lock();
-                V existing = this.internalMap.get(key);
-                V newValue = existing != null
-                        ? this.duplicateStrategy.handle(existing, value)
-                        : value;
+                internalStore(key, value);
+            } finally {
+                this.lock.writeLock().unlock();
+            }
+        }
 
-                this.internalMap.put(key, newValue);
+        private void internalStore(K key, V value) {
+            V existing = this.internalMap.get(key);
+            V newValue = existing != null
+                    ? this.duplicateStrategy.handle(existing, value)
+                    : value;
+
+            this.internalMap.put(key, newValue);
+        }
+
+        @Override
+        public void storeEntries(Map<K, V> entries) {
+            try {
+                this.lock.writeLock().lock();
+                entries.forEach(this::internalStore);
             } finally {
                 this.lock.writeLock().unlock();
             }

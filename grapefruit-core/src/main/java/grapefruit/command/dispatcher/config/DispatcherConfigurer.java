@@ -1,6 +1,8 @@
 package grapefruit.command.dispatcher.config;
 
 import grapefruit.command.argument.mapper.ArgumentMapper;
+import grapefruit.command.argument.modifier.ArgumentModifier;
+import grapefruit.command.argument.modifier.ContextualModifier;
 import grapefruit.command.dispatcher.CommandRegistrationHandler;
 import grapefruit.command.dispatcher.auth.CommandAuthorizer;
 import grapefruit.command.dispatcher.condition.CommandCondition;
@@ -9,11 +11,14 @@ import grapefruit.command.util.key.Key;
 import io.leangen.geantyref.TypeToken;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * This class is used to configure a {@link grapefruit.command.dispatcher.CommandDispatcher}.
@@ -21,6 +26,7 @@ import static java.util.Objects.requireNonNull;
 public abstract class DispatcherConfigurer {
     private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers = Registry.create(Registry.DuplicateStrategy.reject());
     private final Registry<Key<?>, CommandCondition> conditions = Registry.create(Registry.DuplicateStrategy.reject());
+    private final Registry<Key<?>, Function<ContextualModifier.Context, ArgumentModifier<?>>> modifiers = Registry.create(Registry.DuplicateStrategy.reject());
     private CommandAuthorizer authorizer = null;
     private Supplier<Executor> executor = null;
     private CommandRegistrationHandler registrationHandler = null;
@@ -62,6 +68,7 @@ public abstract class DispatcherConfigurer {
          */
         root.argumentMappers.merge(other.argumentMappers);
         root.conditions.merge(other.conditions);
+        root.modifiers.merge(other.modifiers);
         // Only copy properties that have been changed from their default values
         if (other.authorizer != null) root.authorizer = other.authorizer;
         if (other.executor != null) root.executor = other.executor;
@@ -137,10 +144,10 @@ public abstract class DispatcherConfigurer {
     }
 
     /**
-     * @see this#conditions(Iterable)
+     * @see this#conditions(Collection)
      */
     protected void conditions(CommandCondition... conditions) {
-        conditions(List.of(conditions));
+        conditions(Set.of(conditions));
     }
 
     /**
@@ -148,8 +155,43 @@ public abstract class DispatcherConfigurer {
      *
      * @param conditions The conditions to register
      */
-    protected void conditions(Iterable<CommandCondition> conditions) {
-        conditions.forEach(x -> this.conditions.store(Key.of(x.getClass()), x));
+    protected void conditions(Collection<CommandCondition> conditions) {
+        this.conditions.storeEntries(conditions.stream().collect(toMap(x -> Key.of(x.getClass()), Function.identity())));
+    }
+
+    /**
+     * @see this#modifiers(Collection)
+     */
+    protected void modifiers(ArgumentModifier<?>... modifiers) {
+        modifiers(Set.of(modifiers));
+    }
+
+    /**
+     * Registers the provided argument modifiers.
+     *
+     * @param modifiers The modifiers to register
+     */
+    protected void modifiers(Collection<ArgumentModifier<?>> modifiers) {
+        this.modifiers.storeEntries(modifiers.stream()
+                // In this instance, ctx will always be null
+                .collect(toMap(x -> Key.of(x.getClass()), x -> ctx -> x)));
+    }
+
+    /**
+     * @see this#modifierFactories(Collection)
+     */
+    protected void modifierFactories(ContextualModifier.Factory<?>... factories) {
+        modifierFactories(Set.of(factories));
+    }
+
+    /**
+     * Register the provided modifier factories.
+     *
+     * @param factories The factories to register
+     */
+    protected void modifierFactories(Collection<ContextualModifier.Factory<?>> factories) {
+        this.modifiers.storeEntries(factories.stream()
+                .collect(toMap(x -> Key.of(x.getClass()), x -> x::createFromContext)));
     }
 
     // Getters
@@ -188,9 +230,17 @@ public abstract class DispatcherConfigurer {
 
     /**
      * Returns the registered conditions.
-     * For internal user.
+     * For internal use.
      */
     public Registry<Key<?>, CommandCondition> conditions() {
         return this.conditions;
+    }
+
+    /**
+     * Returns the registered modifiers
+     * For internal use.
+     */
+    public Registry<Key<?>, Function<ContextualModifier.Context, ArgumentModifier<?>>> modifiers() {
+        return this.modifiers;
     }
 }

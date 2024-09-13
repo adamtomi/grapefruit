@@ -1,0 +1,36 @@
+package grapefruit.command.argument.modifier.standard;
+
+import grapefruit.command.argument.CommandArgumentException;
+import grapefruit.command.argument.modifier.ContextualModifier;
+import grapefruit.command.util.key.Key;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public final class RegexModifier implements ContextualModifier<String> {
+    private static final Key<String> REGEX_KEY = Key.named(String.class, "value");
+    private static final Key<Integer> FLAGS_KEY = Key.named(Integer.class, "flags");
+    private final Pattern pattern;
+
+    private RegexModifier(Context context) {
+        String value = context.require(REGEX_KEY);
+        int flags = context.require(FLAGS_KEY);
+        this.pattern = Pattern.compile(value, flags);
+    }
+
+    @Override
+    public String apply(String input) throws CommandArgumentException {
+        Matcher matcher = this.pattern.matcher(input);
+        if (!matcher.matches()) throw new CommandArgumentException(); // TODO proper error
+
+        return input;
+    }
+
+    public static final class Factory implements ContextualModifier.Factory<String> {
+
+        @Override
+        public ContextualModifier<String> createFromContext(Context context) {
+            return new RegexModifier(context);
+        }
+    }
+}

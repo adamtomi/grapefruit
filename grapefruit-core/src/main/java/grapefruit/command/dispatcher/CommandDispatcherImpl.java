@@ -5,6 +5,8 @@ import grapefruit.command.CommandException;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.argument.binding.BoundArgument;
 import grapefruit.command.argument.mapper.ArgumentMapper;
+import grapefruit.command.argument.modifier.ArgumentModifier;
+import grapefruit.command.argument.modifier.ContextualModifier;
 import grapefruit.command.dispatcher.auth.CommandAuthorizationException;
 import grapefruit.command.dispatcher.auth.CommandAuthorizer;
 import grapefruit.command.dispatcher.condition.CommandCondition;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static grapefruit.command.dispatcher.syntax.CommandSyntax.LONG_FLAG_FORMAT;
 import static grapefruit.command.dispatcher.syntax.CommandSyntax.SHORT_FLAG_FORMAT;
@@ -39,6 +42,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     private final CommandAuthorizer authorizer;
     private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers;
     private final Registry<Key<?>, CommandCondition> conditions;
+    private final Registry<Key<?>, Function<ContextualModifier.Context, ArgumentModifier<?>>> modifiers;
     private final CommandRegistrationHandler registrationHandler;
 
     CommandDispatcherImpl(DispatcherConfigurer configurer) {
@@ -46,6 +50,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         this.authorizer = requireNonNull(configurer.authorizer(), "authorizer cannot be null");
         this.argumentMappers = requireNonNull(configurer.argumentMappers(), "argumentMappers cannot be null");
         this.conditions = requireNonNull(configurer.conditions(), "conditions cannot be null");
+        this.modifiers = requireNonNull(configurer.modifiers(), "modifiers cannot be null");
         this.registrationHandler = requireNonNull(configurer.registrationHandler(), "registrationHandler cannot be null");
     }
 
@@ -97,6 +102,10 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         // Bind command arguments to argument mappers
         Map<Boolean, List<BoundArgument<?>>> argumentBindings = command.arguments()
                 .stream()
+                // Bake modifiers
+                .peek(x -> x.modifierChain().bake($ -> this.modifiers.get($.key()).orElseThrow(
+                        () -> new IllegalArgumentException("Could not find modifier factory for key '%s'".formatted($.key()))
+                ).apply($.context()))) // Bake modifiers
                 .map(this::bindArgument)
                 .collect(partitioningBy(x -> x.argument().isFlag()));
 

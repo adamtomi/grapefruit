@@ -32,7 +32,9 @@ final class BoundArgumentImpl<T> implements BoundArgument<T> {
     @Override
     public void consume(CommandContext context, StringReader input) throws CommandException {
         // Use the mapper we're bound to for mapping
-        T result = this.mapper.tryMap(context, input);
+        T resultFromMapper = this.mapper.tryMap(context, input);
+        // Apply modifiers
+        T result = this.argument.modifierChain().applyChain(resultFromMapper);
         // Store the result in the context
         context.put(this.argument.key(), result);
     }

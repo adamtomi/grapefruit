@@ -2,10 +2,11 @@ package grapefruit.command.argument;
 
 import grapefruit.command.argument.binding.BoundArgument;
 import grapefruit.command.argument.mapper.ArgumentMapper;
-import grapefruit.command.argument.modifier.ArgumentModifier;
+import grapefruit.command.argument.modifier.ModifierChain;
+import grapefruit.command.argument.modifier.ModifierPreset;
 import grapefruit.command.util.key.Key;
 
-import java.util.Set;
+import java.util.List;
 
 /**
  * Describes an argument of a command. {@link CommandArgument#name()} needs to be
@@ -65,10 +66,14 @@ public interface CommandArgument<T> {
      * argument.
      *
      * @return Modifiers associated with this argument
-     * @see ArgumentModifier
+     * @see ModifierPreset
      */
-    default Set<ArgumentModifier<T>> modifiers() {
-        return Set.of();
+    default List<ModifierPreset> modifiers() {
+        return List.of();
+    }
+
+    default ModifierChain<T> modifierChain() {
+        throw new UnsupportedOperationException();
     }
 
     /**
