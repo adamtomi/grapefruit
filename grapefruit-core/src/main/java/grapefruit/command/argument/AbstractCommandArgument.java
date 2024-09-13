@@ -87,7 +87,7 @@ abstract class AbstractCommandArgument<T> implements CommandArgument<T> {
 
         @Override
         public String toString() {
-            return "CommandArguments.Flag(name=%s, shorthand=%s, isPresenceFlag=%b)"
+            return "AbstractCommandArgument$Flag(name=%s, shorthand=%s, isPresenceFlag=%b)"
                     .formatted(this.name, this.shorthand, this.isPresenceFlag);
         }
     }
