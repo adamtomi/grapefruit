@@ -46,7 +46,6 @@ public class CommandContext {
      */
     public <T> T require(Key<T> key) {
         requireNonNull(key, "key cannot be null");
-        // TODO probably need to throw a different exception. Maybe
         return get(key).orElseThrow(() -> new IllegalArgumentException("Nothing is mapped to key '%s'".formatted(key)));
     }
 
