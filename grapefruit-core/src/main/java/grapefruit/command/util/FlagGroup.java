@@ -109,10 +109,6 @@ public class FlagGroup implements Iterable<BoundArgument<?>> {
                 .orElseThrow(exceptionFactory);
     }
 
-    public int size() {
-        return this.arguments.size();
-    }
-
     @Override
     public @NotNull Iterator<BoundArgument<?>> iterator() {
         return this.arguments.iterator();
