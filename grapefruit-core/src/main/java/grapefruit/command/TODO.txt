@@ -68,3 +68,6 @@
 - [code-gen]: See what happens, if nested classes have command methods in them. They probably work fine, but the container class will be
   named after the original class's parent class, so if we have command methods in both the parent and nested class, the container names
   will clash.
+
+- [core]: Rework command syntax system.
+- [core]: Get rid of some of the exception classes, if possible.
