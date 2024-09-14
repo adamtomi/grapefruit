@@ -1,6 +1,7 @@
 package grapefruit.command.dispatcher;
 
 import grapefruit.command.dispatcher.condition.CommandCondition;
+import grapefruit.command.dispatcher.tree.RouteNode;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -9,18 +10,18 @@ import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 
 final class CommandSpecImpl implements CommandSpec {
-    private final String route;
+    private final List<RouteNode> route;
     private final @Nullable String permission;
     private final List<Class<? extends CommandCondition>> conditions;
 
-    private CommandSpecImpl(String route, @Nullable String permission, List<Class<? extends CommandCondition>> conditions) {
+    private CommandSpecImpl(List<RouteNode> route, @Nullable String permission, List<Class<? extends CommandCondition>> conditions) {
         this.route = requireNonNull(route, "route cannot be null");
         this.permission = permission; // permission CAN be null
         this.conditions = requireNonNull(conditions, "conditions cannot be null");
     }
 
     @Override
-    public String route() {
+    public List<RouteNode> route() {
         return this.route;
     }
 
@@ -66,7 +67,7 @@ final class CommandSpecImpl implements CommandSpec {
 
         @Override
         public CommandSpec build() {
-            return new CommandSpecImpl(this.route, this.permission, this.conditions);
+            return new CommandSpecImpl(RouteNode.parse(this.route), this.permission, this.conditions);
         }
     }
 }

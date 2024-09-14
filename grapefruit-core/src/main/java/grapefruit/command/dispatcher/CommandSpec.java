@@ -2,6 +2,7 @@ package grapefruit.command.dispatcher;
 
 import grapefruit.command.annotation.CommandDefinition;
 import grapefruit.command.dispatcher.condition.CommandCondition;
+import grapefruit.command.dispatcher.tree.RouteNode;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -16,7 +17,7 @@ public interface CommandSpec {
     /**
      * @return The route of the command
      */
-    String route();
+    List<RouteNode> route();
 
     /**
      * @return The permission of the command

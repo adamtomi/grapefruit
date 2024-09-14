@@ -21,13 +21,6 @@
   instance as that's already created when CommandDispatcher#dispatch is called. The registration shall
   happen in DispatcherConfigurer as that's where every bit of configuration is done.
 
-- RoutePart should probably be extracted from CommandGraph and should live in CommandSpec instead.
-  This way we would only need to parse the route once, when the spec is created, the graph could
-  already access it when the #insert method is called, and could access it again when #delete
-  is called (right now it needs to parse the route again, which is suboptimal). This way registration
-  handlers could also operate on the processed route parts as opposed to the raw string
-  representation, which would simplify registering commands on third party platforms.
-
 - Add more documentation.
 
 - Add tests.

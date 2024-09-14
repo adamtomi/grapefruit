@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 import static java.util.Objects.requireNonNull;
 
 public class CommandNode {
+    private static final String ROOT_NAME = "__root__";
     private static final Pattern VALID_NAME_PATTERN = Pattern.compile("(\\w|-)+", Pattern.UNICODE_CHARACTER_CLASS);
     private final String primaryAlias;
     private final Set<String> aliases;
@@ -23,18 +24,21 @@ public class CommandNode {
     private final CommandNode parent;
     private Command command;
 
-    public CommandNode(String primaryAlias, Set<String> aliases, @Nullable CommandNode parent, @Nullable Command command) {
+    private CommandNode(String primaryAlias, Set<String> aliases, @Nullable CommandNode parent) {
         validate(primaryAlias);
         aliases.forEach(CommandNode::validate);
         this.primaryAlias = requireNonNull(primaryAlias, "primaryAlias cannot be null");
         // Create a mutable copy
         this.aliases = new HashSet<>(requireNonNull(aliases, "aliases cannot be null"));
         this.parent = parent;
-        this.command = command;
     }
 
-    public CommandNode(String primaryAlias, Set<String> aliases, @Nullable CommandNode parent) {
-        this(primaryAlias, aliases, parent, null);
+    public static CommandNode from(RouteNode routeNode, @Nullable CommandNode parent) {
+        return new CommandNode(routeNode.primaryAlias(), routeNode.secondaryAliases(), parent);
+    }
+
+    public static CommandNode root() {
+        return new CommandNode(ROOT_NAME, Set.of(), null);
     }
 
     private static void validate(String input) {

@@ -2,6 +2,7 @@ package grapefruit.command.dispatcher.syntax;
 
 import grapefruit.command.Command;
 import grapefruit.command.argument.CommandArgument;
+import grapefruit.command.dispatcher.tree.RouteNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +43,7 @@ public interface CommandSyntax {
      *
      * @return The route of the command
      */
-    String route();
+    List<RouteNode> route();
 
     /**
      * Returns a list of basic argument information.

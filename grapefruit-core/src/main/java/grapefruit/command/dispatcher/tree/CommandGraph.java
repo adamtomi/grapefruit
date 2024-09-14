@@ -6,18 +6,15 @@ import grapefruit.command.dispatcher.input.StringReader;
 
 import java.io.Serial;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
 public class CommandGraph {
     /* The internal command tree */
-    private final CommandNode rootNode = new CommandNode("__ROOT__", Set.of(), null);
+    private final CommandNode rootNode = CommandNode.root();
 
     /**
      * Inserts the given command into the command tree.
@@ -26,7 +23,7 @@ public class CommandGraph {
      */
     public void insert(Command command) {
         requireNonNull(command, "command cannot be null");
-        List<RoutePart> parts = parseRoute(command);
+        List<RouteNode> parts = command.spec().route();
         /*
          * A command handler cannot be registered directly on the
          * root node, at least one route part is required.
@@ -37,8 +34,8 @@ public class CommandGraph {
 
         CommandNode node = this.rootNode;
         // Loop through the route parts
-        for (Iterator<RoutePart> iter = parts.iterator(); iter.hasNext();) {
-            RoutePart part = iter.next();
+        for (Iterator<RouteNode> iter = parts.iterator(); iter.hasNext();) {
+            RouteNode part = iter.next();
             boolean isLast = !iter.hasNext();
 
             // Attempt to find an existing child node with the
@@ -46,7 +43,7 @@ public class CommandGraph {
             Optional<CommandNode> childCandidate = findChild(node, part);
             if (childCandidate.isEmpty()) {
                 // Create new child node
-                CommandNode temp = part.toNode(node);
+                CommandNode temp = CommandNode.from(part, node);
                 node.addChild(temp);
                 node = temp;
                 // Register command if we're at the end of the chain
@@ -63,7 +60,7 @@ public class CommandGraph {
                     throw new IllegalArgumentException("Node '%s' already exists in the command chain".formatted(childNode));
                 }
 
-                childNode.mergeAliases(part.aliases);
+                childNode.mergeAliases(part.secondaryAliases());
                 node = childNode;
             }
         }
@@ -76,13 +73,13 @@ public class CommandGraph {
      */
     public void delete(Command command) {
         requireNonNull(command, "command cannot be null");
-        List<RoutePart> parts = parseRoute(command);
+        List<RouteNode> parts = command.spec().route();
         // There's nothing to delete if the list is empty
         if (parts.isEmpty()) return;
 
         CommandNode node = this.rootNode;
         // Find the last node in this command chain
-        for (RoutePart part : parts) {
+        for (RouteNode part : parts) {
             Optional<CommandNode> childCandidate = findChild(node, part);
             if (childCandidate.isEmpty()) {
                 // This shouldn't happen
@@ -152,81 +149,15 @@ public class CommandGraph {
      * or secondary aliases.
      *
      * @param parent The parent node
-     * @param part The route part containing the aliases
+     * @param node The route node containing the aliases
      */
-    private Optional<CommandNode> findChild(CommandNode parent, RoutePart part) {
-        Optional<CommandNode> found = parent.findChild(part.primaryAlias);
+    private Optional<CommandNode> findChild(CommandNode parent, RouteNode node) {
+        Optional<CommandNode> found = parent.findChild(node.primaryAlias());
         if (found.isEmpty()) {
-            for (String alias : part.aliases) found = parent.findChild(alias);
+            for (String alias : node.secondaryAliases()) found = parent.findChild(alias);
         }
 
         return found;
-    }
-
-    /**
-     * Parses the route of the command and returns a {@link List} of
-     * {@link RoutePart} instances.
-     *
-     * @return The generated list of route parts
-     */
-    private List<RoutePart> parseRoute(Command command) {
-        /*
-         * Split the command route into parts. Each individual part
-         * will become a command node in the tree if the registration
-         * succeeds.
-         */
-        return Arrays.stream(command.spec().route().split(" "))
-                .map(RoutePart::of)
-                .toList();
-    }
-
-    /**
-     * Simple class storing a primary alias and a {@link java.util.Set} of
-     * secondary aliases.
-     */
-    private record RoutePart(String primaryAlias, Set<String> aliases) {
-
-        RoutePart {
-            requireNonNull(primaryAlias, "primaryAlias cannot be null");
-            requireNonNull(aliases, "aliases cannot be null");
-        }
-
-        /**
-         * Parses a string representation of a route part
-         * into a {@link RoutePart} instance.
-         *
-         * @param part The string representation
-         */
-        static RoutePart of(String part) {
-            String[] split = part.split("\\|");
-            // If split is empty, the part is empy/blank
-            if (split.length == 0) {
-                throw new IllegalArgumentException("'%s' is not a valid route part".formatted(part));
-            }
-
-            // The first alias will be treated as the primary
-            String primaryAlias = split[0].trim();
-            if (primaryAlias.isBlank()) throw new IllegalArgumentException("Primary alias cannot be blank");
-
-            // The remaining (if any) aliases become secondary aliases
-            Set<String> aliases = Arrays.stream(split).skip(1)
-                    .map(String::trim)
-                    .filter(x -> !x.isBlank()) // Filter out blank strings
-                    .collect(Collectors.toSet());
-
-            return new RoutePart(primaryAlias, aliases);
-        }
-
-        /**
-         * Creates a new {@link CommandNode} with the supplied parent
-         * being the parent node and the primary and secondary aliases
-         * held by this {@link RoutePart} instance.
-         *
-         * @param parent The parent node
-         */
-        public CommandNode toNode(CommandNode parent) {
-            return new CommandNode(this.primaryAlias, this.aliases, parent);
-        }
     }
 
     /**
