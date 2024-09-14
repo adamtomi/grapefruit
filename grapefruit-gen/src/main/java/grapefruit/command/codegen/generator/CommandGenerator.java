@@ -21,9 +21,9 @@ import javax.lang.model.type.TypeMirror;
 import java.util.List;
 import java.util.Objects;
 
-import static grapefruit.command.codegen.Naming.ACTION_METHOD_SUFFIX;
 import static grapefruit.command.codegen.Naming.ARGUMENTS_METHOD_SUFFIX;
 import static grapefruit.command.codegen.Naming.CONTEXT_PARAM;
+import static grapefruit.command.codegen.Naming.HANDLER_METHOD_SUFFIX;
 import static grapefruit.command.codegen.Naming.REFERENCE_PARAM;
 import static grapefruit.command.codegen.util.AnnotationUtil.accessAnnotationValue;
 import static grapefruit.command.codegen.util.AnnotationUtil.accessAnnotationValueList;
@@ -92,7 +92,7 @@ public class CommandGenerator implements Generator<CodeBlock> {
         // Include arguments method
         context.include(generateArgumentsMethod(parameters));
         // Include our command handler method
-        context.include(generateActionMethod(parameters));
+        context.include(generateHandlerMethod(parameters));
         // Static import Command#wrap
         context.importStatic(Command.class, "wrap");
 
@@ -100,7 +100,7 @@ public class CommandGenerator implements Generator<CodeBlock> {
                 "wrap($L(), $L, this::$L)",
                 ARGUMENTS_METHOD_SUFFIX.apply(this.method),
                 generateCommandSpec(),
-                ACTION_METHOD_SUFFIX.apply(this.method)
+                HANDLER_METHOD_SUFFIX.apply(this.method)
         );
     }
 
@@ -126,7 +126,7 @@ public class CommandGenerator implements Generator<CodeBlock> {
     }
 
     // This method will be responsible for calling the original command method.
-    private MethodSpec generateActionMethod(List<ParameterGenerator.Result> parameters) {
+    private MethodSpec generateHandlerMethod(List<ParameterGenerator.Result> parameters) {
         // Generate code block calling the original command method
         CodeBlock call = CodeBlock.builder()
                 .add("this.$L.$L(", REFERENCE_PARAM, this.method.getSimpleName())
@@ -139,7 +139,7 @@ public class CommandGenerator implements Generator<CodeBlock> {
                 .build();
 
         // Build the method. This will be passed to Command#wrap later.
-        return MethodSpec.methodBuilder(ACTION_METHOD_SUFFIX.apply(this.method))
+        return MethodSpec.methodBuilder(HANDLER_METHOD_SUFFIX.apply(this.method))
                 .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
                 .addParameter(CommandContext.class, CONTEXT_PARAM)
                 .addStatement(call)
