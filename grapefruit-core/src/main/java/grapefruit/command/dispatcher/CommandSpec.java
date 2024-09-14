@@ -30,15 +30,50 @@ public interface CommandSpec {
     List<Class<? extends CommandCondition>> conditions();
 
     /**
-     * Creates a new command spec based on the supplied information.
+     * Creates a new builder instance.
      *
-     * @param route The route
-     * @param permission The permission, or null
-     * @param conditions The list of conditions
-     * @return The created command spec
+     * @return The builder
      */
-    @SafeVarargs
-    static CommandSpec of(String route, @Nullable String permission, Class<? extends CommandCondition>... conditions) {
-        return new CommandSpecImpl(route, Optional.ofNullable(permission), List.of(conditions));
+    static Builder builder() {
+        return new CommandSpecImpl.Builder();
+    }
+
+    /**
+     * Builder to simplify the creation of new {@link CommandSpec} instances.
+     * Used by the code generator.
+     */
+    interface Builder {
+
+        /**
+         * Sets the route of the {@link CommandSpec}.
+         *
+         * @param route The route
+         * @return This
+         */
+        Builder route(String route);
+
+        /**
+         * Sets the permission of the {@link CommandSpec}. Passing
+         * {@code null} this method means that the {@link grapefruit.command.dispatcher.auth.CommandAuthorizer}
+         * will allow every user to execute the command.
+         *
+         * @return This
+         */
+        Builder permission(@Nullable String permission);
+
+        /**
+         * Sets the conditions of the {@link CommandSpec}.
+         *
+         * @see CommandCondition
+         * @return This
+         */
+        Builder conditions(List<Class<? extends CommandCondition>> conditions);
+
+        /**
+         * Verifies the provided data and creates a new {@link CommandSpec}.
+         *
+         * @return The created command spec
+         */
+        CommandSpec build();
     }
 }

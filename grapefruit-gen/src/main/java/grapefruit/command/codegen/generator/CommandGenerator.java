@@ -153,12 +153,16 @@ public class CommandGenerator implements Generator<CodeBlock> {
         // Retrieve permission. Default to null, if the value was a blank string
         String permission = pick(accessAnnotationValue(this.commandDef, "permission", String.class), null);
         // Convert condition classes
-        CodeBlock conditions = accessAnnotationValueList(this.commandDef, "conditions", TypeMirror.class).stream()
-                .map(x -> CodeBlock.of("$T.class", x))
-                .collect(CodeBlock.joining(", "));
+        CodeBlock conditions = CodeBlock.builder()
+                .add("$T.of(", List.class)
+                .add(accessAnnotationValueList(this.commandDef, "conditions", TypeMirror.class).stream()
+                        .map(x -> CodeBlock.of("$T.class", x))
+                        .collect(CodeBlock.joining(", ")))
+                .add(")")
+                .build();
 
         return CodeBlock.of(
-                "$T.of($S, $S, $L)",
+                "$T.builder().route($S).permission($S).conditions($L).build()",
                 CommandSpec.class,
                 route,
                 permission,
