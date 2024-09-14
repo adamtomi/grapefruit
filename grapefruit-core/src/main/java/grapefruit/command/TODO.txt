@@ -1,11 +1,3 @@
-- Argument modifiers. Not sure how to go about them, the goal is to be able
-  to pass data to the modifiers. So an annotation is annotated with @Modifier
-  and that annotation is then placed onto a method parameter annotated with
-  either @Arg or @Flag. For instance @Regex("[0-9a-z]+"). That value needs to
-  be passed to the argument modifier instance. Or an alternative is that the
-  corresponding argument mapper would get access to this data and would apply
-  the same logic to the already mapped value.
-
 - @InjectedBy annotation. At the moment non-argument parameters are allowed, but only
   one per type. So if a command method has the following parameters: (String x, @Arg int y, @Arg int z),
   we assume that a value for x will be in the context store mapped to Key.of(String). This
@@ -52,6 +44,17 @@
 - Implement "standard" argument mappers for java primitive types (maybe not boolean though, because
   please use presence flags instead?), and perhaps a few other builtin java types (such types could
   be UUID, Duration, some form of Date (maybe the newer LocalDateTime thingy instead).
+  - A so-called CommaSeparatedArgumentMapper would also make sense. It would expect arguments formatted as a,b,c,
+    and then map them into a List, or Set, or whatever. It could look something like this:
+    ArgumentMapper<Set<MyType>> mapper = CommaSeparatedArgumentMapper.wrap(new MyTypeMapper(), HashSet::new);
+    It could also come with multiple factory methods, such as #set (returning a set of something), #list
+    (returning a list of something) with #wrap allowing users to pass in a generator, should they want
+    something different.
+  - An enum mapper would also be nice. It could have several configuration options, such as whether
+    case-insensitivity is desired or not, what values should be accepted (EnumSet.of()).
+  - EnumLikeArgumentMapper could take a list of arguments and only accept those (T[]). For instance, a
+    weekday mapper would be something like: ArgumentMapper<String> weekdayMapper = EnumLikeArgumentMapper.of("monday", "tuesday"...);
+
 
 - Introduce description system. @CommandDefinition, @Arg, and @Flag annotations should have a "description"
   parameter ("" by default), and if a command syntax exception is thrown, these descriptions should be included
