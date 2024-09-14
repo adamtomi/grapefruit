@@ -34,7 +34,7 @@ final class BoundArgumentImpl<T> implements BoundArgument<T> {
         // Use the mapper we're bound to for mapping
         T resultFromMapper = this.mapper.tryMap(context, input);
         // Apply modifiers
-        T result = this.argument.modifierChain().applyChain(resultFromMapper);
+        T result = this.argument.modifierChain().apply(resultFromMapper);
         // Store the result in the context
         context.put(this.argument.key(), result);
     }

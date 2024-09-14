@@ -75,3 +75,6 @@
 - [code-gen]: See what happens, if nested classes have command methods in them. They probably work fine, but the container class will be
   named after the original class's parent class, so if we have command methods in both the parent and nested class, the container names
   will clash.
+
+- [code-gen]: Invalid CommandSpec is generated, if there are no conditions: wrap(tell$arguments(), CommandSpec.of("tell|msg", "testplugin.tell", ), this::tell$action));
+  The CommandSpecBuilder mentioned somewhere in this list would help.

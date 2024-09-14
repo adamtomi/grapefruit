@@ -62,19 +62,13 @@ public interface CommandArgument<T> {
     FlagArgument<T> asFlag();
 
     /**
-     * Returns a set of modifiers associated with this
+     * Returns the {@link ModifierChain} associated with this
      * argument.
      *
-     * @return Modifiers associated with this argument
-     * @see ModifierBlueprint
+     * @return The modifier chain
+     * @see ModifierChain
      */
-    default List<ModifierBlueprint> modifiers() {
-        return List.of();
-    }
-
-    default ModifierChain<T> modifierChain() {
-        throw new UnsupportedOperationException();
-    }
+    ModifierChain<T> modifierChain();
 
     /**
      * Binds this command argument to the supplied {@link ArgumentMapper}

@@ -14,7 +14,7 @@ public @interface Modifier {
 
     Class<? extends ArgumentModifier<?>> value();
 
-    @Retention(RetentionPolicy.SOURCE)
+    @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.ANNOTATION_TYPE)
     @interface Factory {
 

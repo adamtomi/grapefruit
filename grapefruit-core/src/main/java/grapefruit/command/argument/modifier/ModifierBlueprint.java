@@ -3,8 +3,6 @@ package grapefruit.command.argument.modifier;
 import grapefruit.command.util.key.Key;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
-
 public interface ModifierBlueprint {
 
     Key<?> key();
@@ -12,7 +10,7 @@ public interface ModifierBlueprint {
     @Nullable
     ContextualModifier.Context context();
 
-    static ModifierBlueprint of(Class<?> clazz, Map<String, Object> values) {
-        return new ModifierImpl.ModifierBlueprintImpl(Key.of(clazz), ContextualModifier.Context.of(values));
+    static ModifierBlueprint of(Class<?> clazz, @Nullable ContextualModifier.Context context) {
+        return new ModifierImpl.ModifierBlueprintImpl(Key.of(clazz), context);
     }
 }

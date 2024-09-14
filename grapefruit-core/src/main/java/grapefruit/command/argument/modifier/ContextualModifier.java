@@ -2,16 +2,21 @@ package grapefruit.command.argument.modifier;
 
 import grapefruit.command.util.key.Key;
 
-import java.util.Map;
-
 public interface ContextualModifier<T> extends ArgumentModifier<T> {
 
     interface Context {
 
         <T> T require(Key<T> key);
 
-        static Context of(Map<String, Object> values) {
-            return new ModifierImpl.ContextImpl(values);
+        static Builder builder() {
+            return new ModifierImpl.ContextBuilderImpl();
+        }
+
+        interface Builder {
+
+            Builder put(String key, Object value);
+
+            Context build();
         }
     }
 

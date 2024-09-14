@@ -1,6 +1,9 @@
 package grapefruit.command.argument;
 
+import grapefruit.command.argument.modifier.ModifierChain;
 import grapefruit.command.util.key.Key;
+
+import java.util.List;
 
 /**
  * Utility class to easily create command arguments.
@@ -17,8 +20,8 @@ public final class CommandArguments {
      * @param mapperKey The mapperKey of the argument
      * @return The created argument
      */
-    public static <T> CommandArgument<T> required(String name, Key<T> key, Key<T> mapperKey) {
-        return new AbstractCommandArgument.Required<>(name, key, mapperKey);
+    public static <T> CommandArgument<T> required(String name, Key<T> key, Key<T> mapperKey, ModifierChain<T> modifierChain) {
+        return new AbstractCommandArgument.Required<>(name, key, mapperKey, modifierChain);
     }
 
     /**
@@ -33,7 +36,8 @@ public final class CommandArguments {
      * @return the created argument
      */
     public static FlagArgument<Boolean> presenceFlag(String name, char shorthand, Key<Boolean> mapperKey) {
-        return new AbstractCommandArgument.Flag<>(name, Key.of(Boolean.class), mapperKey, shorthand, true);
+        // Modifiers aren't supported on presence flags
+        return new AbstractCommandArgument.Flag<>(name, Key.of(Boolean.class), mapperKey, shorthand, true, ModifierChain.of(List.of()));
     }
 
     /**
@@ -45,7 +49,7 @@ public final class CommandArguments {
      * @param mapperKey The mapper key
      * @return The created argument
      */
-    public static <T> FlagArgument<T> valueFlag(String name, char shorthand, Key<T> key, Key<T> mapperKey) {
-        return new AbstractCommandArgument.Flag<>(name, key, mapperKey, shorthand, false);
+    public static <T> FlagArgument<T> valueFlag(String name, char shorthand, Key<T> key, Key<T> mapperKey, ModifierChain<T> modifierChain) {
+        return new AbstractCommandArgument.Flag<>(name, key, mapperKey, shorthand, false, modifierChain);
     }
 }

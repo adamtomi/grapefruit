@@ -7,7 +7,7 @@ import java.util.function.Function;
 
 public interface ModifierChain<T> {
 
-    T applyChain(T input) throws CommandArgumentException;
+    T apply(T input) throws CommandArgumentException;
 
     void bake(Function<ModifierBlueprint, ArgumentModifier<?>> modifierAccess);
 

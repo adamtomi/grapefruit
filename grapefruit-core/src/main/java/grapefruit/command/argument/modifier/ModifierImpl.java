@@ -6,6 +6,7 @@ import grapefruit.command.util.key.Key;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -24,7 +25,7 @@ final class ModifierImpl {
         }
 
         @Override
-        public T applyChain(T input) throws CommandArgumentException {
+        public T apply(T input) throws CommandArgumentException {
             T result = input;
             for (ArgumentModifier<T> bakedModifier : this.bakedModifiers) result = bakedModifier.apply(result);
             return result;
@@ -41,9 +42,9 @@ final class ModifierImpl {
     static final class ContextImpl implements ContextualModifier.Context {
         private final Registry<Key<?>, Object> valueStore = Registry.create(Registry.DuplicateStrategy.reject());
 
-        public ContextImpl(Map<String, Object> values) {
+        ContextImpl(Map<String, Object> values) {
             Map<Key<?>, Object> transformed = values.entrySet().stream()
-                    .collect(toMap(x -> Key.named(x.getValue().getClass(), x.getKey()), Function.identity()));
+                    .collect(toMap(x -> Key.named(x.getValue().getClass(), x.getKey()), Map.Entry::getValue));
 
             this.valueStore.storeEntries(transformed);
         }
@@ -53,6 +54,26 @@ final class ModifierImpl {
         public <T> T require(Key<T> key) {
             return (T) this.valueStore.get(key)
                     .orElseThrow(() -> new IllegalArgumentException("Unrecognized key: '%s'".formatted(key)));
+        }
+    }
+
+    static final class ContextBuilderImpl implements ContextualModifier.Context.Builder {
+        private final Map<String, Object> values = new HashMap<>();
+
+        ContextBuilderImpl() {}
+
+        @Override
+        public ContextualModifier.Context.Builder put(String key, Object value) {
+            this.values.put(
+                    requireNonNull(key, "key cannot be null"),
+                    requireNonNull(value, "value cannot be null")
+            );
+            return this;
+        }
+
+        @Override
+        public ContextualModifier.Context build() {
+            return new ContextImpl(this.values);
         }
     }
 

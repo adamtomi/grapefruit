@@ -64,6 +64,11 @@ public final class AnnotationUtil {
         }
     }
 
+    public static boolean matches(AnnotationMirror annotation, Class<? extends Annotation> clazz) {
+        TypeElement element = asType(annotation.getAnnotationType().asElement());
+        return element.getQualifiedName().contentEquals(clazz.getCanonicalName());
+    }
+
     public static Optional<AnnotationMirror> findAnnotation(Element element, Class<? extends Annotation> annotation) {
         String name = annotation.getCanonicalName();
         // Check all annotations
