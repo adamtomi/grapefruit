@@ -1,14 +1,35 @@
 package grapefruit.command.dispatcher.config;
 
-import java.util.function.Supplier;
+import grapefruit.command.argument.mapper.ArgumentMapper;
 
-public interface MappingBuilder<T> extends ArgumentMappingBuilder<T> {
+/**
+ * Used to bind types to {@link ArgumentMapper} instances.
+ *
+ * @param <T> The expected argument type
+ */
+public interface MappingBuilder<T> {
 
-    void to(T instance);
+    /**
+     * Binds the provided mapper to a type.
+     *
+     * @param mapper The mapper to bind
+     */
+    void using(ArgumentMapper<T> mapper);
 
-    void toSupplier(Supplier<T> supplier);
+    /**
+     * Named {@link MappingBuilder} used to set up named mapper
+     * bindings.
+     *
+     * @param <T> THe expected argument type
+     */
+    interface Named<T> extends MappingBuilder<T> {
 
-    Named<T> namedAs(String name);
-
-    interface Named<T> extends ArgumentMappingBuilder<T> {}
+        /**
+         * Sets up the name for the binding.
+         *
+         * @param name The name
+         * @return The builder
+         */
+        MappingBuilder<T> namedAs(String name);
+    }
 }

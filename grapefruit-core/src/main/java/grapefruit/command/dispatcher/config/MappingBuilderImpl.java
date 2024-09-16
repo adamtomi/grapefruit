@@ -5,7 +5,6 @@ import grapefruit.command.util.key.Key;
 import io.leangen.geantyref.TypeToken;
 
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -17,18 +16,6 @@ final class MappingBuilderImpl<T> implements MappingBuilder<T>, MappingBuilder.N
     MappingBuilderImpl(TypeToken<T> type, BiConsumer<Key<T>, ArgumentMapper<T>> handler) {
         this.type = requireNonNull(type, "type cannot be null");
         this.handler = requireNonNull(handler, "handler cannot be null");
-    }
-
-    @Override
-    public void to(T instance) {
-        // TODO Implement later
-        throw new UnsupportedOperationException("Not implemented yet.");
-    }
-
-    @Override
-    public void toSupplier(Supplier<T> supplier) {
-        // TODO Implement later
-        throw new UnsupportedOperationException("Not implemented yet.");
     }
 
     @Override
