@@ -118,14 +118,14 @@ public abstract class DispatcherConfigurer {
      * @param type The type of the argument
      * @return The new builer instance
      */
-    protected <T> MappingBuilder<T> map(Class<T> type) {
+    protected <T> MappingBuilder.Named<T> map(Class<T> type) {
         return map(TypeToken.get(type));
     }
 
     /**
      * @see this#map(Class)
      */
-    protected <T> MappingBuilder<T> map(TypeToken<T> type) {
+    protected <T> MappingBuilder.Named<T> map(TypeToken<T> type) {
         return new MappingBuilderImpl<>(type, this.argumentMappers::store);
     }
 
