@@ -14,7 +14,7 @@ public interface CommandDispatcher {
 
     void dispatch(CommandContext context, String commandLine) throws CommandException;
 
-    List<String> suggestions(CommandContext context, String commandLine);
+    List<String> complete(CommandContext context, String commandLine);
 
     static CommandDispatcher using(DispatcherConfigurer... configurers) {
         return new CommandDispatcherImpl(DispatcherConfigurer.merge(configurers));

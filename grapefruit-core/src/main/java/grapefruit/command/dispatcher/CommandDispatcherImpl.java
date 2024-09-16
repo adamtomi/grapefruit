@@ -249,12 +249,12 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     }
 
     @Override
-    public List<String> suggestions(CommandContext context, String commandLine) {
+    public List<String> complete(CommandContext context, String commandLine) {
         requireNonNull(context, "context cannot be null");
         requireNonNull(commandLine, "commandLine cannot be null");
         // Construct a new reader from user input
         StringReader input = new StringReaderImpl(commandLine, context);
-        // Find the command instance to create suggestions for
+        // Find the command instance to create completions for
         CommandGraph.SearchResult searchResult = this.commandGraph.search(input);
 
         /*
@@ -280,10 +280,10 @@ final class CommandDispatcherImpl implements CommandDispatcher {
          */
         if (parseResult.fullyConsumed()) return List.of();
 
-        return suggestions(context, parseResult, input);
+        return complete(context, parseResult, input);
     }
 
-    private List<String> suggestions(
+    private List<String> complete(
             CommandContext context,
             ParseResult parseResult,
             StringReader input
@@ -302,7 +302,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
          * ParseInfo#argument. This will only evaluate to true, if remaining
          * is whitespace, but not an empty string.
          */
-        boolean suggestNext = remaining.isBlank() && !remaining.isEmpty();
+        boolean completeNext = remaining.isBlank() && !remaining.isEmpty();
 
         // Select the first unseen argument. Required arguments take precedence over flags.
         BoundArgument<?> firstUnseen = parseResult.remaining().isEmpty()
@@ -310,25 +310,25 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                 : parseResult.remaining().get(0);
 
         /*
-         * Select argument to create suggestions for. If suggestNext evaluates
+         * Select argument to create completions for. If suggestNext evaluates
          * to true (explained above), we don't care about the ParseInfo#argument,
          * otherwise prefer that over firstUnseen, if it's present.
          */
-        BoundArgument<?> argument = suggestNext
+        BoundArgument<?> argument = completeNext
                 ? firstUnseen
                 : parseResult.lastUnsuccessfulArgument().orElse(firstUnseen);
 
-        // The user input to create suggestions based on.
-        String arg = suggestNext ? remaining : parseResult.lastInput().orElse(remaining);
+        // The user input to create completions based on.
+        String arg = completeNext ? remaining : parseResult.lastInput().orElse(remaining);
 
         if (arg.isEmpty()) return List.of();
 
-        // Accumulate suggestions into this list
+        // Accumulate completions into this list
         List<String> base = new ArrayList<>();
 
         if (argument.argument().isFlag()) {
-            if (argument.argument().asFlag().isPresenceFlag() && suggestNext) {
-                base.addAll(argument.mapper().listSuggestions(context, arg));
+            if (argument.argument().asFlag().isPresenceFlag() && completeNext) {
+                base.addAll(argument.mapper().complete(context, arg));
             } else {
                 base.addAll(formatFlags(parseResult.remainingFlags()));
                 // Flag shorthand is used
@@ -343,7 +343,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
             }
         } else {
-            base.addAll(argument.mapper().listSuggestions(context, arg));
+            base.addAll(argument.mapper().complete(context, arg));
 
             // If the current argument starts with '-', we list flags as well
             if (arg.startsWith(SHORT_FLAG_PREFIX)) {
