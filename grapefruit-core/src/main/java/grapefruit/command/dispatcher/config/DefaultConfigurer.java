@@ -1,15 +1,15 @@
 package grapefruit.command.dispatcher.config;
 
-import grapefruit.command.argument.mapper.standard.UUIDArgumentMapper;
-import grapefruit.command.argument.modifier.standard.RegexModifier;
+import grapefruit.command.argument.mapper.builtin.UUIDArgumentMapper;
+import grapefruit.command.argument.modifier.builtin.RegexModifier;
 
 import java.util.UUID;
 
-import static grapefruit.command.argument.mapper.standard.StringArgumentMapper.GREEDY_NAME;
-import static grapefruit.command.argument.mapper.standard.StringArgumentMapper.QUOTABLE_NAME;
-import static grapefruit.command.argument.mapper.standard.StringArgumentMapper.greedy;
-import static grapefruit.command.argument.mapper.standard.StringArgumentMapper.quotable;
-import static grapefruit.command.argument.mapper.standard.StringArgumentMapper.single;
+import static grapefruit.command.argument.mapper.builtin.StringArgumentMapper.GREEDY_NAME;
+import static grapefruit.command.argument.mapper.builtin.StringArgumentMapper.QUOTABLE_NAME;
+import static grapefruit.command.argument.mapper.builtin.StringArgumentMapper.greedy;
+import static grapefruit.command.argument.mapper.builtin.StringArgumentMapper.quotable;
+import static grapefruit.command.argument.mapper.builtin.StringArgumentMapper.single;
 
 /**
  * This class provides basic dispatcher configuration.

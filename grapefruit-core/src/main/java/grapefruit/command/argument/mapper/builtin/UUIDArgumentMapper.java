@@ -1,4 +1,4 @@
-package grapefruit.command.argument.mapper.standard;
+package grapefruit.command.argument.mapper.builtin;
 
 import grapefruit.command.CommandException;
 import grapefruit.command.argument.CommandArgumentException;

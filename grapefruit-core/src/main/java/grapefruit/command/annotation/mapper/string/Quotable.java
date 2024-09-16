@@ -1,7 +1,7 @@
 package grapefruit.command.annotation.mapper.string;
 
 import grapefruit.command.annotation.mapper.MappedBy;
-import grapefruit.command.argument.mapper.standard.StringArgumentMapper;
+import grapefruit.command.argument.mapper.builtin.StringArgumentMapper;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -1,4 +1,4 @@
-package grapefruit.command.argument.modifier.standard;
+package grapefruit.command.argument.modifier.builtin;
 
 import grapefruit.command.argument.CommandArgumentException;
 import grapefruit.command.argument.modifier.ContextualModifier;
