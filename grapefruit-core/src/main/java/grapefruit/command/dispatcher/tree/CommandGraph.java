@@ -12,6 +12,11 @@ import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * {@link Command} instances are stored in a so-called command tree. Each command
+ * will be registered at the route specified be its {@link grapefruit.command.dispatcher.CommandSpec}.
+ * The last node will hold the command instance itself.
+ */
 public class CommandGraph {
     /* The internal command tree */
     private final CommandNode rootNode = CommandNode.root();
