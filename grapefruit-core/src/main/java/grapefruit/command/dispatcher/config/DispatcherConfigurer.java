@@ -13,9 +13,7 @@ import io.leangen.geantyref.TypeToken;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
-import java.util.concurrent.Executor;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
@@ -28,7 +26,6 @@ public abstract class DispatcherConfigurer {
     private final Registry<Key<?>, CommandCondition> conditions = Registry.create(Registry.DuplicateStrategy.reject());
     private final Registry<Key<?>, Function<ContextualModifier.Context, ArgumentModifier<?>>> modifiers = Registry.create(Registry.DuplicateStrategy.reject());
     private CommandAuthorizer authorizer = null;
-    private Supplier<Executor> executor = null;
     private CommandRegistrationHandler registrationHandler = null;
     private boolean configured = false;
 
@@ -71,14 +68,12 @@ public abstract class DispatcherConfigurer {
         root.modifiers.merge(other.modifiers);
         // Only copy properties that have been changed from their default values
         if (other.authorizer != null) root.authorizer = other.authorizer;
-        if (other.executor != null) root.executor = other.executor;
         if (other.registrationHandler != null) root.registrationHandler = other.registrationHandler;
     }
 
     /* Set default values if no custom value has been configured */
     private static void setDefaults(DispatcherConfigurer configurer) {
         if (configurer.authorizer == null) configurer.authorizer = CommandAuthorizer.ALWAYS_ALLOW;
-        if (configurer.executor == null) configurer.executor = () -> Runnable::run;
         if (configurer.registrationHandler == null) configurer.registrationHandler = CommandRegistrationHandler.noop();
     }
 
@@ -103,15 +98,6 @@ public abstract class DispatcherConfigurer {
      */
     protected void authorize(CommandAuthorizer authorizer) {
         this.authorizer = requireNonNull(authorizer, "authorizer cannot be null");
-    }
-
-    /**
-     * Sets the {@link Executor} used by the {@link grapefruit.command.dispatcher.CommandDispatcher}.
-     *
-     * @param executor Supplier returning the executor to use
-     */
-    protected void executor(Supplier<Executor> executor) {
-        this.executor = requireNonNull(executor, "executor cannot be null");
     }
 
     /**
@@ -202,14 +188,6 @@ public abstract class DispatcherConfigurer {
      */
     public CommandAuthorizer authorizer() {
         return this.authorizer;
-    }
-
-    /**
-     * Returns the configured {@link Executor} factory.
-     * For internal use.
-     */
-    public Supplier<Executor> executor() {
-        return this.executor;
     }
 
     /**
