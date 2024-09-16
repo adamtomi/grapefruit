@@ -11,6 +11,10 @@ import java.util.List;
  * Argument mapper implementation that maps user input into a {@link String}.
  */
 public abstract class StringArgumentMapper implements ArgumentMapper<String> {
+    /** Name used by {@link Quotable#INSTANCE} */
+    public static final String QUOTABLE_NAME = "__quotable__";
+    /** Named used by {@link Greedy#INSTANCE} */
+    public static final String GREEDY_NAME = "__greedy__";
 
     /**
      * @return {@link Single#INSTANCE}

@@ -11,9 +11,9 @@ import java.lang.annotation.Target;
 /**
  * Indicates that the argument is to be mapped by {@link StringArgumentMapper#quotable()} ()}
  */
-@MappedBy(Quotable.NAME)
+@MappedBy(StringArgumentMapper.QUOTABLE_NAME)
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.PARAMETER)
 public @interface Quotable {
-    String NAME = "__quotable__";
+
 }

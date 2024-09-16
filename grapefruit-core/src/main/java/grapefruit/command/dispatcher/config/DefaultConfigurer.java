@@ -1,9 +1,9 @@
 package grapefruit.command.dispatcher.config;
 
-import grapefruit.command.annotation.mapper.string.Greedy;
-import grapefruit.command.annotation.mapper.string.Quotable;
 import grapefruit.command.argument.modifier.standard.RegexModifier;
 
+import static grapefruit.command.argument.mapper.standard.StringArgumentMapper.GREEDY_NAME;
+import static grapefruit.command.argument.mapper.standard.StringArgumentMapper.QUOTABLE_NAME;
 import static grapefruit.command.argument.mapper.standard.StringArgumentMapper.greedy;
 import static grapefruit.command.argument.mapper.standard.StringArgumentMapper.quotable;
 import static grapefruit.command.argument.mapper.standard.StringArgumentMapper.single;
@@ -24,8 +24,8 @@ public final class DefaultConfigurer extends DispatcherConfigurer {
     public void configure() {
         // Configure argument mappers
         map(String.class).using(single());
-        map(String.class).namedAs(Quotable.NAME).using(quotable());
-        map(String.class).namedAs(Greedy.NAME).using(greedy());
+        map(String.class).namedAs(QUOTABLE_NAME).using(quotable());
+        map(String.class).namedAs(GREEDY_NAME).using(greedy());
 
         // Register modifier factories
         modifierFactories(new RegexModifier.Factory());
