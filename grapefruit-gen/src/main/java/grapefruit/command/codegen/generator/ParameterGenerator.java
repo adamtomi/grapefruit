@@ -7,6 +7,7 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import grapefruit.command.annotation.arg.Arg;
 import grapefruit.command.annotation.arg.Flag;
+import grapefruit.command.annotation.inject.InjectedBy;
 import grapefruit.command.annotation.mapper.MappedBy;
 import grapefruit.command.argument.CommandArguments;
 import grapefruit.command.argument.modifier.ContextualModifier;
@@ -80,7 +81,12 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
          * turned into a command argument. Upon execution, the command context will be
          * expected to hold a value with a matching key for such parameters.
          */
-        if (arg.isEmpty() && flag.isEmpty()) return new NonArgument(typeName);
+        if (arg.isEmpty() && flag.isEmpty()) {
+            // AnnotationMirror injectedBy = assertAnnotation(element, InjectedBy.class);
+            AnnotationMirror injectedBy = findAnnotation(element, InjectedBy.class)
+                    .orElseThrow(() -> new IllegalStateException("Non-argument parameters are expected to be annotated by '%s'".formatted(InjectedBy.class)));
+            return new NonArgument(typeName, injectedBy);
+        }
 
         // Fallback name, if @Arg or @Flag doesn't provide a custom one.
         String fallbackName = element.getSimpleName().toString();
@@ -165,8 +171,14 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
 
     /* Represents a non-command-argument parameter */
     private static final class NonArgument extends ParameterGenerator {
-        private NonArgument(TypeName typeName) {
-            super(typeName, ParameterGenerator.keyFieldName(typeName));
+        private final AnnotationMirror injectedBy;
+
+        private NonArgument(TypeName typeName, AnnotationMirror injectedBy) {
+            super(typeName, "%s_%s".formatted(
+                    accessAnnotationValue(injectedBy, "value", String.class),
+                    ParameterGenerator.keyFieldName(typeName)
+            ));
+            this.injectedBy = requireNonNull(injectedBy, "injectedBy cannot be null");
         }
 
         @Override
@@ -176,8 +188,18 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
         }
 
         @Override
+        protected CodeBlock generateKeyInitializer() {
+            return key(this.typeName, accessAnnotationValue(this.injectedBy, "value", String.class));
+        }
+
+        @Override
         protected CodeBlock generateValueExtractor() {
-            return CodeBlock.of("$L.require($L)", CONTEXT_PARAM, this.keyFieldName);
+            boolean nullable = accessAnnotationValue(this.injectedBy, "nullable", Boolean.class);
+            return CodeBlock.of(
+                    "$L.$L($L)",
+                    CONTEXT_PARAM,
+                    nullable ? "nullable" : "require",
+                    this.keyFieldName);
         }
     }
 

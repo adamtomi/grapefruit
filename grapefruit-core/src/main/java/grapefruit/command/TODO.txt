@@ -1,20 +1,3 @@
-- @InjectedBy annotation. At the moment non-argument parameters are allowed, but only
-  one per type. So if a command method has the following parameters: (String x, @Arg int y, @Arg int z),
-  we assume that a value for x will be in the context store mapped to Key.of(String). This
-  doesn't allow us to inject multiple arguments of type String. I'm unsure if this is a problem
-  or not, the only use-case I can think of right now is minecraft command senders. Or
-  perhaps command cost values and stuff like that. But still, maybe having a similar system
-  to the mapped by stuff described above would make sense. Let's say we create a new annotation
-  called @InjectedBy(String) (not @Inject as that would conflict with DI frameworks), the string
-  argument would refer to a key name, and then we could either annotate a parameter or an
-  annotation with this. So if maybe we have a cost modifier on our command (minecraft...), we
-  could inject it into the function either by (...params, @InjectedBy("__command_cost__") float cost), or
-  (...params, @Cost float cost), assuming that @Cost itself is annotated with @InjectedBy("__command_cost__").
-  And while we're at it, we could also set the nullability of the value to be injected, so that
-  the appropriate command context method is used. something like: @InjectedBy(value = "something", nullable = true);
-  the field "nullable" could be false by default (in which case CommandContext#require is used, otherwise
-  CommandContext#nullable).
-
 - Command call listeners existed in grapefruit 1, I'd like to have them in this version too, maybe
   having more stages to register call listeners to. Maybe [ PRE_PARSE, PRE_EXECUTION, POST_EXECUTION, FAILED ].
   Unlike the first version, this time they could actually get access to the current CommandContext
