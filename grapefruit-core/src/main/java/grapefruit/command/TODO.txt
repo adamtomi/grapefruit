@@ -23,8 +23,6 @@
     It could also come with multiple factory methods, such as #set (returning a set of something), #list
     (returning a list of something) with #wrap allowing users to pass in a generator, should they want
     something different.
-  - An enum mapper would also be nice. It could have several configuration options, such as whether
-    case-insensitivity is desired or not, what values should be accepted (EnumSet.of()).
   - EnumLikeArgumentMapper could take a list of arguments and only accept those (T[]). For instance, a
     weekday mapper would be something like: ArgumentMapper<String> weekdayMapper = EnumLikeArgumentMapper.of("monday", "tuesday"...);
 
