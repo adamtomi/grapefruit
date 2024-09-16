@@ -170,7 +170,7 @@ public final class EnumArgumentMapper<E extends Enum<E>> implements ArgumentMapp
          * @param resolveStrategy The resolve strategy
          * @return This
          */
-        public Builder<E> resolveStrategy(ResolveStrategy<E> resolveStrategy) {
+        public Builder<E> resolve(ResolveStrategy<E> resolveStrategy) {
             this.resolveStrategy = requireNonNull(resolveStrategy, "resolveStrategy cannot be null");
             return this;
         }
@@ -181,7 +181,7 @@ public final class EnumArgumentMapper<E extends Enum<E>> implements ArgumentMapp
          * @param completionTransformer The completion transformer
          * @return This
          */
-        public Builder<E> completionTransformer(CompletionTransformer<E> completionTransformer) {
+        public Builder<E> complete(CompletionTransformer<E> completionTransformer) {
             this.completionTransformer = requireNonNull(completionTransformer, "completionTransformer cannot be null");
             return this;
         }
