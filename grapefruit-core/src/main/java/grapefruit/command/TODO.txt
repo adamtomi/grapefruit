@@ -52,3 +52,7 @@
 
 - [core]: Rework command syntax system.
 - [core]: Get rid of some of the exception classes, if possible.
+
+- [code-gen]: Execution failed for task ':foundation-plugin:compileJava'.
+              > java.lang.IllegalArgumentException: not a valid name: display-name_java_lang_String_key
+              ^ FIX THIS
