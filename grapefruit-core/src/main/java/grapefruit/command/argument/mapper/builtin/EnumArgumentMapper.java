@@ -160,7 +160,7 @@ public final class EnumArgumentMapper<E extends Enum<E>> implements ArgumentMapp
          *
          * @return This
          */
-        public Builder<E> allowAll(Class<E> clazz) {
+        public Builder<E> allOf(Class<E> clazz) {
             return allow(EnumSet.allOf(clazz));
         }
 
