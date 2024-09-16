@@ -3,10 +3,7 @@ package grapefruit.command.argument;
 import grapefruit.command.argument.binding.BoundArgument;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.argument.modifier.ModifierChain;
-import grapefruit.command.argument.modifier.ModifierBlueprint;
 import grapefruit.command.util.key.Key;
-
-import java.util.List;
 
 /**
  * Describes an argument of a command. {@link CommandArgument#name()} needs to be
