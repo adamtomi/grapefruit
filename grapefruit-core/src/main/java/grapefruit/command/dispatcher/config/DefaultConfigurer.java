@@ -1,10 +1,17 @@
 package grapefruit.command.dispatcher.config;
 
+import grapefruit.command.argument.mapper.builtin.CharacterArgumentMapper;
 import grapefruit.command.argument.mapper.builtin.UUIDArgumentMapper;
 import grapefruit.command.argument.modifier.builtin.RegexModifier;
 
 import java.util.UUID;
 
+import static grapefruit.command.argument.mapper.builtin.NumericArgumentMapper.byteMapper;
+import static grapefruit.command.argument.mapper.builtin.NumericArgumentMapper.doubleMapper;
+import static grapefruit.command.argument.mapper.builtin.NumericArgumentMapper.floatMapper;
+import static grapefruit.command.argument.mapper.builtin.NumericArgumentMapper.intMapper;
+import static grapefruit.command.argument.mapper.builtin.NumericArgumentMapper.longMapper;
+import static grapefruit.command.argument.mapper.builtin.NumericArgumentMapper.shortMapper;
 import static grapefruit.command.argument.mapper.builtin.StringArgumentMapper.GREEDY_NAME;
 import static grapefruit.command.argument.mapper.builtin.StringArgumentMapper.QUOTABLE_NAME;
 import static grapefruit.command.argument.mapper.builtin.StringArgumentMapper.greedy;
@@ -25,10 +32,21 @@ public final class DefaultConfigurer extends DispatcherConfigurer {
 
     @Override
     public void configure() {
-        // Configure argument mappers
+        // Register string mappers
         map(String.class).using(single());
         map(String.class).namedAs(QUOTABLE_NAME).using(quotable());
         map(String.class).namedAs(GREEDY_NAME).using(greedy());
+
+        // Register primitive type mappers
+        map(Character.class).using(new CharacterArgumentMapper());
+        map(Byte.class).using(byteMapper());
+        map(Short.class).using(shortMapper());
+        map(Integer.class).using(intMapper());
+        map(Long.class).using(longMapper());
+        map(Float.class).using(floatMapper());
+        map(Double.class).using(doubleMapper());
+
+        // Register custom type mappers
         map(UUID.class).using(new UUIDArgumentMapper());
 
         // Register modifier factories
