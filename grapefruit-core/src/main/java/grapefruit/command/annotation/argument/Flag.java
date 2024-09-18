@@ -26,4 +26,12 @@ public @interface Flag {
      * is used. This means that the flag name is resolved first.
      */
     char shorthand() default ' ';
+
+    /**
+     * If {@link Flag#name()} is a blank string, the parameter's name will be used
+     * as a replacement. If this option is set to true (which it is by default),
+     * {@code camelCase} parameter names are turned into {@code kebab-case} names,
+     * which might be desirable for flag names.
+     */
+    boolean hyphenate() default true;
 }

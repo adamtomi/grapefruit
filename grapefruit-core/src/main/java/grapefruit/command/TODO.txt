@@ -56,3 +56,8 @@
 - [code-gen]: Execution failed for task ':foundation-plugin:compileJava'.
               > java.lang.IllegalArgumentException: not a valid name: display-name_java_lang_String_key
               ^ FIX THIS
+
+- [code-gen]: Store command set as a private final field, and just return an immutable copy of it whenever #commands is called
+- [code-gen]: Presence flags aren't recognized properly.
+- [code-gen]: Add a name cache, so we can detect names that would clash. Right now sanitization would turn both 'ab:c' and 'ab-c' into 'ab_c',
+  which could cause issues later. We would need to somehow keep track of parameter names, types and key name.

@@ -37,6 +37,8 @@ import static grapefruit.command.codegen.util.AnnotationUtil.findAnnotation;
 import static grapefruit.command.codegen.util.AnnotationUtil.matches;
 import static grapefruit.command.codegen.util.CodeBlockUtil.key;
 import static grapefruit.command.codegen.util.StringUtil.pick;
+import static grapefruit.command.codegen.util.StringUtil.sanitize;
+import static grapefruit.command.codegen.util.StringUtil.toKebabCase;
 import static grapefruit.command.codegen.util.TypeNameUtil.flattenTypeNames;
 import static grapefruit.command.codegen.util.TypeNameUtil.toTypeName;
 import static java.util.Objects.requireNonNull;
@@ -66,7 +68,7 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
 
     private ParameterGenerator(TypeName typeName, String keyFieldName) {
         this.typeName = requireNonNull(typeName, "typeName cannot be null");
-        this.keyFieldName = requireNonNull(keyFieldName, "keyFieldName cannot be null");
+        this.keyFieldName = sanitize(requireNonNull(keyFieldName, "keyFieldName cannot be null"));
     }
 
     public static ParameterGenerator create(VariableElement element) {
@@ -107,11 +109,16 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
             String argumentName = pick(accessAnnotationValue(arg.orElseThrow(), "name", String.class), fallbackName);
             return new RequiredArg(typeName, argumentName, mapperName, modifiers);
         } else { // This means that "flag" is present
+            AnnotationMirror flagDef = flag.orElseThrow();
             // Use the correct name
-            String argumentName = pick(accessAnnotationValue(flag.orElseThrow(), "name", String.class), fallbackName);
-            char shorthand = accessAnnotationValue(flag.orElseThrow(), "shorthand", Character.class);
+            String argumentName = pick(accessAnnotationValue(flagDef, "name", String.class), fallbackName);
+            char shorthand = accessAnnotationValue(flagDef, "shorthand", Character.class);
 
-            return new FlagArg(typeName, argumentName, mapperName, shorthand, modifiers);
+            // Turn to kebab-case, if necessary
+            String finalName = accessAnnotationValue(flagDef, "hyphenate", Boolean.class)
+                    ? toKebabCase(argumentName)
+                    : argumentName;
+            return new FlagArg(typeName, finalName, mapperName, shorthand, modifiers);
         }
     }
 
