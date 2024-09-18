@@ -41,6 +41,7 @@ import static grapefruit.command.codegen.util.StringUtil.sanitize;
 import static grapefruit.command.codegen.util.StringUtil.toKebabCase;
 import static grapefruit.command.codegen.util.TypeNameUtil.flattenTypeNames;
 import static grapefruit.command.codegen.util.TypeNameUtil.toTypeName;
+import static grapefruit.command.codegen.util.TypeNameUtil.unboxSafe;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -293,7 +294,7 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
 
         private FlagArg(TypeName typeName, String name, String mapperName, char shorthand, Map<AnnotationMirror, TypeMirror> modifiers) {
             super(typeName, name, mapperName, modifiers);
-            this.presence = typeName.equals(TypeName.BOOLEAN);
+            this.presence = unboxSafe(typeName).equals(TypeName.BOOLEAN);
             this.shorthand = !Character.isAlphabetic(shorthand) ? name.charAt(0) : shorthand;
         }
 

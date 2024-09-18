@@ -18,4 +18,8 @@ public final class TypeNameUtil {
     public static TypeName toTypeName(Element element) {
         return TypeName.get(element.asType());
     }
+
+    public static TypeName unboxSafe(TypeName type) {
+        return type.isBoxedPrimitive() ? type.unbox() : type;
+    }
 }
