@@ -22,8 +22,9 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.google.auto.common.MoreElements.getPackage;
-import static grapefruit.command.codegen.Naming.COMMANDS;
+import static grapefruit.command.codegen.Naming.COMMANDS_METHOD;
 import static grapefruit.command.codegen.Naming.CONTAINER_CLASS_SUFFIX;
+import static grapefruit.command.codegen.Naming.INTERNAL_COMMANDS_FIELD;
 import static grapefruit.command.codegen.Naming.REFERENCE_PARAM;
 import static grapefruit.command.codegen.util.FileHeader.LINE_1;
 import static grapefruit.command.codegen.util.FileHeader.LINE_2;
@@ -90,11 +91,12 @@ public class ContainerGenerator implements Generator<JavaFile> {
         // Include methods
         context.methods().forEach(classBuilder::addMethod);
 
-        // Include reference field
+        // Include our own fields
         classBuilder.addField(generateReferenceField());
+        classBuilder.addField(generateCommandsField());
 
         // Include our own methods
-        classBuilder.addMethod(generateConstructor()).addMethod(generateCommandsMethod(commands));
+        classBuilder.addMethod(generateConstructor(commands)).addMethod(generateCommandsMethod());
 
         // Generate java file
         JavaFile.Builder fileBuilder = JavaFile.builder(getPackage(this.container).getQualifiedName().toString(), classBuilder.build())
@@ -112,30 +114,36 @@ public class ContainerGenerator implements Generator<JavaFile> {
                 .build();
     }
 
-    private MethodSpec generateConstructor() {
-        return MethodSpec.constructorBuilder()
-                .addModifiers(Modifier.PUBLIC)
-                .addParameter(toTypeName(this.container), REFERENCE_PARAM)
-                .addStatement("this.$L = requireNonNull($L, $S)", REFERENCE_PARAM, REFERENCE_PARAM, "reference cannot be null")
+    private FieldSpec generateCommandsField() {
+        return FieldSpec.builder(COMMAND_SET, INTERNAL_COMMANDS_FIELD, Modifier.PRIVATE, Modifier.FINAL)
                 .build();
     }
 
-    private MethodSpec generateCommandsMethod(List<CodeBlock> commands) {
-        // Generate return block that will hold the set of commands
+    private MethodSpec generateConstructor(List<CodeBlock> commands) {
+        // Generate "internalCommands" initializer
         CodeBlock initializer = CodeBlock.builder()
-                .add("return $T.of(", Set.class)
+                .add("$T.of(", Set.class)
                 .indent()
                 .add(commands.stream().collect(CodeBlock.joining(",\n")))
                 .unindent()
                 .add(")")
                 .build();
 
-        // Generate the actual method
-        return MethodSpec.methodBuilder(COMMANDS)
+        return MethodSpec.constructorBuilder()
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(toTypeName(this.container), REFERENCE_PARAM)
+                .addStatement("this.$L = requireNonNull($L, $S)", REFERENCE_PARAM, REFERENCE_PARAM, "reference cannot be null")
+                .addStatement("this.$L = $L", INTERNAL_COMMANDS_FIELD, initializer)
+                .build();
+    }
+
+    private MethodSpec generateCommandsMethod() {
+        return MethodSpec.methodBuilder(COMMANDS_METHOD)
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .returns(COMMAND_SET)
-                .addStatement(initializer)
+                // Create immutable copy of the command set
+                .addStatement("return $T.copyOf(this.$L)", Set.class, INTERNAL_COMMANDS_FIELD)
                 .build();
     }
 
