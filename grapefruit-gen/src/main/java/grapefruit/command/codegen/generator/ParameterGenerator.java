@@ -1,5 +1,6 @@
 package grapefruit.command.codegen.generator;
 
+import com.google.common.collect.ImmutableMap;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
@@ -14,6 +15,7 @@ import grapefruit.command.argument.modifier.ContextualModifier;
 import grapefruit.command.argument.modifier.ModifierBlueprint;
 import grapefruit.command.argument.modifier.ModifierChain;
 import grapefruit.command.codegen.Naming;
+import grapefruit.command.util.PrimitivesUtil;
 import grapefruit.command.util.key.Key;
 
 import javax.lang.model.element.AnnotationMirror;
@@ -289,6 +291,16 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
 
     /* Represents a flag command argument parameter */
     private static final class FlagArg extends Argument {
+        private static final Map<TypeName, String> METHOD_LOOKUP = ImmutableMap.<TypeName, String>builder()
+                .put(TypeName.BYTE, "safeByte")
+                .put(TypeName.SHORT, "safeShort")
+                .put(TypeName.INT, "safeInt")
+                .put(TypeName.LONG, "safeLong")
+                .put(TypeName.FLOAT, "safeFloat")
+                .put(TypeName.DOUBLE, "safeDouble")
+                .put(TypeName.CHAR, "safeChar")
+                .put(TypeName.BOOLEAN, "safeBoolean")
+                .build();
         private final boolean presence;
         private final char shorthand;
 
@@ -309,12 +321,22 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
         protected CodeBlock generateValueExtractor() {
             return this.presence
                     ? CodeBlock.of("$L.get($L).orElse($L)", CONTEXT_PARAM, this.keyFieldName, false)
-                    : CodeBlock.of("$L.nullable($L)", CONTEXT_PARAM, this.keyFieldName);
+                    : generateValueFlagValueExtractor();
+        }
+
+        private CodeBlock generateValueFlagValueExtractor() {
+            CodeBlock base = CodeBlock.of("$L.nullable($L)", CONTEXT_PARAM, this.keyFieldName);
+            if (this.typeName.isBoxedPrimitive()) {
+                return CodeBlock.of("$L($L)", METHOD_LOOKUP.get(this.typeName.unbox()), base);
+            }
+
+            return base;
         }
 
         @Override
         public Result generate(GeneratorContext context) {
             context.importStatic(CommandArguments.class, this.presence ? "presenceFlag" : "valueFlag");
+            context.importStatic(PrimitivesUtil.class, "*"); // Unnecessary imports will be discarded by the compiler
             return super.generate(context);
         }
     }

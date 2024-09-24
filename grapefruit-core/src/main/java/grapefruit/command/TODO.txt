@@ -41,9 +41,6 @@
 - Returning a result from a command handler could be cool. Generate code so that if the annotated method's return type
   isn't void, we store the result in the correct command context mapped to COMMAND_RESULT_KEY or something.
 
-- [23:36:10 WARN]: com.tomushimano.lib.command.dispatcher.CommandInvocationException: java.lang.NullPointerException: Cannot invoke "java.lang.Integer.intValue()" because the return value of "com.tomushimano.lib.command.dispatcher.CommandContext.nullable(com.tomushimano.lib.command.util.key.Key)" is null
-  \_ Fix that!
-
 - Codegen module: collectRelevantAnnotations (per parameter)
 
 - [code-gen]: See what happens, if nested classes have command methods in them. They probably work fine, but the container class will be
@@ -55,3 +52,5 @@
 
 - [code-gen]: Add a name cache, so we can detect names that would clash. Right now sanitization would turn both 'ab:c' and 'ab-c' into 'ab_c',
   which could cause issues later. We would need to somehow keep track of parameter names, types and key name.
+
+- Investigate, if having some sort of proper chain when parsing an argument would make sense. Something like mapper->filters->modifiers
