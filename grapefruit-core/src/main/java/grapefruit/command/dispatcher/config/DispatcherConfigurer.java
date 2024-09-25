@@ -2,7 +2,6 @@ package grapefruit.command.dispatcher.config;
 
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.argument.modifier.ArgumentModifier;
-import grapefruit.command.argument.modifier.ContextualModifier;
 import grapefruit.command.dispatcher.CommandRegistrationHandler;
 import grapefruit.command.dispatcher.auth.CommandAuthorizer;
 import grapefruit.command.dispatcher.condition.CommandCondition;
@@ -24,7 +23,7 @@ import static java.util.stream.Collectors.toMap;
 public abstract class DispatcherConfigurer {
     private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers = Registry.create(Registry.DuplicateStrategy.reject());
     private final Registry<Key<?>, CommandCondition> conditions = Registry.create(Registry.DuplicateStrategy.reject());
-    private final Registry<Key<?>, Function<ContextualModifier.Context, ArgumentModifier<?>>> modifiers = Registry.create(Registry.DuplicateStrategy.reject());
+    private final Registry<Key<?>, Function<ArgumentModifier.Context, ArgumentModifier<?>>> modifiers = Registry.create(Registry.DuplicateStrategy.reject());
     private CommandAuthorizer authorizer = null;
     private CommandRegistrationHandler registrationHandler = null;
     private boolean configured = false;
@@ -166,7 +165,7 @@ public abstract class DispatcherConfigurer {
     /**
      * @see this#modifierFactories(Collection)
      */
-    protected void modifierFactories(ContextualModifier.Factory<?>... factories) {
+    protected void modifierFactories(ArgumentModifier.Factory<?>... factories) {
         modifierFactories(Set.of(factories));
     }
 
@@ -175,7 +174,7 @@ public abstract class DispatcherConfigurer {
      *
      * @param factories The factories to register
      */
-    protected void modifierFactories(Collection<ContextualModifier.Factory<?>> factories) {
+    protected void modifierFactories(Collection<ArgumentModifier.Factory<?>> factories) {
         this.modifiers.storeEntries(factories.stream()
                 .collect(toMap(x -> Key.of(x.getClass()), x -> x::createFromContext)));
     }
@@ -218,7 +217,7 @@ public abstract class DispatcherConfigurer {
      * Returns the registered modifiers
      * For internal use.
      */
-    public Registry<Key<?>, Function<ContextualModifier.Context, ArgumentModifier<?>>> modifiers() {
+    public Registry<Key<?>, Function<ArgumentModifier.Context, ArgumentModifier<?>>> modifiers() {
         return this.modifiers;
     }
 }

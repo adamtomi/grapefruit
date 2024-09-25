@@ -6,7 +6,6 @@ import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.argument.binding.BoundArgument;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.argument.modifier.ArgumentModifier;
-import grapefruit.command.argument.modifier.ContextualModifier;
 import grapefruit.command.dispatcher.auth.CommandAuthorizationException;
 import grapefruit.command.dispatcher.auth.CommandAuthorizer;
 import grapefruit.command.dispatcher.condition.CommandCondition;
@@ -42,7 +41,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     private final CommandAuthorizer authorizer;
     private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers;
     private final Registry<Key<?>, CommandCondition> conditions;
-    private final Registry<Key<?>, Function<ContextualModifier.Context, ArgumentModifier<?>>> modifiers;
+    private final Registry<Key<?>, Function<ArgumentModifier.Context, ArgumentModifier<?>>> modifiers;
     private final CommandRegistrationHandler registrationHandler;
 
     CommandDispatcherImpl(DispatcherConfigurer configurer) {

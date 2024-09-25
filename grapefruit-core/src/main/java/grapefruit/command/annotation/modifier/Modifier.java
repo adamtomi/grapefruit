@@ -1,7 +1,6 @@
 package grapefruit.command.annotation.modifier;
 
 import grapefruit.command.argument.modifier.ArgumentModifier;
-import grapefruit.command.argument.modifier.ContextualModifier;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -18,6 +17,6 @@ public @interface Modifier {
     @Target(ElementType.ANNOTATION_TYPE)
     @interface Factory {
 
-        Class<? extends ContextualModifier.Factory<?>> value();
+        Class<? extends ArgumentModifier.Factory<?>> value();
     }
 }

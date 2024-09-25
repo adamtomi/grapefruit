@@ -11,7 +11,7 @@ import grapefruit.command.annotation.argument.Flag;
 import grapefruit.command.annotation.inject.InjectedBy;
 import grapefruit.command.annotation.mapper.MappedBy;
 import grapefruit.command.argument.CommandArguments;
-import grapefruit.command.argument.modifier.ContextualModifier;
+import grapefruit.command.argument.modifier.ArgumentModifier;
 import grapefruit.command.argument.modifier.ModifierBlueprint;
 import grapefruit.command.argument.modifier.ModifierChain;
 import grapefruit.command.codegen.Naming;
@@ -253,7 +253,7 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
             if (values.isEmpty()) {
                 modifierContext = CodeBlock.of("null");
             } else {
-                modifierContext = CodeBlock.builder().add("$T.builder().", ContextualModifier.Context.class)
+                modifierContext = CodeBlock.builder().add("$T.builder().", ArgumentModifier.Context.class)
                         .add(values.entrySet().stream()
                                 .map(x -> CodeBlock.of("put($S, $L)", x.getKey().getSimpleName(), x.getValue()))
                                 .collect(CodeBlock.joining(".")))

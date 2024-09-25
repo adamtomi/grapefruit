@@ -8,9 +8,9 @@ public interface ModifierBlueprint {
     Key<?> key();
 
     @Nullable
-    ContextualModifier.Context context();
+    ArgumentModifier.Context context();
 
-    static ModifierBlueprint of(Class<?> clazz, @Nullable ContextualModifier.Context context) {
+    static ModifierBlueprint of(Class<?> clazz, @Nullable ArgumentModifier.Context context) {
         return new ModifierImpl.ModifierBlueprintImpl(Key.of(clazz), context);
     }
 }

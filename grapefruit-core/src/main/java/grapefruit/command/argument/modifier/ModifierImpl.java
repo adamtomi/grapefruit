@@ -39,7 +39,7 @@ final class ModifierImpl {
         }
     }
 
-    static final class ContextImpl implements ContextualModifier.Context {
+    static final class ContextImpl implements ArgumentModifier.Context {
         private final Registry<Key<?>, Object> valueStore = Registry.create(Registry.DuplicateStrategy.reject());
 
         ContextImpl(Map<String, Object> values) {
@@ -57,13 +57,13 @@ final class ModifierImpl {
         }
     }
 
-    static final class ContextBuilderImpl implements ContextualModifier.Context.Builder {
+    static final class ContextBuilderImpl implements ArgumentModifier.Context.Builder {
         private final Map<String, Object> values = new HashMap<>();
 
         ContextBuilderImpl() {}
 
         @Override
-        public ContextualModifier.Context.Builder put(String key, Object value) {
+        public ArgumentModifier.Context.Builder put(String key, Object value) {
             this.values.put(
                     requireNonNull(key, "key cannot be null"),
                     requireNonNull(value, "value cannot be null")
@@ -72,12 +72,12 @@ final class ModifierImpl {
         }
 
         @Override
-        public ContextualModifier.Context build() {
+        public ArgumentModifier.Context build() {
             return new ContextImpl(this.values);
         }
     }
 
-    record ModifierBlueprintImpl(Key<?> key, @Nullable ContextualModifier.Context context) implements ModifierBlueprint {
+    record ModifierBlueprintImpl(Key<?> key, @Nullable ArgumentModifier.Context context) implements ModifierBlueprint {
         ModifierBlueprintImpl {
             requireNonNull(key, "key cannot be null");
         }
