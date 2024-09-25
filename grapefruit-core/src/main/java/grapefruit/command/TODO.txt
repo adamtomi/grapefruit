@@ -8,12 +8,6 @@
 
 - Add tests.
 
-- Message system? Right now we don't have one, and I'm actually glad about that. We do throw a lot
-  of exceptions though that are up to the user to handle, but right now I think that works. Probably
-  in the long run too. Maybe we could have an extension package to grapefruit, and that could take
-  care of printing the appropriate messages to users based on exceptions. Maybe. If not, then we'll
-  need to have a lot more flexible message system than what was implemented in grapefruit 1.
-
 - Implement "standard" argument mappers for java primitive types (maybe not boolean though, because
   please use presence flags instead?), and perhaps a few other builtin java types (such types could
   be UUID, Duration, some form of Date (maybe the newer LocalDateTime thingy instead).
