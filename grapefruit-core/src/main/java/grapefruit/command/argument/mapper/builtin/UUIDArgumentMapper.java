@@ -1,7 +1,6 @@
 package grapefruit.command.argument.mapper.builtin;
 
 import grapefruit.command.CommandException;
-import grapefruit.command.argument.CommandArgumentException;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.StringReader;
@@ -17,10 +16,11 @@ public class UUIDArgumentMapper implements ArgumentMapper<UUID> {
 
     @Override
     public UUID tryMap(CommandContext context, StringReader input) throws CommandException {
+        String value = input.readSingle();
         try {
-            return UUID.fromString(input.readSingle());
+            return UUID.fromString(value);
         } catch (IllegalArgumentException ex) {
-            throw new CommandArgumentException(); // TODO error message
+            throw generateException(value);
         }
     }
 

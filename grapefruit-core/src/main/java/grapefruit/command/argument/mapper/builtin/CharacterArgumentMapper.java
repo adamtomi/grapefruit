@@ -1,7 +1,6 @@
 package grapefruit.command.argument.mapper.builtin;
 
 import grapefruit.command.CommandException;
-import grapefruit.command.argument.CommandArgumentException;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.StringReader;
@@ -17,7 +16,7 @@ public class CharacterArgumentMapper implements ArgumentMapper<Character> {
     public Character tryMap(CommandContext context, StringReader input) throws CommandException {
         String value = input.readSingle();
         // Input too long, throw an error
-        if (value.length() != 1) throw new CommandArgumentException(); // TODO error message
+        if (value.length() != 1) throw generateException(value);
 
         return value.charAt(0);
     }

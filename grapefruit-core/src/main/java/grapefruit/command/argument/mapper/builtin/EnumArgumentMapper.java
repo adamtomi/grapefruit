@@ -1,7 +1,6 @@
 package grapefruit.command.argument.mapper.builtin;
 
 import grapefruit.command.CommandException;
-import grapefruit.command.argument.CommandArgumentException;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.StringReader;
@@ -63,7 +62,7 @@ public final class EnumArgumentMapper<E extends Enum<E>> implements ArgumentMapp
             if (this.resolveStrategy.equals(name, each)) return each;
         }
 
-        throw new CommandArgumentException();
+        throw generateException(name);
     }
 
     @Override

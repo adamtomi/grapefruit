@@ -38,6 +38,17 @@ public interface ArgumentMapper<T> {
     List<String> complete(CommandContext context, String input);
 
     /**
+     * Returns a new {@link ArgumentMappingException} instance assoicated with
+     * this mapper instance.
+     *
+     * @param input The user input that was parsed
+     * @return The generated exception
+     */
+    default ArgumentMappingException generateException(String input) {
+        return new ArgumentMappingException(input, this);
+    }
+
+    /**
      * Constructs a new {@link ArgumentMapper} instance
      * that maps any input into the supplied value.
      *

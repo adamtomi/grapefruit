@@ -1,7 +1,6 @@
 package grapefruit.command.argument.mapper.builtin;
 
 import grapefruit.command.CommandException;
-import grapefruit.command.argument.CommandArgumentException;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.StringReader;
@@ -72,7 +71,7 @@ public final class NumericArgumentMapper<N extends Number> implements ArgumentMa
         try {
             return this.internalMapper.apply(value);
         } catch (NumberFormatException ex) {
-            throw new CommandArgumentException(); // TODO error message
+            throw generateException(value);
         }
     }
 

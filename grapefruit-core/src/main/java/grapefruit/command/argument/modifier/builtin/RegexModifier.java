@@ -21,7 +21,7 @@ public final class RegexModifier implements ArgumentModifier<String> {
     @Override
     public String apply(String input) throws CommandArgumentException {
         Matcher matcher = this.pattern.matcher(input);
-        if (!matcher.matches()) throw new CommandArgumentException(); // TODO proper error
+        if (!matcher.matches()) throw generateException(input);
 
         return input;
     }

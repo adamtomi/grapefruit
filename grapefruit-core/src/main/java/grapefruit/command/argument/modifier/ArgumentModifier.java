@@ -28,6 +28,17 @@ public interface ArgumentModifier<T> {
     T apply(T input) throws CommandArgumentException;
 
     /**
+     * Returns a new {@link ArgumentModifierException} instance assoicated with
+     * this modifier instance.
+     *
+     * @param input The user input that was parsed
+     * @return The generated exception
+     */
+    default ArgumentModifierException generateException(String input) {
+        return new ArgumentModifierException(input, this);
+    }
+
+    /**
      * The context is responsible for storing values extracted from the original
      * annotation. A named {@link Key} will be created for every extracted value
      * with its type being the type of the annotation value. Which means that if
