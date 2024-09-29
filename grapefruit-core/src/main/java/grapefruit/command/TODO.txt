@@ -8,19 +8,6 @@
 
 - Add tests.
 
-- Implement "standard" argument mappers for java primitive types (maybe not boolean though, because
-  please use presence flags instead?), and perhaps a few other builtin java types (such types could
-  be UUID, Duration, some form of Date (maybe the newer LocalDateTime thingy instead).
-  - A so-called CommaSeparatedArgumentMapper would also make sense. It would expect arguments formatted as a,b,c,
-    and then map them into a List, or Set, or whatever. It could look something like this:
-    ArgumentMapper<Set<MyType>> mapper = CommaSeparatedArgumentMapper.wrap(new MyTypeMapper(), HashSet::new);
-    It could also come with multiple factory methods, such as #set (returning a set of something), #list
-    (returning a list of something) with #wrap allowing users to pass in a generator, should they want
-    something different.
-  - EnumLikeArgumentMapper could take a list of arguments and only accept those (T[]). For instance, a
-    weekday mapper would be something like: ArgumentMapper<String> weekdayMapper = EnumLikeArgumentMapper.of("monday", "tuesday"...);
-
-
 - Introduce description system. @CommandDefinition, @Arg, and @Flag annotations should have a "description"
   parameter ("" by default), and if a command syntax exception is thrown, these descriptions should be included
   so that they can be printed to the user. Optionally, we might want to have description lookup/provider system,
