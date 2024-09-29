@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -42,6 +43,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers;
     private final Registry<Key<?>, CommandCondition> conditions;
     private final Registry<Key<?>, Function<ArgumentModifier.Context, ArgumentModifier<?>>> modifiers;
+    private final Registry<ExecutionStage, Queue<ExecutionListener>> listeners;
     private final CommandRegistrationHandler registrationHandler;
 
     CommandDispatcherImpl(DispatcherConfigurer configurer) {
@@ -50,6 +52,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         this.argumentMappers = requireNonNull(configurer.argumentMappers(), "argumentMappers cannot be null");
         this.conditions = requireNonNull(configurer.conditions(), "conditions cannot be null");
         this.modifiers = requireNonNull(configurer.modifiers(), "modifiers cannot be null");
+        this.listeners = requireNonNull(configurer.listeners(), "listener cannot be null");
         this.registrationHandler = requireNonNull(configurer.registrationHandler(), "registrationHandler cannot be null");
     }
 
@@ -153,6 +156,18 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         ));
     }
 
+    // Invoke command listeners
+    private boolean invokeListeners(ExecutionStage stage, CommandContext context) {
+        Optional<Queue<ExecutionListener>> listeners = this.listeners.get(stage);
+        if (listeners.isEmpty()) return true;
+
+        for (ExecutionListener listener : listeners.orElseThrow()) {
+            if (!listener.handle(context)) return false;
+        }
+
+        return true;
+    }
+
     @Override
     public void dispatch(CommandContext context, String commandLine) throws CommandException {
         requireNonNull(context, "context cannot be null");
@@ -166,6 +181,10 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         // The search was successful, we can extract the command instance
         Command command = ((CommandGraph.SearchResult.Success) search).command();
 
+        // Save the command instance so that we can retrieve it later if needed
+        context.put(InternalContextKeys.COMMAND, command);
+        if (!invokeListeners(ExecutionStage.PRE_PROCESS, context)) return;
+
         // Check permissions
         Optional<String> permission = command.spec().permission();
         boolean mayExecute = permission.map(x -> this.authorizer.authorize(x, context))
@@ -173,9 +192,6 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
         // Throw an exception if the user lacks sufficient permissions
         if (!mayExecute) throw new CommandAuthorizationException(permission.orElseThrow());
-
-        // Save the command instance so that we can retrieve it later if needed
-        context.put(InternalContextKeys.COMMAND, command);
 
         // Retrieve command info
         CommandInfo commandInfo = requireInfo(command);
@@ -190,8 +206,11 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         // Rethrow captured exception if it exists
         parseResult.rethrowCaptured();
 
+        if (!invokeListeners(ExecutionStage.PRE_EXECUTION, context)) return;
         // Finally, invoke the command
         command.run(context);
+
+        invokeListeners(ExecutionStage.POST_EXECUTION, context);
     }
 
     private ParseResult parseArguments(CommandContext context, StringReader input, CommandInfo commandInfo) {

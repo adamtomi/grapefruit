@@ -1,9 +1,3 @@
-- Command call listeners existed in grapefruit 1, I'd like to have them in this version too, maybe
-  having more stages to register call listeners to. Maybe [ PRE_PARSE, PRE_EXECUTION, POST_EXECUTION, FAILED ].
-  Unlike the first version, this time they could actually get access to the current CommandContext
-  instance as that's already created when CommandDispatcher#dispatch is called. The registration shall
-  happen in DispatcherConfigurer as that's where every bit of configuration is done.
-
 - Add more documentation.
 
 - Add tests.

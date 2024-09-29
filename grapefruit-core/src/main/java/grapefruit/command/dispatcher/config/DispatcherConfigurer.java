@@ -3,6 +3,8 @@ package grapefruit.command.dispatcher.config;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.argument.modifier.ArgumentModifier;
 import grapefruit.command.dispatcher.CommandRegistrationHandler;
+import grapefruit.command.dispatcher.ExecutionListener;
+import grapefruit.command.dispatcher.ExecutionStage;
 import grapefruit.command.dispatcher.auth.CommandAuthorizer;
 import grapefruit.command.dispatcher.condition.CommandCondition;
 import grapefruit.command.util.Registry;
@@ -11,6 +13,8 @@ import io.leangen.geantyref.TypeToken;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -24,6 +28,7 @@ public abstract class DispatcherConfigurer {
     private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers = Registry.create(Registry.DuplicateStrategy.reject());
     private final Registry<Key<?>, CommandCondition> conditions = Registry.create(Registry.DuplicateStrategy.reject());
     private final Registry<Key<?>, Function<ArgumentModifier.Context, ArgumentModifier<?>>> modifiers = Registry.create(Registry.DuplicateStrategy.reject());
+    private final Registry<ExecutionStage, Queue<ExecutionListener>> listeners = Registry.create(Registry.DuplicateStrategy.reject());
     private CommandAuthorizer authorizer = null;
     private CommandRegistrationHandler registrationHandler = null;
     private boolean configured = false;
@@ -179,6 +184,17 @@ public abstract class DispatcherConfigurer {
                 .collect(toMap(x -> Key.of(x.getClass()), x -> x::createFromContext)));
     }
 
+    /**
+     * Register the supplied {@link ExecutionListener listener}.
+     *
+     * @param stage The execution stage
+     * @param listener The listener
+     */
+    protected void on(ExecutionStage stage, ExecutionListener listener) {
+        if (!this.listeners.has(stage)) this.listeners.store(stage, new LinkedList<>());
+        this.listeners.get(stage).orElseThrow().offer(listener);
+    }
+
     // Getters
 
     /**
@@ -219,5 +235,13 @@ public abstract class DispatcherConfigurer {
      */
     public Registry<Key<?>, Function<ArgumentModifier.Context, ArgumentModifier<?>>> modifiers() {
         return this.modifiers;
+    }
+
+    /**
+     * Returns the registered listeners.
+     * For internal use.
+     */
+    public Registry<ExecutionStage, Queue<ExecutionListener>> listeners() {
+        return this.listeners;
     }
 }
