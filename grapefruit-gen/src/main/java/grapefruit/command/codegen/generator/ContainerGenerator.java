@@ -1,5 +1,6 @@
 package grapefruit.command.codegen.generator;
 
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
@@ -11,6 +12,7 @@ import grapefruit.command.Command;
 import grapefruit.command.CommandContainer;
 import grapefruit.command.codegen.util.ElementPredicate;
 
+import javax.annotation.processing.Generated;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -19,25 +21,16 @@ import javax.lang.model.element.TypeElement;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.StringJoiner;
 
 import static com.google.auto.common.MoreElements.getPackage;
 import static grapefruit.command.codegen.Naming.COMMANDS_METHOD;
 import static grapefruit.command.codegen.Naming.CONTAINER_CLASS_SUFFIX;
 import static grapefruit.command.codegen.Naming.INTERNAL_COMMANDS_FIELD;
 import static grapefruit.command.codegen.Naming.REFERENCE_PARAM;
-import static grapefruit.command.codegen.util.FileHeader.LINE_1;
-import static grapefruit.command.codegen.util.FileHeader.LINE_2;
-import static grapefruit.command.codegen.util.FileHeader.LINE_3;
-import static grapefruit.command.codegen.util.FileHeader.LINE_4;
-import static grapefruit.command.codegen.util.FileHeader.writeBlank;
-import static grapefruit.command.codegen.util.FileHeader.writeHorizontal;
-import static grapefruit.command.codegen.util.FileHeader.writeLine;
 import static grapefruit.command.codegen.util.TypeNameUtil.toTypeName;
 import static java.util.Objects.requireNonNull;
 
@@ -87,7 +80,13 @@ public class ContainerGenerator implements Generator<JavaFile> {
                 .map(x -> x.generate(context))
                 .toList();
 
+        AnnotationSpec generated = AnnotationSpec.builder(Generated.class)
+                .addMember("value", "$S", context.generator())
+                .addMember("date", "$S", Instant.now().truncatedTo(ChronoUnit.SECONDS))
+                .build();
+
         TypeSpec.Builder classBuilder = TypeSpec.classBuilder(generateOutputClassName())
+                .addAnnotation(generated)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addSuperinterface(CommandContainer.class);
 
@@ -105,7 +104,6 @@ public class ContainerGenerator implements Generator<JavaFile> {
 
         // Generate java file
         JavaFile.Builder fileBuilder = JavaFile.builder(getPackage(this.container).getQualifiedName().toString(), classBuilder.build())
-                .addFileComment(generateFileHeader(context.generator()))
                 .indent(" ".repeat(4))
                 .skipJavaLangImports(true)
                 .addStaticImport(Objects.class, "requireNonNull");
@@ -166,29 +164,5 @@ public class ContainerGenerator implements Generator<JavaFile> {
                 // Create immutable copy of the command set
                 .addStatement("return $T.copyOf(this.$L)", Set.class, INTERNAL_COMMANDS_FIELD)
                 .build();
-    }
-
-    private String generateFileHeader(String generator) {
-        List<String> lines = List.of(
-                LINE_1,
-                "",
-                LINE_2,
-                LINE_3.formatted(generator),
-                LINE_4.formatted(Instant.now().truncatedTo(ChronoUnit.SECONDS))
-        );
-
-        int length = lines.stream()
-                .mapToInt(String::length)
-                .sorted()
-                .toArray()[lines.size() - 1] + 2; // + 2 for padding
-
-        StringBuilder builder = new StringBuilder()
-                .append("\n");
-        writeHorizontal(builder, length);
-        writeBlank(builder, length);
-        lines.forEach(x -> writeLine(builder, length, x));
-        writeBlank(builder, length);
-        writeHorizontal(builder, length);
-        return builder.toString();
     }
 }
