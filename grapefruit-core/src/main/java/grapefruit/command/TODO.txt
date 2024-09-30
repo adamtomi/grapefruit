@@ -18,10 +18,6 @@
 
 - Codegen module: collectRelevantAnnotations (per parameter)
 
-- [code-gen]: See what happens, if nested classes have command methods in them. They probably work fine, but the container class will be
-  named after the original class's parent class, so if we have command methods in both the parent and nested class, the container names
-  will clash.
-
 - [core]: Rework command syntax system.
 - [core]: Get rid of some of the exception classes, if possible.
 
@@ -29,3 +25,6 @@
   which could cause issues later. We would need to somehow keep track of parameter names, types and key name.
 
 - Investigate, if having some sort of proper chain when parsing an argument would make sense. Something like mapper->filters->modifiers
+
+- [core]: ArgumentMapper#isTerminal. Terminal argument mappers consume the remaining part of input
+  (currently the greedy string mapper is the only one) and thus cannot be followed by any other arguments.
