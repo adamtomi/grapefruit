@@ -109,7 +109,9 @@ public interface Registry<K, V> {
         public void merge(Registry<K, V> other) {
             try {
                 this.lock.writeLock().lock();
-                this.internalMap.putAll(other.asImmutableMap());
+                for (Map.Entry<K, V> entry : other.asImmutableMap().entrySet()) {
+                    internalStore(entry.getKey(), entry.getValue());
+                }
             } finally {
                 this.lock.writeLock().unlock();
             }

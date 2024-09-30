@@ -70,6 +70,7 @@ public abstract class DispatcherConfigurer {
         root.argumentMappers.merge(other.argumentMappers);
         root.conditions.merge(other.conditions);
         root.modifiers.merge(other.modifiers);
+        root.listeners.merge(other.listeners);
         // Only copy properties that have been changed from their default values
         if (other.authorizer != null) root.authorizer = other.authorizer;
         if (other.registrationHandler != null) root.registrationHandler = other.registrationHandler;
