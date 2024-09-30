@@ -11,15 +11,20 @@ import grapefruit.command.Command;
 import grapefruit.command.CommandContainer;
 import grapefruit.command.codegen.util.ElementPredicate;
 
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.StringJoiner;
 
 import static com.google.auto.common.MoreElements.getPackage;
 import static grapefruit.command.codegen.Naming.COMMANDS_METHOD;
@@ -82,7 +87,7 @@ public class ContainerGenerator implements Generator<JavaFile> {
                 .map(x -> x.generate(context))
                 .toList();
 
-        TypeSpec.Builder classBuilder = TypeSpec.classBuilder(CONTAINER_CLASS_SUFFIX.apply(this.container))
+        TypeSpec.Builder classBuilder = TypeSpec.classBuilder(generateOutputClassName())
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addSuperinterface(CommandContainer.class);
 
@@ -102,11 +107,27 @@ public class ContainerGenerator implements Generator<JavaFile> {
         JavaFile.Builder fileBuilder = JavaFile.builder(getPackage(this.container).getQualifiedName().toString(), classBuilder.build())
                 .addFileComment(generateFileHeader(context.generator()))
                 .indent(" ".repeat(4))
+                .skipJavaLangImports(true)
                 .addStaticImport(Objects.class, "requireNonNull");
 
         // Add static imports
         context.staticImports().forEach(x -> fileBuilder.addStaticImport(x.from(), x.method()));
         return fileBuilder.build();
+    }
+
+    // Generate class name. This method takes nested class names into account
+    private String generateOutputClassName() {
+        // Collect names
+        Deque<String> names = new ArrayDeque<>();
+        Element element = this.container;
+        // If the element is a package, stop
+        while (element != null && !element.getKind().equals(ElementKind.PACKAGE)) {
+            names.offerFirst(element.getSimpleName().toString());
+            element = element.getEnclosingElement();
+        }
+
+        String baseName = String.join("_", names);
+        return CONTAINER_CLASS_SUFFIX.apply(baseName);
     }
 
     private FieldSpec generateReferenceField() {

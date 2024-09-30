@@ -49,7 +49,7 @@ public class CommandProcessor extends AbstractProcessor {
             } catch (IOException ex) {
                 this.processingEnv.getMessager().printMessage(
                         Diagnostic.Kind.ERROR,
-                        "Failed to write Java file to '%s'.".formatted(file)
+                        "Failed to write Java file to '%s'.".formatted(file.toJavaFileObject().toUri())
                 );
 
                 ex.printStackTrace();
