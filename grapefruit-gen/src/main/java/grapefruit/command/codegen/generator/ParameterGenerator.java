@@ -15,6 +15,7 @@ import grapefruit.command.argument.modifier.ArgumentModifier;
 import grapefruit.command.argument.modifier.ModifierBlueprint;
 import grapefruit.command.argument.modifier.ModifierChain;
 import grapefruit.command.codegen.Naming;
+import grapefruit.command.codegen.util.NameCache;
 import grapefruit.command.util.PrimitivesUtil;
 import grapefruit.command.util.key.Key;
 
@@ -22,6 +23,7 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import java.util.HashMap;
@@ -66,16 +68,20 @@ import static java.util.Objects.requireNonNull;
  * </ul>
  */
 public abstract class ParameterGenerator implements Generator<ParameterGenerator.Result> {
+    private static final NameCache NAME_CACHE = new NameCache();
     protected final TypeName typeName;
     protected final String keyFieldName;
 
-    private ParameterGenerator(TypeName typeName, String keyFieldName) {
+    private ParameterGenerator(TypeElement container, TypeName typeName, String keyFieldName) {
         this.typeName = requireNonNull(typeName, "typeName cannot be null");
-        this.keyFieldName = sanitize(requireNonNull(keyFieldName, "keyFieldName cannot be null"));
+        requireNonNull(container, "container cannot be null");
+        requireNonNull(keyFieldName, "keyFieldName cannot be null");
+        this.keyFieldName = NAME_CACHE.generateUniqueName(container, keyFieldName, sanitize(keyFieldName));
     }
 
     public static ParameterGenerator create(VariableElement element) {
         TypeName typeName = toTypeName(element).box();
+        TypeElement container = asType(element.getEnclosingElement().getEnclosingElement());
         // Retrieve @Arg annotation, if it exists
         Optional<AnnotationMirror> arg = getAnnotationMirror(element, Arg.class).toJavaUtil();
         // Retrieve @Flag annotation, if it exists
@@ -90,7 +96,7 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
             // AnnotationMirror injectedBy = assertAnnotation(element, InjectedBy.class);
             AnnotationMirror injectedBy = findAnnotation(element, InjectedBy.class)
                     .orElseThrow(() -> new IllegalStateException("Non-argument parameters are expected to be annotated by '%s'".formatted(InjectedBy.class)));
-            return new NonArgument(typeName, injectedBy);
+            return new NonArgument(container, typeName, injectedBy);
         }
 
         // Fallback name, if @Arg or @Flag doesn't provide a custom one.
@@ -110,7 +116,7 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
 
             // Use the correct name
             String argumentName = pick(accessAnnotationValue(arg.orElseThrow(), "name", String.class), fallbackName);
-            return new RequiredArg(typeName, argumentName, mapperName, modifiers);
+            return new RequiredArg(container, typeName, argumentName, mapperName, modifiers);
         } else { // This means that "flag" is present
             AnnotationMirror flagDef = flag.orElseThrow();
             // Use the correct name
@@ -121,7 +127,7 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
             String finalName = accessAnnotationValue(flagDef, "hyphenate", Boolean.class)
                     ? toKebabCase(argumentName)
                     : argumentName;
-            return new FlagArg(typeName, finalName, mapperName, shorthand, modifiers);
+            return new FlagArg(container, typeName, finalName, mapperName, shorthand, modifiers);
         }
     }
 
@@ -183,8 +189,8 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
     private static final class NonArgument extends ParameterGenerator {
         private final AnnotationMirror injectedBy;
 
-        private NonArgument(TypeName typeName, AnnotationMirror injectedBy) {
-            super(typeName, "%s_%s".formatted(
+        private NonArgument(TypeElement container, TypeName typeName, AnnotationMirror injectedBy) {
+            super(container, typeName, "%s_%s".formatted(
                     accessAnnotationValue(injectedBy, "value", String.class),
                     ParameterGenerator.keyFieldName(typeName)
             ));
@@ -219,8 +225,8 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
         protected final String mapperName;
         protected final Map<AnnotationMirror, TypeMirror> modifiers;
 
-        private Argument(TypeName typeName, String name, /* @Nullable */ String mapperName, Map<AnnotationMirror, TypeMirror> modifiers) {
-            super(typeName, "%s_%s".formatted(name, ParameterGenerator.keyFieldName(typeName)));
+        private Argument(TypeElement container, TypeName typeName, String name, /* @Nullable */ String mapperName, Map<AnnotationMirror, TypeMirror> modifiers) {
+            super(container, typeName, "%s_%s".formatted(name, ParameterGenerator.keyFieldName(typeName)));
             this.name = requireNonNull(name, "name cannot be null");
             this.mapperName = mapperName; // mapperName CAN be null
             this.modifiers = requireNonNull(modifiers, "modifiers cannot be null");
@@ -268,8 +274,8 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
 
     /* Represents a required command argument parameter */
     private static final class RequiredArg extends Argument {
-        private RequiredArg(TypeName typeName, String name, String mapperName, Map<AnnotationMirror, TypeMirror> modifiers) {
-            super(typeName, name, mapperName, modifiers);
+        private RequiredArg(TypeElement container, TypeName typeName, String name, String mapperName, Map<AnnotationMirror, TypeMirror> modifiers) {
+            super(container, typeName, name, mapperName, modifiers);
         }
 
         @Override
@@ -304,8 +310,8 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
         private final boolean presence;
         private final char shorthand;
 
-        private FlagArg(TypeName typeName, String name, String mapperName, char shorthand, Map<AnnotationMirror, TypeMirror> modifiers) {
-            super(typeName, name, mapperName, modifiers);
+        private FlagArg(TypeElement container, TypeName typeName, String name, String mapperName, char shorthand, Map<AnnotationMirror, TypeMirror> modifiers) {
+            super(container, typeName, name, mapperName, modifiers);
             this.presence = unboxSafe(typeName).equals(TypeName.BOOLEAN);
             this.shorthand = !Character.isAlphabetic(shorthand) ? name.charAt(0) : shorthand;
         }
