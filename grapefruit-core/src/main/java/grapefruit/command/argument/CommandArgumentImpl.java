@@ -9,14 +9,14 @@ import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
-abstract class AbstractCommandArgument<T> implements CommandArgument<T> {
+abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
     protected final String name;
     protected final Key<T> key;
     protected final Key<T> mapperKey;
     protected final boolean isFlag;
     protected final ModifierChain<T> modifierChain;
 
-    AbstractCommandArgument(String name, Key<T> key, Key<T> mapperKey, boolean isFlag, ModifierChain<T> modifierChain) {
+    CommandArgumentImpl(String name, Key<T> key, Key<T> mapperKey, boolean isFlag, ModifierChain<T> modifierChain) {
         this.name = requireNonNull(name, "name cannot be null");
         this.key = requireNonNull(key, "key cannot be null");
         this.mapperKey = requireNonNull(mapperKey, "mapperKey cannot be null");
@@ -54,7 +54,7 @@ abstract class AbstractCommandArgument<T> implements CommandArgument<T> {
         return BoundArgument.of(this, mapper);
     }
 
-    static final class Required<T> extends AbstractCommandArgument<T> {
+    static final class Required<T> extends CommandArgumentImpl<T> {
         Required(String name, Key<T> key, Key<T> mapperKey, ModifierChain<T> modifierChain) {
             super(name, key, mapperKey, false, modifierChain);
         }
@@ -66,11 +66,11 @@ abstract class AbstractCommandArgument<T> implements CommandArgument<T> {
 
         @Override
         public String toString() {
-            return "AbstractCommandArgument$Required(name=%s)".formatted(this.name);
+            return "CommandArgumentImpl$Required(name=%s)".formatted(this.name);
         }
     }
 
-    static abstract class Flag<T> extends AbstractCommandArgument<T> implements FlagArgument<T> {
+    static abstract class Flag<T> extends CommandArgumentImpl<T> implements FlagArgument<T> {
         private final char shorthand;
         private final boolean isPresenceFlag;
 
@@ -97,7 +97,7 @@ abstract class AbstractCommandArgument<T> implements CommandArgument<T> {
 
         @Override
         public String toString() {
-            return "AbstractCommandArgument$Flag(name=%s, shorthand=%s, isPresenceFlag=%b)"
+            return "CommandArgumentImpl$Flag(name=%s, shorthand=%s, isPresenceFlag=%b)"
                     .formatted(this.name, this.shorthand, this.isPresenceFlag);
         }
     }
