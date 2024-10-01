@@ -5,6 +5,8 @@ import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.argument.modifier.ModifierChain;
 import grapefruit.command.util.key.Key;
 
+import java.util.function.Function;
+
 import static java.util.Objects.requireNonNull;
 
 abstract class AbstractCommandArgument<T> implements CommandArgument<T> {
@@ -68,7 +70,7 @@ abstract class AbstractCommandArgument<T> implements CommandArgument<T> {
         }
     }
 
-    static final class Flag<T> extends AbstractCommandArgument<T> implements FlagArgument<T> {
+    static abstract class Flag<T> extends AbstractCommandArgument<T> implements FlagArgument<T> {
         private final char shorthand;
         private final boolean isPresenceFlag;
 
@@ -97,6 +99,27 @@ abstract class AbstractCommandArgument<T> implements CommandArgument<T> {
         public String toString() {
             return "AbstractCommandArgument$Flag(name=%s, shorthand=%s, isPresenceFlag=%b)"
                     .formatted(this.name, this.shorthand, this.isPresenceFlag);
+        }
+    }
+
+    static final class PresenceFlag extends Flag<Boolean> {
+        /* Store a mapper that always returns the value "true" */
+        private static final ArgumentMapper<Boolean> BOOLEAN_MAPPER = ArgumentMapper.constant(true);
+
+        PresenceFlag(String name, Key<Boolean> key, Key<Boolean> mapperKey, char shorthand, ModifierChain<Boolean> modifierChain) {
+            super(name, key, mapperKey, shorthand, true, modifierChain);
+        }
+
+        @Override
+        public BoundArgument<Boolean> bind(Function<Key<Boolean>, ArgumentMapper<Boolean>> mapperAccess) {
+            // Since this is a presence flag, we always want to bind to BOOLEAN_MAPPER
+            return bind(BOOLEAN_MAPPER);
+        }
+    }
+
+    static final class ValueFlag<T> extends Flag<T> {
+        ValueFlag(String name, Key<T> key, Key<T> mapperKey, char shorthand, ModifierChain<T> modifierChain) {
+            super(name, key, mapperKey, shorthand, false, modifierChain);
         }
     }
 }

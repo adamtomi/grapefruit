@@ -125,29 +125,19 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     // This method exists to make working with generics less of a pain.
     @SuppressWarnings("unchecked")
     private <T> BoundArgument<T> bindArgument(CommandArgument<T> argument) {
-        ArgumentMapper<T> mapper;
+        /*
+         * Retrieve argument mapper. A correct mapper is assumed to be present
+         * in the registry, hence we throw an error if that turns out not to be
+         * the case. No mapper being present for this argument's mapper key would
+         * indicate an improper/incomplete dispatcher configurer, which is a user
+         * error.
+         */
+        Function<Key<T>, ArgumentMapper<T>> mapperAccess = key -> (ArgumentMapper<T>) this.argumentMappers.get(key)
+                .orElseThrow(() -> new IllegalStateException("Could not find argument mapper matching '%s'. Requested by: '%s'".formatted(
+                        argument.mapperKey(), argument
+                )));
 
-        // Presence flags always yield true if present, otherwise false
-        if (argument.isFlag() && argument.asFlag().isPresenceFlag()) {
-            // Cast is safe, as a presence flag will always be CommandArgument<Boolean>,
-            // which means that <T> in that instance will be Boolean.
-            mapper = (ArgumentMapper<T>) ArgumentMapper.constant(true);
-        } else {
-            /*
-             * Retrieve argument mapper. A correct mapper is assumed to be present
-             * in the registry, hence we throw an error if that turns out not to be
-             * the case. No mapper being present for this argument's mapper key would
-             * indicate an improper/incomplete dispatcher configurer, which is a user
-             * error.
-             */
-            mapper = (ArgumentMapper<T>) this.argumentMappers.get(argument.mapperKey())
-                    .orElseThrow(() -> new IllegalStateException("Could not find argument mapper matching '%s'. Requested by: '%s'".formatted(
-                            argument.mapperKey(), argument
-                    )));
-        }
-
-        // Return resulting bound argument.
-        return argument.bind(mapper);
+        return argument.bind(mapperAccess);
     }
 
     private CommandInfo requireInfo(Command command) {

@@ -5,6 +5,8 @@ import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.argument.modifier.ModifierChain;
 import grapefruit.command.util.key.Key;
 
+import java.util.function.Function;
+
 /**
  * Describes an argument of a command. {@link CommandArgument#name()} needs to be
  * unique per argument chain.
@@ -78,4 +80,12 @@ public interface CommandArgument<T> {
      * @return The resulting {@link BoundArgument} instance
      */
     BoundArgument<T> bind(ArgumentMapper<T> mapper);
+
+    /**
+     * @param mapperAccess Function providing argument mapper instances
+     * @see this#bind(ArgumentMapper)
+     */
+    default BoundArgument<T> bind(Function<Key<T>, ArgumentMapper<T>> mapperAccess) {
+        return bind(mapperAccess.apply(mapperKey()));
+    }
 }

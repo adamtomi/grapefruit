@@ -37,7 +37,7 @@ public final class CommandArguments {
      */
     public static FlagArgument<Boolean> presenceFlag(String name, char shorthand, Key<Boolean> mapperKey) {
         // Modifiers aren't supported on presence flags
-        return new AbstractCommandArgument.Flag<>(name, Key.of(Boolean.class), mapperKey, shorthand, true, ModifierChain.of(List.of()));
+        return new AbstractCommandArgument.PresenceFlag(name, Key.of(Boolean.class), mapperKey, shorthand, ModifierChain.of(List.of()));
     }
 
     /**
@@ -50,6 +50,6 @@ public final class CommandArguments {
      * @return The created argument
      */
     public static <T> FlagArgument<T> valueFlag(String name, char shorthand, Key<T> key, Key<T> mapperKey, ModifierChain<T> modifierChain) {
-        return new AbstractCommandArgument.Flag<>(name, key, mapperKey, shorthand, false, modifierChain);
+        return new AbstractCommandArgument.ValueFlag<>(name, key, mapperKey, shorthand, modifierChain);
     }
 }
