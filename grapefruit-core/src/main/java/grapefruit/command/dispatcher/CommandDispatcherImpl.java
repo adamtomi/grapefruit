@@ -345,7 +345,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
         if (argument.argument().isFlag()) {
             if (argument.argument().asFlag().isPresenceFlag() && completeNext) {
-                base.addAll(argument.mapper().complete(context, arg));
+                base.addAll(formatFlags(List.of(firstUnseen)));
             } else {
                 base.addAll(formatFlags(parseResult.remainingFlags()));
                 // Flag shorthand is used
