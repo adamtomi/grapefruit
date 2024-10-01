@@ -57,9 +57,11 @@ class ParseResult {
         return List.copyOf(this.remainingFlags);
     }
 
-    // TODO
-    public Optional<String> remainingInput() {
-        throw new UnsupportedOperationException();
+    @Override
+    public String toString() {
+        return "ParseResult(lastUnsuccessfulArgument=%s, lastInput=%s, capturedException=%s)".formatted(
+                this.lastUnsuccessfulArgument, this.lastInput, this.capturedException
+        );
     }
 
     static Builder parsing(CommandInfo commandInfo) {
