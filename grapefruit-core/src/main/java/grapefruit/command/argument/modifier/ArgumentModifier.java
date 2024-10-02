@@ -116,5 +116,17 @@ public interface ArgumentModifier<T> {
          * @return The created modifier instance
          */
         ArgumentModifier<T> createFromContext(Context context);
+
+        /**
+         * Creates a factory instance that always returns the supplied
+         * {@link ArgumentModifier} instance.
+         *
+         * @param <T> The data type expected by the modifier
+         * @param modifier The modifier instance
+         * @return The created factory instance
+         */
+        static <T> Factory<T> providing(ArgumentModifier<T> modifier) {
+            return ctx -> modifier;
+        }
     }
 }

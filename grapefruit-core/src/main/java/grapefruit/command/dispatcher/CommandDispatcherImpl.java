@@ -42,7 +42,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     private final CommandAuthorizer authorizer;
     private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers;
     private final Registry<Key<?>, CommandCondition> conditions;
-    private final Registry<Key<?>, Function<ArgumentModifier.Context, ArgumentModifier<?>>> modifiers;
+    private final Registry<Key<?>, ArgumentModifier.Factory<?>> modifiers;
     private final Registry<ExecutionStage, Queue<ExecutionListener>> listeners;
     private final CommandRegistrationHandler registrationHandler;
 
@@ -107,7 +107,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
                 // Bake modifiers
                 .peek(x -> x.modifierChain().bake($ -> this.modifiers.get($.key()).orElseThrow(
                         () -> new IllegalArgumentException("Could not find modifier factory for key '%s'".formatted($.key()))
-                ).apply($.context()))) // Bake modifiers
+                ).createFromContext($.context())))
                 .map(this::bindArgument)
                 .collect(partitioningBy(x -> x.argument().isFlag()));
 

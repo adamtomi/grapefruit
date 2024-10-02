@@ -27,7 +27,7 @@ import static java.util.stream.Collectors.toMap;
 public abstract class DispatcherConfigurer {
     private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers = Registry.create(Registry.DuplicateStrategy.reject());
     private final Registry<Key<?>, CommandCondition> conditions = Registry.create(Registry.DuplicateStrategy.reject());
-    private final Registry<Key<?>, Function<ArgumentModifier.Context, ArgumentModifier<?>>> modifiers = Registry.create(Registry.DuplicateStrategy.reject());
+    private final Registry<Key<?>, ArgumentModifier.Factory<?>> modifiers = Registry.create(Registry.DuplicateStrategy.reject());
     private final Registry<ExecutionStage, Queue<ExecutionListener>> listeners = Registry.create(Registry.DuplicateStrategy.reject());
     private CommandAuthorizer authorizer = null;
     private CommandRegistrationHandler registrationHandler = null;
@@ -165,7 +165,7 @@ public abstract class DispatcherConfigurer {
     protected void modifiers(Collection<ArgumentModifier<?>> modifiers) {
         this.modifiers.storeEntries(modifiers.stream()
                 // In this instance, ctx will always be null
-                .collect(toMap(x -> Key.of(x.getClass()), x -> ctx -> x)));
+                .collect(toMap(x -> Key.of(x.getClass()), ArgumentModifier.Factory::providing)));
     }
 
     /**
@@ -182,7 +182,7 @@ public abstract class DispatcherConfigurer {
      */
     protected void modifierFactories(Collection<ArgumentModifier.Factory<?>> factories) {
         this.modifiers.storeEntries(factories.stream()
-                .collect(toMap(x -> Key.of(x.getClass()), x -> x::createFromContext)));
+                .collect(toMap(x -> Key.of(x.getClass()), Function.identity())));
     }
 
     /**
@@ -234,7 +234,7 @@ public abstract class DispatcherConfigurer {
      * Returns the registered modifiers
      * For internal use.
      */
-    public Registry<Key<?>, Function<ArgumentModifier.Context, ArgumentModifier<?>>> modifiers() {
+    public Registry<Key<?>, ArgumentModifier.Factory<?>> modifiers() {
         return this.modifiers;
     }
 
