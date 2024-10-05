@@ -17,18 +17,18 @@ import static java.util.Objects.requireNonNull;
  */
 public final class EnumArgumentMapper<E extends Enum<E>> implements ArgumentMapper<E> {
     private final EnumSet<E> allowedValues;
-    private final ResolveStrategy<E> resolveStrategy;
+    private final ResolutionStrategy<E> resolutionStrategy;
     private final CompletionTransformer<E> completionTransformer;
 
-    private EnumArgumentMapper(EnumSet<E> allowedValues, ResolveStrategy<E> resolveStrategy, CompletionTransformer<E> completionTransformer) {
+    private EnumArgumentMapper(EnumSet<E> allowedValues, ResolutionStrategy<E> resolutionStrategy, CompletionTransformer<E> completionTransformer) {
         this.allowedValues = requireNonNull(allowedValues, "allowedValues cannot be null");
-        this.resolveStrategy = requireNonNull(resolveStrategy, "resolveStrategy cannot be null");
+        this.resolutionStrategy = requireNonNull(resolutionStrategy, "resolutionStrategy cannot be null");
         this.completionTransformer = requireNonNull(completionTransformer, "completionTransformer cannot be null");
     }
 
     /**
      * Constructs a new {@link EnumArgumentMapper} instance from the supplied
-     * values. By default {@link ResolveStrategy#strict()} is used to resolve
+     * values. By default {@link ResolutionStrategy#strict()} is used to resolve
      * values, and {@link Enum#name()} is used to convert enum values to
      * {@link String strings}.
      *
@@ -39,7 +39,7 @@ public final class EnumArgumentMapper<E extends Enum<E>> implements ArgumentMapp
     public static <E extends Enum<E>> EnumArgumentMapper<E> of(EnumSet<E> allowedValues) {
         return new EnumArgumentMapper<>(
                 allowedValues,
-                ResolveStrategy.strict(),
+                ResolutionStrategy.strict(),
                 Enum::name
         );
     }
@@ -59,7 +59,7 @@ public final class EnumArgumentMapper<E extends Enum<E>> implements ArgumentMapp
     public E tryMap(CommandContext context, StringReader input) throws CommandException {
         String name = input.readSingle();
         for (E each : this.allowedValues) {
-            if (this.resolveStrategy.equals(name, each)) return each;
+            if (this.resolutionStrategy.equals(name, each)) return each;
         }
 
         throw generateException(name);
@@ -78,7 +78,7 @@ public final class EnumArgumentMapper<E extends Enum<E>> implements ArgumentMapp
      * @param <E> The enum type
      */
     @FunctionalInterface
-    public interface ResolveStrategy<E extends Enum<E>> {
+    public interface ResolutionStrategy<E extends Enum<E>> {
 
         /**
          * Checks, whether the input can be considered as being equals
@@ -93,24 +93,24 @@ public final class EnumArgumentMapper<E extends Enum<E>> implements ArgumentMapp
         boolean equals(String input, E candidate);
 
         /**
-         * Returns a {@link ResolveStrategy}, that is case-sensitive
+         * Returns a {@link ResolutionStrategy}, that is case-sensitive
          * (hence the name strict). This strategy is used by default.
          *
          * @param <E> The enum type
          * @return The created instance
          */
-        static <E extends Enum<E>> ResolveStrategy<E> strict() {
+        static <E extends Enum<E>> ResolutionStrategy<E> strict() {
             return (input, candidate) -> input.equals(candidate.name());
         }
 
         /**
-         * Returns a {@link ResolveStrategy}, that is case-insensitive
+         * Returns a {@link ResolutionStrategy}, that is case-insensitive
          * (hence the name liberal).
          *
          * @param <E> The enum type
          * @return The created instance
          */
-        static <E extends Enum<E>> ResolveStrategy<E> liberal() {
+        static <E extends Enum<E>> ResolutionStrategy<E> liberal() {
             return (input, candidate) -> input.equalsIgnoreCase(candidate.name());
         }
     }
@@ -139,7 +139,7 @@ public final class EnumArgumentMapper<E extends Enum<E>> implements ArgumentMapp
      */
     public static final class Builder<E extends Enum<E>> {
         private EnumSet<E> allowedValues;
-        private ResolveStrategy<E> resolveStrategy;
+        private ResolutionStrategy<E> resolutionStrategy;
         private CompletionTransformer<E> completionTransformer;
 
         /**
@@ -164,13 +164,13 @@ public final class EnumArgumentMapper<E extends Enum<E>> implements ArgumentMapp
         }
 
         /**
-         * Sets the {@link ResolveStrategy} to be used by the mapper.
+         * Sets the {@link ResolutionStrategy} to be used by the mapper.
          *
-         * @param resolveStrategy The resolve strategy
+         * @param resolutionStrategy The resolve strategy
          * @return This
          */
-        public Builder<E> resolve(ResolveStrategy<E> resolveStrategy) {
-            this.resolveStrategy = requireNonNull(resolveStrategy, "resolveStrategy cannot be null");
+        public Builder<E> resolve(ResolutionStrategy<E> resolutionStrategy) {
+            this.resolutionStrategy = requireNonNull(resolutionStrategy, "resolveStrategy cannot be null");
             return this;
         }
 
@@ -191,7 +191,7 @@ public final class EnumArgumentMapper<E extends Enum<E>> implements ArgumentMapp
          * @return The created mapper
          */
         public EnumArgumentMapper<E> build() {
-            return new EnumArgumentMapper<>(this.allowedValues, this.resolveStrategy, this.completionTransformer);
+            return new EnumArgumentMapper<>(this.allowedValues, this.resolutionStrategy, this.completionTransformer);
         }
     }
 }
