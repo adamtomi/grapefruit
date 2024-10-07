@@ -45,6 +45,10 @@ class ParseResult {
         if (this.capturedException != null) throw this.capturedException;
     }
 
+    public boolean wasCaptured(Class<? extends CommandException> clazz) {
+        return clazz.isInstance(this.capturedException);
+    }
+
     public boolean fullyConsumed() {
         return this.remaining.isEmpty() && this.remainingFlags.isEmpty();
     }
