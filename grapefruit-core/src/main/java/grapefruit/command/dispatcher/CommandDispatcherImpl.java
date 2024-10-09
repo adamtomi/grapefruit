@@ -271,8 +271,6 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     public List<String> complete(CommandContext context, String commandLine) {
         requireNonNull(context, "context cannot be null");
         requireNonNull(commandLine, "commandLine cannot be null");
-        System.out.println("=======================================================");
-        System.out.println("Dispatch: '%s'".formatted(commandLine));
         // Construct a new reader from user input
         StringReader input = new StringReaderImpl(commandLine, context);
         // Find the command instance to create completions for
@@ -285,7 +283,19 @@ final class CommandDispatcherImpl implements CommandDispatcher {
          * CommandNode was matched, root command aliases will
          * be returned.
          */
-        if (searchResult instanceof CommandGraph.SearchResult.Failure failure) return failure.validOptions(true);
+        if (searchResult instanceof CommandGraph.SearchResult.Failure failure) {
+            if (input.hasNext()) {
+                return List.of();
+            }
+
+            String prefix = failure.cause() instanceof CommandGraph.NoSuchCommandException noSuchCommandException
+                    ? noSuchCommandException.name()
+                    : "";
+            return failure.validOptions(true)
+                    .stream()
+                    .filter(x -> startsWithIgnoreCase(x, prefix))
+                    .toList();
+        }
 
         // Command can safely be extracted
         Command command = ((CommandGraph.SearchResult.Success) searchResult).command();
@@ -296,10 +306,12 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         ParseResult parseResult = parseArguments(context, input, commandInfo);
         // If either DuplicateFlagException or UnrecognizedFlagException was thrown,
         // return an empty list.
-        // Move this to the other complete method
-        /*if (parseResult.wasCaptured(DuplicateFlagException.class) || parseResult.wasCaptured(UnrecognizedFlagException.class)) {
+        if (
+                (parseResult.wasCaptured(DuplicateFlagException.class) || parseResult.wasCaptured(UnrecognizedFlagException.class))
+                && input.hasNext()
+        ) {
             return List.of();
-        }*/
+        }
 
         // TODO check if input ends with "' '"
         /*
@@ -309,86 +321,57 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         if (parseResult.fullyConsumed()) return List.of();
 
 
-        return complete(context, parseResult, input);
+        return completeArguments(context, parseResult, input);
     }
 
-    private List<String> complete(
+    // TODO store parse data per argument. For instance for flags we need to know if we're completing the name or the value.
+    private List<String> completeArguments(
             CommandContext context,
             ParseResult parseResult,
             StringReader input
     ) {
-        System.out.println("------------------- COMPLETE -------------------");
-        System.out.println("complete");
         /*
          * Indicates whether to suggest the next command argument instead of
          * ParseInfo#argument. This will only evaluate to true, if remaining
          * is whitespace, but not an empty string.
          */
-        // boolean completeNext = remaining.isBlank() && !remaining.isEmpty();
         boolean completeNext = input.unwrap().endsWith(" ");
 
         // Attempt to read the remaining arguments.
         String remaining;
         try {
-            System.out.println("Reading remaining");
             remaining = input.readRemaining();
-            System.out.println("Remaining: '%s'".formatted(remaining));
         } catch (CommandException ex) {
-            System.out.println("Failed to remaining args");
             // There's nothing to read, default to empty string
-            if (completeNext) {
-                System.out.println("completeNext");
-                remaining = "";
-            } else {
-                System.out.println("complete current");
-                remaining = "";
-            }
+            remaining = "";
         }
-
-        System.out.println("Complete next " + completeNext);
-        System.out.println("Current " + parseResult.lastUnsuccessfulArgument());
-        System.out.println("LastInput " + parseResult.lastInput());
 
         // Select the first unseen argument. Required arguments take precedence over flags.
         BoundArgument<?> firstUnseen = parseResult.remaining().isEmpty()
                 ? parseResult.remainingFlags().get(0)
                 : parseResult.remaining().get(0);
 
-        System.out.println("First unseen " + firstUnseen);
-
         /*
          * Select argument to create completions for. If suggestNext evaluates
          * to true (explained above), we don't care about the ParseInfo#argument,
          * otherwise prefer that over firstUnseen, if it's present.
          */
-        /*BoundArgument<?> argument = completeNext
-                ? firstUnseen
-                : parseResult.lastUnsuccessfulArgument().orElse(firstUnseen);*/
         BoundArgument<?> argument = parseResult.lastUnsuccessfulArgument().orElse(firstUnseen);
-
-        System.out.println("Argument " + argument);
 
         // The user input to create completions based on.
         String arg = completeNext ? remaining : parseResult.lastInput().orElse(remaining);
-        System.out.println("Arg: '%s'".formatted(arg));
-
-        // if (arg.isEmpty()) return List.of();
 
         // Accumulate completions into this list
         List<String> base = new ArrayList<>();
 
         if (argument.argument().isFlag()) {
-            System.out.println("flag");
             if (argument.argument().asFlag().isPresenceFlag() && completeNext) {
-                System.out.println("presence flag && completeNext");
                 base.addAll(formatFlags(List.of(firstUnseen)));
             } else {
-                System.out.println("value flag");
-                // base.addAll(formatFlags(parseResult.remainingFlags()));
+                // TODO only include these suggestions, if a) completeNext is true or b) the flag name (or group) has been completed already
                 base.addAll(argument.mapper().complete(context, arg));
                 // Flag shorthand is used
                 if (arg.length() > 1 && Character.isAlphabetic(arg.charAt(1))) {
-                    System.out.println("complete flag group");
                     // Start completing a flag group
                     parseResult.remainingFlags().stream()
                             .map(x -> x.argument().asFlag().shorthand())
@@ -399,12 +382,10 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
             }
         } else {
-            System.out.println("required arg");
             base.addAll(argument.mapper().complete(context, arg));
 
             // If the current argument starts with '-', we list flags as well
             if (arg.startsWith(SHORT_FLAG_PREFIX)) {
-                System.out.println("complete flags as well");
                 base.addAll(formatFlags(parseResult.remainingFlags()));
             }
         }
