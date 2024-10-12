@@ -4,6 +4,8 @@ plugins {
     id("jacoco")
 }
 
+apply(from = rootProject.file("buildSrc/shared.gradle.kts"))
+
 dependencies {
     compileOnly(libs.annotations)
     implementation(libs.geantyref)

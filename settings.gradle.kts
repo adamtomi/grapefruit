@@ -1,9 +1,2 @@
 rootProject.name = "grapefruit"
-include("grapefruit-compiler")
-include("grapefruit-runtime")
-
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-    }
-}
+include("grapefruit-compiler", "grapefruit-runtime")
