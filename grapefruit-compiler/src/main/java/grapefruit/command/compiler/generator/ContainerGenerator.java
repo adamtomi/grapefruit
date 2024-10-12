@@ -1,4 +1,4 @@
-package grapefruit.command.codegen.generator;
+package grapefruit.command.compiler.generator;
 
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.CodeBlock;
@@ -10,7 +10,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import grapefruit.command.Command;
 import grapefruit.command.CommandContainer;
-import grapefruit.command.codegen.util.ElementPredicate;
+import grapefruit.command.compiler.util.ElementPredicate;
 
 import javax.annotation.processing.Generated;
 import javax.lang.model.element.Element;
@@ -27,11 +27,11 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.google.auto.common.MoreElements.getPackage;
-import static grapefruit.command.codegen.Naming.COMMANDS_METHOD;
-import static grapefruit.command.codegen.Naming.CONTAINER_CLASS_SUFFIX;
-import static grapefruit.command.codegen.Naming.INTERNAL_COMMANDS_FIELD;
-import static grapefruit.command.codegen.Naming.REFERENCE_PARAM;
-import static grapefruit.command.codegen.util.TypeNameUtil.toTypeName;
+import static grapefruit.command.compiler.Naming.COMMANDS_METHOD;
+import static grapefruit.command.compiler.Naming.CONTAINER_CLASS_SUFFIX;
+import static grapefruit.command.compiler.Naming.INTERNAL_COMMANDS_FIELD;
+import static grapefruit.command.compiler.Naming.REFERENCE_PARAM;
+import static grapefruit.command.compiler.util.TypeNameUtil.toTypeName;
 import static java.util.Objects.requireNonNull;
 
 /**

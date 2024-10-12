@@ -1,4 +1,4 @@
-package grapefruit.command.codegen.generator;
+package grapefruit.command.compiler.generator;
 
 import com.google.common.collect.ImmutableMap;
 import com.squareup.javapoet.ClassName;
@@ -14,8 +14,8 @@ import grapefruit.command.argument.CommandArguments;
 import grapefruit.command.argument.modifier.ArgumentModifier;
 import grapefruit.command.argument.modifier.ModifierBlueprint;
 import grapefruit.command.argument.modifier.ModifierChain;
-import grapefruit.command.codegen.Naming;
-import grapefruit.command.codegen.util.NameCache;
+import grapefruit.command.compiler.Naming;
+import grapefruit.command.compiler.util.NameCache;
 import grapefruit.command.util.PrimitivesUtil;
 import grapefruit.command.util.key.Key;
 
@@ -35,17 +35,17 @@ import java.util.stream.Collectors;
 import static com.google.auto.common.AnnotationMirrors.getAnnotationValuesWithDefaults;
 import static com.google.auto.common.MoreElements.asType;
 import static com.google.auto.common.MoreElements.getAnnotationMirror;
-import static grapefruit.command.codegen.Naming.CONTEXT_PARAM;
-import static grapefruit.command.codegen.util.AnnotationUtil.accessAnnotationValue;
-import static grapefruit.command.codegen.util.AnnotationUtil.findAnnotation;
-import static grapefruit.command.codegen.util.AnnotationUtil.matches;
-import static grapefruit.command.codegen.util.CodeBlockUtil.key;
-import static grapefruit.command.codegen.util.StringUtil.pick;
-import static grapefruit.command.codegen.util.StringUtil.sanitize;
-import static grapefruit.command.codegen.util.StringUtil.toKebabCase;
-import static grapefruit.command.codegen.util.TypeNameUtil.flattenTypeNames;
-import static grapefruit.command.codegen.util.TypeNameUtil.toTypeName;
-import static grapefruit.command.codegen.util.TypeNameUtil.unboxSafe;
+import static grapefruit.command.compiler.Naming.CONTEXT_PARAM;
+import static grapefruit.command.compiler.util.AnnotationUtil.accessAnnotationValue;
+import static grapefruit.command.compiler.util.AnnotationUtil.findAnnotation;
+import static grapefruit.command.compiler.util.AnnotationUtil.matches;
+import static grapefruit.command.compiler.util.CodeBlockUtil.key;
+import static grapefruit.command.compiler.util.StringUtil.pick;
+import static grapefruit.command.compiler.util.StringUtil.sanitize;
+import static grapefruit.command.compiler.util.StringUtil.toKebabCase;
+import static grapefruit.command.compiler.util.TypeNameUtil.flattenTypeNames;
+import static grapefruit.command.compiler.util.TypeNameUtil.toTypeName;
+import static grapefruit.command.compiler.util.TypeNameUtil.unboxSafe;
 import static java.util.Objects.requireNonNull;
 
 /**

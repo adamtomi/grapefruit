@@ -1,4 +1,4 @@
-package grapefruit.command.codegen.util;
+package grapefruit.command.compiler.util;
 
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;

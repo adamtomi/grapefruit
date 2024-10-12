@@ -1,4 +1,4 @@
-package grapefruit.command.codegen.util;
+package grapefruit.command.compiler.util;
 
 public final class StringUtil {
     private StringUtil() {}

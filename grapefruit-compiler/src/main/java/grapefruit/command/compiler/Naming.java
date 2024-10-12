@@ -1,7 +1,6 @@
-package grapefruit.command.codegen;
+package grapefruit.command.compiler;
 
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
 import java.util.function.Function;
 
 public final class Naming {

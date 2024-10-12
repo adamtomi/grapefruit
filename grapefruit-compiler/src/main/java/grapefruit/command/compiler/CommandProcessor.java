@@ -1,11 +1,11 @@
-package grapefruit.command.codegen;
+package grapefruit.command.compiler;
 
 import com.google.auto.common.MoreElements;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.JavaFile;
 import grapefruit.command.annotation.CommandDefinition;
-import grapefruit.command.codegen.generator.ContainerGenerator;
-import grapefruit.command.codegen.generator.GeneratorContext;
+import grapefruit.command.compiler.generator.ContainerGenerator;
+import grapefruit.command.compiler.generator.GeneratorContext;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;

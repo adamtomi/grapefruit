@@ -1,4 +1,4 @@
-package grapefruit.command.codegen.generator;
+package grapefruit.command.compiler.generator;
 
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;

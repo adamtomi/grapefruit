@@ -1,4 +1,4 @@
-package grapefruit.command.codegen.util;
+package grapefruit.command.compiler.util;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;

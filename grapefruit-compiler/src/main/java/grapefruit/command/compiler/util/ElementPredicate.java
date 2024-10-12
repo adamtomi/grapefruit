@@ -1,4 +1,4 @@
-package grapefruit.command.codegen.util;
+package grapefruit.command.compiler.util;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static grapefruit.command.codegen.util.TypeNameUtil.toTypeName;
+import static grapefruit.command.compiler.util.TypeNameUtil.toTypeName;
 import static java.util.Objects.requireNonNull;
 
 public class ElementPredicate implements Predicate<Element> {

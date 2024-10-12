@@ -1,4 +1,4 @@
-package grapefruit.command.codegen.generator;
+package grapefruit.command.compiler.generator;
 
 /**
  * Responsible for generating some piece of code.

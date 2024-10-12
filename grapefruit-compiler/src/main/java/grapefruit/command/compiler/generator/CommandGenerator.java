@@ -1,4 +1,4 @@
-package grapefruit.command.codegen.generator;
+package grapefruit.command.compiler.generator;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -9,7 +9,7 @@ import com.squareup.javapoet.WildcardTypeName;
 import grapefruit.command.Command;
 import grapefruit.command.annotation.CommandDefinition;
 import grapefruit.command.argument.CommandArgument;
-import grapefruit.command.codegen.util.ElementPredicate;
+import grapefruit.command.compiler.util.ElementPredicate;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.CommandSpec;
 
@@ -21,14 +21,14 @@ import javax.lang.model.type.TypeMirror;
 import java.util.List;
 import java.util.Objects;
 
-import static grapefruit.command.codegen.Naming.ARGUMENTS_METHOD_SUFFIX;
-import static grapefruit.command.codegen.Naming.CONTEXT_PARAM;
-import static grapefruit.command.codegen.Naming.HANDLER_METHOD_SUFFIX;
-import static grapefruit.command.codegen.Naming.REFERENCE_PARAM;
-import static grapefruit.command.codegen.util.AnnotationUtil.accessAnnotationValue;
-import static grapefruit.command.codegen.util.AnnotationUtil.accessAnnotationValueList;
-import static grapefruit.command.codegen.util.AnnotationUtil.assertAnnotation;
-import static grapefruit.command.codegen.util.StringUtil.pick;
+import static grapefruit.command.compiler.Naming.ARGUMENTS_METHOD_SUFFIX;
+import static grapefruit.command.compiler.Naming.CONTEXT_PARAM;
+import static grapefruit.command.compiler.Naming.HANDLER_METHOD_SUFFIX;
+import static grapefruit.command.compiler.Naming.REFERENCE_PARAM;
+import static grapefruit.command.compiler.util.AnnotationUtil.accessAnnotationValue;
+import static grapefruit.command.compiler.util.AnnotationUtil.accessAnnotationValueList;
+import static grapefruit.command.compiler.util.AnnotationUtil.assertAnnotation;
+import static grapefruit.command.compiler.util.StringUtil.pick;
 import static java.util.Objects.requireNonNull;
 
 /**
