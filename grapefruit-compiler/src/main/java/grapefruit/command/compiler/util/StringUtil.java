@@ -1,6 +1,8 @@
 package grapefruit.command.compiler.util;
 
 public final class StringUtil {
+    private static final String EMPTY_SANITIZED = "__";
+
     private StringUtil() {}
 
     /**
@@ -51,17 +53,26 @@ public final class StringUtil {
      * @return The sanitized string
      */
     public static String sanitize(String value) {
+        if (value.isBlank()) return EMPTY_SANITIZED;
+
         StringBuilder builder = new StringBuilder();
-        for (char c : value.toCharArray()) {
-            // If it's not a valid java identifier part, replace it to '_'
-            builder.append(Character.isJavaIdentifierPart(c) ? c : '_');
+        int first = value.codePointAt(0);
+
+        // If the character is not a valid java identifier start, replace it to '_'
+        if (!Character.isJavaIdentifierStart(first)) {
+            builder.append('_');
+        } else {
+            builder.appendCodePoint(first);
         }
+
+        value.codePoints().skip(1L)
+                // If it's not a valid java identifier part, replace it to '_'
+                .map(c -> Character.isJavaIdentifierPart(c) ? c : '_')
+                .forEachOrdered(builder::appendCodePoint);
 
         String built = builder.toString();
 
         // "_" is not a valid identifier anymore, but "__" is.
-        return built.equals("_")
-                ? "__"
-                : built;
+        return built.equals("_") ? EMPTY_SANITIZED : built;
     }
 }
