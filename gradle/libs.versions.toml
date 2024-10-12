@@ -1,0 +1,11 @@
+[versions]
+annotations = "23.0.0"
+auto-service = "1.1.1"
+geantyref = "2.0.0"
+javapoet = "1.13.0"
+
+[libraries]
+annotations = { module = "org.jetbrains:annotations", version.ref = "annotations" }
+auto-service = { module = "com.google.auto.service:auto-service", version.ref = "auto-service" }
+geantyref = { module = "io.leangen.geantyref:geantyref", version.ref = "geantyref" }
+javapoet = { module = "com.squareup:javapoet", version.ref = "javapoet" }

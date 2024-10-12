@@ -10,8 +10,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.jetbrains:annotations:23.0.0")
-    implementation("io.leangen.geantyref:geantyref:2.0.0")
+    compileOnly(libs.annotations)
+    implementation(libs.geantyref)
 }
 
 
