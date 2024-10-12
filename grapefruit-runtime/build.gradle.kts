@@ -4,11 +4,6 @@ plugins {
     id("jacoco")
 }
 
-repositories {
-    mavenCentral()
-    google()
-}
-
 dependencies {
     compileOnly(libs.annotations)
     implementation(libs.geantyref)

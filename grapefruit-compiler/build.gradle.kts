@@ -5,10 +5,6 @@ plugins {
     id("com.gradleup.shadow") version "8.3.0"
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     implementation(libs.auto.service)
     annotationProcessor(libs.auto.service)
@@ -21,9 +17,9 @@ dependencies {
     testImplementation(libs.jupiter.params)
 }
 
-tasks.withType<Test>().configureEach {
+/* tasks.withType<Test>().configureEach {
     useJUnitPlatform()
-}
+} */
 
 tasks.named<ShadowJar>("shadowJar") {
     minimize()
