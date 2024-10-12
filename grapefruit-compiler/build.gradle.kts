@@ -15,6 +15,14 @@ dependencies {
     implementation(libs.geantyref)
     implementation(libs.javapoet)
     implementation(project(":grapefruit-runtime"))
+
+    testImplementation(libs.jupiter.api)
+    testRuntimeOnly(libs.jupiter.engine)
+    testImplementation(libs.jupiter.params)
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
 }
 
 tasks.named<ShadowJar>("shadowJar") {
