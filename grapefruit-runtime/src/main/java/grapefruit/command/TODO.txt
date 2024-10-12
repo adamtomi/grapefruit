@@ -56,8 +56,6 @@
 
 - [code-gen]: Add tests.
 
-- Rename? core -> runtime, gen -> compiler/processor/generator
-
 - [configuration]: Investigate publishing to GitHub Packages
 
 - [configuration]: Proper gradle setup
