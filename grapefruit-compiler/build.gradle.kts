@@ -3,7 +3,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
     id("java")
     id("com.gradleup.shadow") version "8.3.0"
-    id("grapefruit.java-conventions")
+    id("grapefruit.common-conventions")
 }
 
 dependencies {
@@ -12,10 +12,6 @@ dependencies {
     implementation(libs.geantyref)
     implementation(libs.javapoet)
     implementation(project(":grapefruit-runtime"))
-
-    testImplementation(libs.jupiter.api)
-    testRuntimeOnly(libs.jupiter.engine)
-    testImplementation(libs.jupiter.params)
 }
 
 tasks.named<ShadowJar>("shadowJar") {

@@ -1,13 +1,9 @@
 plugins {
     id("java")
-    id("grapefruit.java-conventions")
+    id("grapefruit.common-conventions")
 }
 
 dependencies {
     compileOnly(libs.annotations)
     implementation(libs.geantyref)
-
-    testImplementation(libs.jupiter.api)
-    testRuntimeOnly(libs.jupiter.engine)
-    testImplementation(libs.jupiter.params)
 }
