@@ -2,9 +2,8 @@ plugins {
     id("java")
     id("maven-publish")
     id("jacoco")
+    id("grapefruit.java-conventions")
 }
-
-apply(from = rootProject.file("buildSrc/shared.gradle.kts"))
 
 dependencies {
     compileOnly(libs.annotations)

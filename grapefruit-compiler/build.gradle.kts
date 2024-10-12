@@ -3,9 +3,8 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
     id("java")
     id("com.gradleup.shadow") version "8.3.0"
+    id("grapefruit.java-conventions")
 }
-
-apply(from = rootProject.file("buildSrc/shared.gradle.kts"))
 
 dependencies {
     implementation(libs.auto.service)
