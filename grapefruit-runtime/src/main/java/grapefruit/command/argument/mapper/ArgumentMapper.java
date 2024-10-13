@@ -68,7 +68,9 @@ public interface ArgumentMapper<T> {
         }
 
         @Override
-        public T tryMap(CommandContext context, StringReader input) throws CommandException {
+        public T tryMap(CommandContext context, StringReader input) {
+            System.out.println("Constant tryMap");
+            System.out.println(this.value);
             return this.value;
         }
 

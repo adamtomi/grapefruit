@@ -32,12 +32,12 @@ public final class CommandArguments {
      *
      * @param name The name of the argument
      * @param shorthand The flag shorthand
-     * @param mapperKey The mapper key
+     * @param key The key of the argument
      * @return the created argument
      */
-    public static FlagArgument<Boolean> presenceFlag(String name, char shorthand, Key<Boolean> mapperKey) {
+    public static FlagArgument<Boolean> presenceFlag(String name, char shorthand, Key<Boolean> key) {
         // Modifiers aren't supported on presence flags
-        return new CommandArgumentImpl.PresenceFlag(name, Key.of(Boolean.class), mapperKey, shorthand, ModifierChain.of(List.of()));
+        return new CommandArgumentImpl.PresenceFlag(name, key, shorthand, ModifierChain.of(List.of()));
     }
 
     /**

@@ -319,7 +319,7 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
         @Override
         protected CodeBlock generateInitializer() {
             return this.presence
-                    ? CodeBlock.of("presenceFlag($S, '$L', $L)", this.name, this.shorthand, generateMapperKey())
+                    ? CodeBlock.of("presenceFlag($S, '$L', $L)", this.name, this.shorthand, this.keyFieldName)
                     : CodeBlock.of("valueFlag($S, '$L', $L, $L, $L)", this.name, this.shorthand, this.keyFieldName, generateMapperKey(), generateModifierChain());
         }
 

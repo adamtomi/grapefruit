@@ -105,9 +105,14 @@ abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
     static final class PresenceFlag extends Flag<Boolean> {
         /* Store a mapper that always returns the value "true" */
         private static final ArgumentMapper<Boolean> BOOLEAN_MAPPER = ArgumentMapper.constant(true);
+        /*
+         * Dummy key, we are not going to use this, since presence flag values are
+         * determined by whether the flag has been set or not.
+         */
+        private static final Key<Boolean> BOOLEAN_KEY = Key.of(Boolean.class);
 
-        PresenceFlag(String name, Key<Boolean> key, Key<Boolean> mapperKey, char shorthand, ModifierChain<Boolean> modifierChain) {
-            super(name, key, mapperKey, shorthand, true, modifierChain);
+        PresenceFlag(String name, Key<Boolean> key, char shorthand, ModifierChain<Boolean> modifierChain) {
+            super(name, key, BOOLEAN_KEY, shorthand, true, modifierChain);
         }
 
         @Override
