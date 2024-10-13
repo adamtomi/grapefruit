@@ -48,6 +48,9 @@
 
 - [core]: CommandNode could potentially implement RouteNode
 
+- [core]: Should command registration handlers return boolean instead (that way we could get rid of interrupt())? Other similar stuff
+  such as condition handlers return boolean instead of throwing an error.
+
 - [code-gen]: collectRelevantAnnotations (per parameter)
 
 - [code-gen]: Refactor parameter generation
