@@ -116,6 +116,11 @@ public interface Registry<K, V> {
                 this.lock.writeLock().unlock();
             }
         }
+
+        @Override
+        public String toString() {
+            return "Registry$Impl(%s)".formatted(this.internalMap);
+        }
     }
 
     /**

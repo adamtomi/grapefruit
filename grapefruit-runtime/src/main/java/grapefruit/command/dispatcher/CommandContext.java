@@ -121,4 +121,9 @@ public class CommandContext {
     public Map<Key<?>, Object> asMap() {
         return this.internalStore.asImmutableMap();
     }
+
+    @Override
+    public String toString() {
+        return "CommandContext(internalStore=%s)".formatted(this.internalStore);
+    }
 }
