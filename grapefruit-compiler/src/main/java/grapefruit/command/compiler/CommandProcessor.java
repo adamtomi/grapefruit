@@ -24,7 +24,7 @@ import java.util.Set;
 import static java.util.stream.Collectors.groupingBy;
 
 @AutoService(Processor.class)
-@SupportedAnnotationTypes("grapefruit.command.annotation.CommandDefinition")
+@SupportedAnnotationTypes("grapefruit.command.annotation.Command")
 public class CommandProcessor extends AbstractProcessor {
 
     @Override
