@@ -9,8 +9,8 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import grapefruit.command.compiler.util.ElementPredicate;
-import grapefruit.command.runtime.Command;
 import grapefruit.command.runtime.generated.CommandContainer;
+import grapefruit.command.runtime.generated.CommandMirror;
 
 import javax.annotation.processing.Generated;
 import javax.lang.model.element.Element;
@@ -38,7 +38,7 @@ import static java.util.Objects.requireNonNull;
  * For every class containing methods annotated with
  * {@link grapefruit.command.runtime.annotation.Command}, this
  * class generates a corresponding {@link CommandContainer}
- * instance containing the {@link Command} implementations
+ * instance containing the {@link CommandMirror} implementations
  * generated for each method.
  */
 public class ContainerGenerator implements Generator<JavaFile> {
@@ -50,7 +50,7 @@ public class ContainerGenerator implements Generator<JavaFile> {
             .forbid(Modifier.PRIVATE, Modifier.ABSTRACT)
             .build();
     /* Return type of overridden method #commands */
-    private static final TypeName COMMAND_SET = ParameterizedTypeName.get(Set.class, Command.class);
+    private static final TypeName COMMAND_SET = ParameterizedTypeName.get(Set.class, CommandMirror.class);
     /* Reference to the original container class */
     private final TypeElement container;
     /* Reference to a list of command methods found in the original container */

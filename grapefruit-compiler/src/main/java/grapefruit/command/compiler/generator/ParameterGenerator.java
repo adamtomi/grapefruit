@@ -12,10 +12,10 @@ import grapefruit.command.runtime.annotation.Arg;
 import grapefruit.command.runtime.annotation.Flag;
 import grapefruit.command.runtime.annotation.meta.InjectedBy;
 import grapefruit.command.runtime.annotation.meta.MappedBy;
-import grapefruit.command.runtime.argument.CommandArguments;
 import grapefruit.command.runtime.argument.modifier.ArgumentModifier;
 import grapefruit.command.runtime.argument.modifier.ModifierBlueprint;
 import grapefruit.command.runtime.argument.modifier.ModifierChain;
+import grapefruit.command.runtime.generated.ArgumentMirror;
 import grapefruit.command.runtime.util.PrimitivesUtil;
 import grapefruit.command.runtime.util.key.Key;
 
@@ -241,13 +241,13 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
             return key(this.typeName, this.name);
         }
 
-        protected CodeBlock generateModifierChain() {
+        protected CodeBlock generateModifierList() {
             CodeBlock modifiers = this.modifiers.entrySet()
                     .stream()
                     .map(this::generateSingleModifier)
                     .collect(CodeBlock.joining(", "));
 
-            return CodeBlock.of("$T.of($T.of($L))", ModifierChain.class, List.class, modifiers);
+            return CodeBlock.of("$T.of($L)", List.class, modifiers);
         }
 
         // Generates a single ModifierBlueprint
@@ -280,7 +280,7 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
 
         @Override
         protected CodeBlock generateInitializer() {
-            return CodeBlock.of("required($S, $L, $L, $L)", this.name, this.keyFieldName, generateMapperKey(), generateModifierChain());
+            return CodeBlock.of("required($S, $L, $L, $L)", this.name, this.keyFieldName, generateMapperKey(), generateModifierList());
         }
 
         @Override
@@ -290,7 +290,7 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
 
         @Override
         public Result generate(GeneratorContext context) {
-            context.importStatic(CommandArguments.class, "required");
+            context.importStatic(ArgumentMirror.class, "required");
             return super.generate(context);
         }
     }
@@ -319,8 +319,8 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
         @Override
         protected CodeBlock generateInitializer() {
             return this.presence
-                    ? CodeBlock.of("presenceFlag($S, '$L', $L)", this.name, this.shorthand, this.keyFieldName)
-                    : CodeBlock.of("valueFlag($S, '$L', $L, $L, $L)", this.name, this.shorthand, this.keyFieldName, generateMapperKey(), generateModifierChain());
+                    ? CodeBlock.of("flag($S, '$L', $L)", this.name, this.shorthand, this.keyFieldName)
+                    : CodeBlock.of("flag($S, '$L', $L, $L, $L)", this.name, this.shorthand, this.keyFieldName, generateMapperKey(), generateModifierList());
         }
 
         @Override
@@ -341,7 +341,7 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
 
         @Override
         public Result generate(GeneratorContext context) {
-            context.importStatic(CommandArguments.class, this.presence ? "presenceFlag" : "valueFlag");
+            context.importStatic(ArgumentMirror.class, "flag");
             context.importStatic(PrimitivesUtil.class, "*"); // Unnecessary imports will be discarded by the compiler
             return super.generate(context);
         }

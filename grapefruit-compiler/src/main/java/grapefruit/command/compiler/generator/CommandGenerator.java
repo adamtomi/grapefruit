@@ -8,9 +8,9 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.WildcardTypeName;
 import grapefruit.command.compiler.util.ElementPredicate;
 import grapefruit.command.runtime.annotation.Command;
-import grapefruit.command.runtime.argument.CommandArgument;
 import grapefruit.command.runtime.dispatcher.CommandContext;
-import grapefruit.command.runtime.dispatcher.CommandSpec;
+import grapefruit.command.runtime.generated.ArgumentMirror;
+import grapefruit.command.runtime.generated.CommandMirror;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ElementKind;
@@ -32,7 +32,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * This class is responsible for generating two methods for every method
- * annotated with {@link Command}:
+ * annotated with {@link grapefruit.command.runtime.annotation.Command}:
  * <ul>
  *     <li>One that returns the argument list of that command</li>
  *     <li>One that handles command invocation (and invokes the original command method)</li>
@@ -50,7 +50,7 @@ public class CommandGenerator implements Generator<CodeBlock> {
     private static final TypeName COMMAND_ARG_LIST = ParameterizedTypeName.get(
             ClassName.get(List.class),
             ParameterizedTypeName.get(
-                    ClassName.get(CommandArgument.class),
+                    ClassName.get(ArgumentMirror.class),
                     WildcardTypeName.subtypeOf(TypeName.OBJECT)
             )
     );
@@ -93,14 +93,9 @@ public class CommandGenerator implements Generator<CodeBlock> {
         // Include our command handler method
         context.include(generateHandlerMethod(parameters));
         // Static import Command#wrap
-        context.importStatic(grapefruit.command.runtime.Command.class, "wrap");
+        context.importStatic(CommandMirror.class, "command");
 
-        return CodeBlock.of(
-                "wrap($L(), $L, this::$L)",
-                ARGUMENTS_METHOD_SUFFIX.apply(this.method),
-                generateCommandSpec(),
-                HANDLER_METHOD_SUFFIX.apply(this.method)
-        );
+        return generateInitializer();
     }
 
     private MethodSpec generateArgumentsMethod(List<ParameterGenerator.Result> parameters) {
@@ -145,14 +140,27 @@ public class CommandGenerator implements Generator<CodeBlock> {
                 .build();
     }
 
-    // Generates the CommandSpec belonging to this command
-    private CodeBlock generateCommandSpec() {
+    private CodeBlock generateInitializer() {
         // Retrieve route
         String route = accessAnnotationValue(this.commandDef, "route", String.class);
         // Retrieve permission. Default to null, if the value was a blank string
         String permission = pick(accessAnnotationValue(this.commandDef, "permission", String.class), null);
-        // Convert condition classes
-        CodeBlock conditions = CodeBlock.builder()
+        // Retrieve condition list
+        List<TypeMirror> conditions = accessAnnotationValueList(this.commandDef, "conditions", TypeMirror.class);
+
+        if (conditions.isEmpty()) {
+            // The condition list is empty, not including it.
+            return CodeBlock.of(
+                    "command($S, $L, $S, this::$L)",
+                    route,
+                    ARGUMENTS_METHOD_SUFFIX.apply(this.method),
+                    permission,
+                    HANDLER_METHOD_SUFFIX.apply(this.method)
+            );
+        }
+
+        // Generating List.of(ConditionClasses...) code block
+        CodeBlock conditionsBlock = CodeBlock.builder()
                 .add("$T.of(", List.class)
                 .add(accessAnnotationValueList(this.commandDef, "conditions", TypeMirror.class).stream()
                         .map(x -> CodeBlock.of("$T.class", x))
@@ -160,12 +168,14 @@ public class CommandGenerator implements Generator<CodeBlock> {
                 .add(")")
                 .build();
 
+        // Include conditions in the generated code
         return CodeBlock.of(
-                "$T.builder().route($S).permission($S).conditions($L).build()",
-                CommandSpec.class,
+                "command($S, $L, $S, $L, this::$L)",
                 route,
+                ARGUMENTS_METHOD_SUFFIX.apply(this.method),
                 permission,
-                conditions
+                conditionsBlock,
+                HANDLER_METHOD_SUFFIX.apply(this.method)
         );
     }
 }

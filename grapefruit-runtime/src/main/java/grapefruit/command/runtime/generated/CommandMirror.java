@@ -20,7 +20,7 @@ public interface CommandMirror {
 
     CommandAction action();
 
-    static CommandMirror create(
+    static CommandMirror command(
             String route,
             List<ArgumentMirror<?>> arguments,
             @Nullable String permission,
@@ -30,7 +30,7 @@ public interface CommandMirror {
         return new CommandMirrorImpl(RouteNode.parse(route), arguments, permission, conditions, action);
     }
 
-    static CommandMirror create(String route, List<ArgumentMirror<?>> arguments, @Nullable String permission, CommandAction action) {
-        return create(route, arguments, permission, List.of(), action);
+    static CommandMirror command(String route, List<ArgumentMirror<?>> arguments, @Nullable String permission, CommandAction action) {
+        return command(route, arguments, permission, List.of(), action);
     }
 }

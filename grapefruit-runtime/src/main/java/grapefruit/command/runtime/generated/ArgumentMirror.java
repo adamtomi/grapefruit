@@ -27,4 +27,8 @@ public interface ArgumentMirror<T> {
     static <T> ArgumentMirror.Flag<T> flag(String name, char shorthand, Key<T> key, Key<T> mapperKey, List<ModifierBlueprint> modifiers) {
         return new ArgumentMirrorImpl.Flag<>(name, shorthand, key, mapperKey, modifiers);
     }
+
+    static ArgumentMirror.Flag<Boolean> flag(String name, char shorthand, Key<Boolean> key) {
+        return flag(name, shorthand, key, Key.of(Boolean.class), List.of());
+    }
 }
