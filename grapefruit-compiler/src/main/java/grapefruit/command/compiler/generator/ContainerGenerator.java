@@ -9,7 +9,7 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import grapefruit.command.Command;
-import grapefruit.command.CommandContainer;
+import grapefruit.command.generated.CommandContainer;
 import grapefruit.command.compiler.util.ElementPredicate;
 
 import javax.annotation.processing.Generated;
@@ -37,7 +37,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * For every class containing methods annotated with
  * {@link grapefruit.command.annotation.Command}, this
- * class generates a corresponding {@link grapefruit.command.CommandContainer}
+ * class generates a corresponding {@link CommandContainer}
  * instance containing the {@link grapefruit.command.Command} implementations
  * generated for each method.
  */
