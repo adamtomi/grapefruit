@@ -60,7 +60,7 @@ abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
         }
 
         @Override
-        public FlagArgument<T> asFlag() {
+        public CommandArgument.Flag<T> asFlag() {
             throw new UnsupportedOperationException("Attempted to cast a non-flag argument");
         }
 
@@ -70,7 +70,7 @@ abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
         }
     }
 
-    static abstract class Flag<T> extends CommandArgumentImpl<T> implements FlagArgument<T> {
+    static abstract class Flag<T> extends CommandArgumentImpl<T> implements CommandArgument.Flag<T> {
         private final char shorthand;
         private final boolean isPresenceFlag;
 
@@ -86,12 +86,12 @@ abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
         }
 
         @Override
-        public boolean isPresenceFlag() {
+        public boolean isPresence() {
             return this.isPresenceFlag;
         }
 
         @Override
-        public FlagArgument<T> asFlag() {
+        public CommandArgument.Flag<T> asFlag() {
             return this;
         }
 

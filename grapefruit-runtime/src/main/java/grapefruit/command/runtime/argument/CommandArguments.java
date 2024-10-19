@@ -35,7 +35,7 @@ public final class CommandArguments {
      * @param key The key of the argument
      * @return the created argument
      */
-    public static FlagArgument<Boolean> presenceFlag(String name, char shorthand, Key<Boolean> key) {
+    public static CommandArgument.Flag<Boolean> presenceFlag(String name, char shorthand, Key<Boolean> key) {
         // Modifiers aren't supported on presence flags
         return new CommandArgumentImpl.PresenceFlag(name, key, shorthand, ModifierChain.of(List.of()));
     }
@@ -49,7 +49,7 @@ public final class CommandArguments {
      * @param mapperKey The mapper key
      * @return The created argument
      */
-    public static <T> FlagArgument<T> valueFlag(String name, char shorthand, Key<T> key, Key<T> mapperKey, ModifierChain<T> modifierChain) {
+    public static <T> CommandArgument.Flag<T> valueFlag(String name, char shorthand, Key<T> key, Key<T> mapperKey, ModifierChain<T> modifierChain) {
         return new CommandArgumentImpl.ValueFlag<>(name, key, mapperKey, shorthand, modifierChain);
     }
 }

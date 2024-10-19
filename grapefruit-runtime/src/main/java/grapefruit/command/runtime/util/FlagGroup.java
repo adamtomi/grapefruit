@@ -1,7 +1,7 @@
 package grapefruit.command.runtime.util;
 
 import grapefruit.command.runtime.CommandException;
-import grapefruit.command.runtime.argument.FlagArgument;
+import grapefruit.command.runtime.argument.CommandArgument;
 import grapefruit.command.runtime.argument.binding.BoundArgument;
 import grapefruit.command.runtime.dispatcher.UnrecognizedFlagException;
 import grapefruit.command.runtime.dispatcher.syntax.CommandSyntax;
@@ -101,7 +101,7 @@ public class FlagGroup implements Iterable<BoundArgument<?>> {
      */
     private static BoundArgument<?> selectFlag(
             List<BoundArgument<?>> candidates,
-            Predicate<FlagArgument<?>> test,
+            Predicate<CommandArgument.Flag<?>> test,
             Supplier<CommandException> exceptionFactory
     ) throws CommandException {
         return candidates.stream().filter(x -> test.test(x.argument().asFlag()))
