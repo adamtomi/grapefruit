@@ -16,6 +16,7 @@ import grapefruit.command.runtime.dispatcher.input.StringReaderImpl;
 import grapefruit.command.runtime.dispatcher.syntax.CommandSyntaxException;
 import grapefruit.command.runtime.dispatcher.syntax.DuplicateFlagException;
 import grapefruit.command.runtime.dispatcher.tree.CommandGraph;
+import grapefruit.command.runtime.generated.CommandMirror;
 import grapefruit.command.runtime.util.FlagGroup;
 import grapefruit.command.runtime.util.Registry;
 import grapefruit.command.runtime.util.key.Key;
@@ -57,7 +58,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     }
 
     @Override
-    public void register(Iterable<Command> commands) {
+    public void register(Iterable<CommandMirror> commands) {
         requireNonNull(commands, "commands cannot be null");
         changeRegistrationState(commands, command -> {
             /*
@@ -76,7 +77,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     }
 
     @Override
-    public void unregister(Iterable<Command> commands) {
+    public void unregister(Iterable<CommandMirror> commands) {
         requireNonNull(commands, "commands cannot be null");
         changeRegistrationState(commands, command -> {
             // The registration handler is invoked first
@@ -88,11 +89,11 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         });
     }
 
-    private void changeRegistrationState(Iterable<Command> commands, Consumer<Command> handler) {
-        for (Command command : commands) {
+    private void changeRegistrationState(Iterable<CommandMirror> commands, Consumer<Command> handler) {
+        for (CommandMirror command : commands) {
             try {
                 // Run state change handler
-                handler.accept(command);
+                // handler.accept(command); // TODO fix
             } catch (CommandRegistrationHandler.Interrupt ignored) {
                 // Interrupt was thrown, do nothing
             }

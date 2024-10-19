@@ -151,7 +151,7 @@ public class CommandGenerator implements Generator<CodeBlock> {
         if (conditions.isEmpty()) {
             // The condition list is empty, not including it.
             return CodeBlock.of(
-                    "command($S, $L, $S, this::$L)",
+                    "command($S, $L(), $S, this::$L)",
                     route,
                     ARGUMENTS_METHOD_SUFFIX.apply(this.method),
                     permission,
@@ -170,7 +170,7 @@ public class CommandGenerator implements Generator<CodeBlock> {
 
         // Include conditions in the generated code
         return CodeBlock.of(
-                "command($S, $L, $S, $L, this::$L)",
+                "command($S, $L(), $S, $L, this::$L)",
                 route,
                 ARGUMENTS_METHOD_SUFFIX.apply(this.method),
                 permission,
