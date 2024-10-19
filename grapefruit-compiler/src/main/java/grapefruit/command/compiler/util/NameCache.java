@@ -4,7 +4,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import javax.lang.model.element.TypeElement;
-
 import java.util.Collection;
 
 public class NameCache {
