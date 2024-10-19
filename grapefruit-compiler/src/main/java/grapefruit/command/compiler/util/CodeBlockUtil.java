@@ -3,7 +3,7 @@ package grapefruit.command.compiler.util;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
-import grapefruit.command.util.key.Key;
+import grapefruit.command.runtime.util.key.Key;
 import io.leangen.geantyref.TypeToken;
 
 public final class CodeBlockUtil {

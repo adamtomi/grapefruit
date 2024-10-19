@@ -6,18 +6,18 @@ import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
-import grapefruit.command.annotation.Arg;
-import grapefruit.command.annotation.Flag;
-import grapefruit.command.annotation.meta.InjectedBy;
-import grapefruit.command.annotation.meta.MappedBy;
-import grapefruit.command.argument.CommandArguments;
-import grapefruit.command.argument.modifier.ArgumentModifier;
-import grapefruit.command.argument.modifier.ModifierBlueprint;
-import grapefruit.command.argument.modifier.ModifierChain;
 import grapefruit.command.compiler.Naming;
 import grapefruit.command.compiler.util.NameCache;
-import grapefruit.command.util.PrimitivesUtil;
-import grapefruit.command.util.key.Key;
+import grapefruit.command.runtime.annotation.Arg;
+import grapefruit.command.runtime.annotation.Flag;
+import grapefruit.command.runtime.annotation.meta.InjectedBy;
+import grapefruit.command.runtime.annotation.meta.MappedBy;
+import grapefruit.command.runtime.argument.CommandArguments;
+import grapefruit.command.runtime.argument.modifier.ArgumentModifier;
+import grapefruit.command.runtime.argument.modifier.ModifierBlueprint;
+import grapefruit.command.runtime.argument.modifier.ModifierChain;
+import grapefruit.command.runtime.util.PrimitivesUtil;
+import grapefruit.command.runtime.util.key.Key;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -139,8 +139,8 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
          Map<AnnotationMirror, TypeMirror> result = new HashMap<>();
          for (AnnotationMirror annotation : parameter.getAnnotationMirrors()) {
              for (AnnotationMirror _annotation : asType(annotation.getAnnotationType().asElement()).getAnnotationMirrors()) {
-                 if (matches(_annotation, grapefruit.command.annotation.meta.Modifier.class)
-                         || matches(_annotation, grapefruit.command.annotation.meta.Modifier.Factory.class)) {
+                 if (matches(_annotation, grapefruit.command.runtime.annotation.meta.Modifier.class)
+                         || matches(_annotation, grapefruit.command.runtime.annotation.meta.Modifier.Factory.class)) {
                      result.put(annotation, accessAnnotationValue(_annotation, "value", TypeMirror.class));
                      // We found a matching annotation, so move on to the next one (on the parameter)
                      break;

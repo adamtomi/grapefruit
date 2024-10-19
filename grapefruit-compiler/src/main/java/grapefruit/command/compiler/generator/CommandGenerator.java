@@ -6,11 +6,11 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.WildcardTypeName;
-import grapefruit.command.annotation.Command;
-import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.compiler.util.ElementPredicate;
-import grapefruit.command.dispatcher.CommandContext;
-import grapefruit.command.dispatcher.CommandSpec;
+import grapefruit.command.runtime.annotation.Command;
+import grapefruit.command.runtime.argument.CommandArgument;
+import grapefruit.command.runtime.dispatcher.CommandContext;
+import grapefruit.command.runtime.dispatcher.CommandSpec;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ElementKind;
@@ -93,7 +93,7 @@ public class CommandGenerator implements Generator<CodeBlock> {
         // Include our command handler method
         context.include(generateHandlerMethod(parameters));
         // Static import Command#wrap
-        context.importStatic(grapefruit.command.Command.class, "wrap");
+        context.importStatic(grapefruit.command.runtime.Command.class, "wrap");
 
         return CodeBlock.of(
                 "wrap($L(), $L, this::$L)",

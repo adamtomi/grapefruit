@@ -3,9 +3,9 @@ package grapefruit.command.compiler;
 import com.google.auto.common.MoreElements;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.JavaFile;
-import grapefruit.command.annotation.Command;
 import grapefruit.command.compiler.generator.ContainerGenerator;
 import grapefruit.command.compiler.generator.GeneratorContext;
+import grapefruit.command.runtime.annotation.Command;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;
@@ -24,7 +24,7 @@ import java.util.Set;
 import static java.util.stream.Collectors.groupingBy;
 
 @AutoService(Processor.class)
-@SupportedAnnotationTypes("grapefruit.command.annotation.Command")
+@SupportedAnnotationTypes("grapefruit.command.runtime.annotation.Command")
 public class CommandProcessor extends AbstractProcessor {
 
     @Override
