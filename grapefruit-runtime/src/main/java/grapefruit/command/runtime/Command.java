@@ -22,6 +22,7 @@ import java.util.List;
  * executable command instances. These commands can be invoked without relying on the use of
  * reflection, increasing performance.
  */
+@Deprecated
 public interface Command extends CommandAction {
 
     /**

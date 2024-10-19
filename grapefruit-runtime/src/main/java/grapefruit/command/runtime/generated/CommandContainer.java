@@ -1,12 +1,10 @@
 package grapefruit.command.runtime.generated;
 
-import grapefruit.command.runtime.annotation.Command;
-
 import java.util.Set;
 
 /**
  * Every java class containing at least one method annotated with
- * {@link Command} a
+ * {@link grapefruit.command.runtime.annotation.Command} a
  * container class implementing this interface will be generated.
  * This makes it easier to retrieve and use the generated {@link CommandMirror}
  * instances.
