@@ -1,6 +1,6 @@
 package grapefruit.command.runtime.dispatcher;
 
-import grapefruit.command.runtime.Command;
+import grapefruit.command.runtime.generated.CommandMirror;
 import grapefruit.command.runtime.util.key.Key;
 
 /**
@@ -9,7 +9,7 @@ import grapefruit.command.runtime.util.key.Key;
  */
 public final class InternalContextKeys {
     /* Key used to access the current command being executed */
-    public static final Key<Command> COMMAND = Key.named(Command.class, "grapefruit:internal:command");
+    public static final Key<CommandMirror> COMMAND = Key.named(CommandMirror.class, "grapefruit:internal:command");
 
     private InternalContextKeys() {}
 }

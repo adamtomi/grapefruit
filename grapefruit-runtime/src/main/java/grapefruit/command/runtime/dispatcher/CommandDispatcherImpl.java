@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static grapefruit.command.runtime.dispatcher.syntax.CommandSyntax.LONG_FLAG_FORMAT;
@@ -39,7 +38,7 @@ import static java.util.stream.Collectors.partitioningBy;
 
 final class CommandDispatcherImpl implements CommandDispatcher {
     private final CommandGraph commandGraph = new CommandGraph();
-    private final Registry<Command, CommandInfo> knownCommands = Registry.create(Registry.DuplicateStrategy.reject());
+    private final Registry<CommandMirror, CommandInfo> knownCommands = Registry.create(Registry.DuplicateStrategy.reject());
     private final CommandAuthorizer authorizer;
     private final Registry<Key<?>, ArgumentMapper<?>> argumentMappers;
     private final Registry<Key<?>, CommandCondition> conditions;
@@ -60,7 +59,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
     @Override
     public void register(Iterable<CommandMirror> commands) {
         requireNonNull(commands, "commands cannot be null");
-        changeRegistrationState(commands, command -> {
+        for (CommandMirror command : commands) {
             /*
              * Gather the runtime command information first. If this
              * fails due to a missing ArgumentMapper or CommandCondition,
@@ -68,40 +67,33 @@ final class CommandDispatcherImpl implements CommandDispatcher {
              */
             CommandInfo commandInfo = buildCommand(command);
             // The registartion handler is invoked first
-            this.registrationHandler.onRegister(command);
+            boolean shouldProceed = this.registrationHandler.register(command);
+            // Got false, skipping registration
+            if (!shouldProceed) return;
             // If the process wasn't interrupted, insert the command into the tree
             this.commandGraph.insert(command);
-            // Cache argument chain
+            // Cache the gathered command information
             this.knownCommands.store(command, commandInfo);
-        });
+        }
     }
 
     @Override
     public void unregister(Iterable<CommandMirror> commands) {
         requireNonNull(commands, "commands cannot be null");
-        changeRegistrationState(commands, command -> {
+        for (CommandMirror command : commands) {
             // The registration handler is invoked first
-            this.registrationHandler.onUnregister(command);
+            boolean shouldProceed = this.registrationHandler.unregister(command);
+            // Got false, skipping registration
+            if (!shouldProceed) return;
             // If the process wasn't interrupted, delete the command from the tree
             this.commandGraph.delete(command);
             // Remove cached argument chain
             this.knownCommands.remove(command);
-        });
-    }
-
-    private void changeRegistrationState(Iterable<CommandMirror> commands, Consumer<Command> handler) {
-        for (CommandMirror command : commands) {
-            try {
-                // Run state change handler
-                // handler.accept(command); // TODO fix
-            } catch (CommandRegistrationHandler.Interrupt ignored) {
-                // Interrupt was thrown, do nothing
-            }
         }
     }
 
     // Gather the runtime information of a command
-    private CommandInfo buildCommand(Command command) {
+    private CommandInfo buildCommand(CommandMirror command) {
         // Bind command arguments to argument mappers
         Map<Boolean, List<BoundArgument<?>>> argumentBindings = command.arguments()
                 .stream()
@@ -141,7 +133,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         return argument.bind(mapperAccess);
     }
 
-    private CommandInfo requireInfo(Command command) {
+    private CommandInfo requireInfo(CommandMirror command) {
         return this.knownCommands.get(command).orElseThrow(() -> new IllegalStateException(
                 "No cached information was found for command '%s' The dispatcher is not configured properly.".formatted(command)
         ));
@@ -170,14 +162,14 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         if (search instanceof CommandGraph.SearchResult.Failure failure) throw failure.cause();
 
         // The search was successful, we can extract the command instance
-        Command command = ((CommandGraph.SearchResult.Success) search).command();
+        CommandMirror command = ((CommandGraph.SearchResult.Success) search).command();
 
         // Save the command instance so that we can retrieve it later if needed
         context.put(InternalContextKeys.COMMAND, command);
         if (!invokeListeners(ExecutionStage.PRE_PROCESS, context)) return;
 
         // Check permissions
-        Optional<String> permission = command.spec().permission();
+        Optional<String> permission = command.permission();
         boolean mayExecute = permission.map(x -> this.authorizer.authorize(x, context))
                 .orElse(true);
 
@@ -199,7 +191,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
         if (!invokeListeners(ExecutionStage.PRE_EXECUTION, context)) return;
         // Finally, invoke the command
-        command.run(context);
+        command.action().run(context);
 
         invokeListeners(ExecutionStage.POST_EXECUTION, context);
     }
@@ -299,7 +291,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         }
 
         // Command can safely be extracted
-        Command command = ((CommandGraph.SearchResult.Success) searchResult).command();
+        CommandMirror command = ((CommandGraph.SearchResult.Success) searchResult).command();
         // Retrieve argument chain
         CommandInfo commandInfo = requireInfo(command);
 

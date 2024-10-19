@@ -11,6 +11,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Runtime command information gathered and used by {@link CommandDispatcherImpl}.
  */
+ @Deprecated
 record CommandInfo(Command command, List<BoundArgument<?>> arguments, List<BoundArgument<?>> flags, List<CommandCondition> conditions) {
     CommandInfo {
         requireNonNull(command, "command cannot be null");

@@ -1,6 +1,6 @@
 package grapefruit.command.runtime.dispatcher.tree;
 
-import grapefruit.command.runtime.Command;
+import grapefruit.command.runtime.generated.CommandMirror;
 import grapefruit.command.runtime.util.StringUtil;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,7 +22,7 @@ public class CommandNode {
     private final Set<String> aliases;
     private final Set<CommandNode> children = new LinkedHashSet<>();
     private final CommandNode parent;
-    private Command command;
+    private CommandMirror command;
 
     private CommandNode(String primaryAlias, Set<String> aliases, @Nullable CommandNode parent) {
         validate(primaryAlias);
@@ -54,11 +54,11 @@ public class CommandNode {
         return Set.copyOf(this.aliases);
     }
 
-    public Optional<Command> command() {
+    public Optional<CommandMirror> command() {
         return Optional.ofNullable(this.command);
     }
 
-    public void command(Command command) {
+    public void command(CommandMirror command) {
         this.command = requireNonNull(command, "command cannot be null");
     }
 

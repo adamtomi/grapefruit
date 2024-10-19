@@ -1,9 +1,8 @@
 package grapefruit.command.runtime.dispatcher.tree;
 
-import grapefruit.command.runtime.Command;
 import grapefruit.command.runtime.CommandException;
-import grapefruit.command.runtime.dispatcher.CommandSpec;
 import grapefruit.command.runtime.dispatcher.input.StringReader;
+import grapefruit.command.runtime.generated.CommandMirror;
 
 import java.io.Serial;
 import java.util.ArrayList;
@@ -14,8 +13,9 @@ import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 
 /**
- * {@link Command} instances are stored in a so-called command tree. Each command
- * will be registered at the route specified be its {@link CommandSpec}.
+ * {@link CommandMirror} instances are stored in a so-called command tree. Each command
+ * will be registered at the route specified by the corresponding
+ * {@link grapefruit.command.runtime.annotation.Command} annotation
  * The last node will hold the command instance itself.
  */
 public class CommandGraph {
@@ -27,9 +27,9 @@ public class CommandGraph {
      *
      * @param command The command to insert
      */
-    public void insert(Command command) {
+    public void insert(CommandMirror command) {
         requireNonNull(command, "command cannot be null");
-        List<RouteNode> parts = command.spec().route();
+        List<RouteNode> parts = command.route();
         /*
          * A command handler cannot be registered directly on the
          * root node, at least one route part is required.
@@ -77,9 +77,9 @@ public class CommandGraph {
      *
      * @param command The command to delete
      */
-    public void delete(Command command) {
+    public void delete(CommandMirror command) {
         requireNonNull(command, "command cannot be null");
-        List<RouteNode> parts = command.spec().route();
+        List<RouteNode> parts = command.route();
         // There's nothing to delete if the list is empty
         if (parts.isEmpty()) return;
 
@@ -111,7 +111,7 @@ public class CommandGraph {
     }
 
     /**
-     * Attempts to find a {@link Command} instance attached to a
+     * Attempts to find a {@link CommandMirror} instance attached to a
      * {@link CommandNode} based on user input.
      *
      * @param input The reader wrapping user input
@@ -131,7 +131,7 @@ public class CommandGraph {
 
                 node = childCandidate.orElseThrow();
                 if (node.isLeaf()) {
-                    Optional<Command> command = node.command();
+                    Optional<CommandMirror> command = node.command();
                     // Not using Optional#orElseThrow(String), because node isn't final
                     if (command.isPresent()) return SearchResult.success(command.orElseThrow());
 
@@ -214,7 +214,7 @@ public class CommandGraph {
          * @param command The command instance
          * @return The created search result
          */
-        static SearchResult success(Command command) {
+        static SearchResult success(CommandMirror command) {
             return new Success(command);
         }
 
@@ -232,7 +232,7 @@ public class CommandGraph {
         /**
          * Successful search result implementation.
          */
-        record Success(Command command) implements SearchResult {
+        record Success(CommandMirror command) implements SearchResult {
             public Success {
                 requireNonNull(command, "command cannot be null");
             }

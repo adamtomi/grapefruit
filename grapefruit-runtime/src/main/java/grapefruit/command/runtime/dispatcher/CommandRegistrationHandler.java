@@ -1,78 +1,58 @@
 package grapefruit.command.runtime.dispatcher;
 
-import grapefruit.command.runtime.Command;
-
-import java.io.Serial;
+import grapefruit.command.runtime.generated.CommandMirror;
 
 /**
- * Provides a simple way for 3rd parties to handle
- * command registration/unregistration. If those
- * actions are undesired for some reason, the implementation
- * can call {@link this#interrupt()} to interrupt the registration
- * or unregistration of the command.
+ * Allows third parties to run some logic upon the
+ * registration or unregistration of a certain command.
  */
-public abstract class CommandRegistrationHandler {
+public interface CommandRegistrationHandler {
 
     /**
-     * Implementations may decide to perform some
-     * logic upon command registration.
+     * This method is invoked before the supplied {@link CommandMirror}
+     * is registered into the command tree. If the registration
+     * process should not proceed any further, implementations
+     * may return {@code false}.
      *
      * @param command The command being registered
+     * @return Whether to register the command or not
      */
-    public abstract void onRegister(Command command);
+    boolean register(CommandMirror command);
 
     /**
-     * Implementations may decide to perform some
-     * logic upon command unregistration.
+     * This method is invoked before the supplied {@link CommandMirror}
+     * is unregistered from the command tree. If the unregistration
+     * process should not proceed any further, implementations
+     * may return {@code false}.
      *
      * @param command The command being unregistered
+     * @return Whether to unregister the command or not
      */
-    public abstract void onUnregister(Command command);
-
-    /**
-     * Utility function to interrupt the ongoing
-     * registration/unregistration.
-     *
-     * @throws Interrupt When the method is called
-     */
-    protected final void interrupt() {
-        throw new Interrupt();
-    }
+    boolean unregister(CommandMirror command);
 
     /**
      * Returns a no operation registartion handler.
      *
      * @return The handler instance
      */
-    public static CommandRegistrationHandler noop() {
+    static CommandRegistrationHandler noop() {
         return NoOp.INSTANCE;
     }
 
-    /* Dummy exception */
-    static final class Interrupt extends RuntimeException {
-        @Serial
-        private static final long serialVersionUID = -1364401961627181390L;
-
-        Interrupt() {
-            super("Interrupting command registration");
-        }
-
-        @Override
-        public synchronized Throwable fillInStackTrace() {
-            return this;
-        }
-    }
-
     /* NOOP implementation */
-    static final class NoOp extends CommandRegistrationHandler {
+    final class NoOp implements CommandRegistrationHandler {
         private static final NoOp INSTANCE = new NoOp();
 
         private NoOp() {}
 
         @Override
-        public void onRegister(Command command) {}
+        public boolean register(CommandMirror command) {
+            return true;
+        }
 
         @Override
-        public void onUnregister(Command command) {}
+        public boolean unregister(CommandMirror command) {
+            return true;
+        }
     }
 }
