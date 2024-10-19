@@ -1,4 +1,4 @@
-package grapefruit.command.annotation.modifier;
+package grapefruit.command.annotation.meta;
 
 import grapefruit.command.argument.modifier.ArgumentModifier;
 

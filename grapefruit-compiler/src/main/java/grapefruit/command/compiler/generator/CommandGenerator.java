@@ -6,8 +6,7 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.WildcardTypeName;
-import grapefruit.command.Command;
-import grapefruit.command.annotation.CommandDefinition;
+import grapefruit.command.annotation.Command;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.compiler.util.ElementPredicate;
 import grapefruit.command.dispatcher.CommandContext;
@@ -33,7 +32,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * This class is responsible for generating two methods for every method
- * annotated with {@link grapefruit.command.annotation.CommandDefinition}:
+ * annotated with {@link Command}:
  * <ul>
  *     <li>One that returns the argument list of that command</li>
  *     <li>One that handles command invocation (and invokes the original command method)</li>
@@ -77,7 +76,7 @@ public class CommandGenerator implements Generator<CodeBlock> {
 
         return new CommandGenerator(
                 method,
-                assertAnnotation(method, CommandDefinition.class),
+                assertAnnotation(method, Command.class),
                 parameters
         );
     }
@@ -94,7 +93,7 @@ public class CommandGenerator implements Generator<CodeBlock> {
         // Include our command handler method
         context.include(generateHandlerMethod(parameters));
         // Static import Command#wrap
-        context.importStatic(Command.class, "wrap");
+        context.importStatic(grapefruit.command.Command.class, "wrap");
 
         return CodeBlock.of(
                 "wrap($L(), $L, this::$L)",

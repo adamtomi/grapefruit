@@ -6,10 +6,10 @@ import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
-import grapefruit.command.annotation.argument.Arg;
-import grapefruit.command.annotation.argument.Flag;
-import grapefruit.command.annotation.inject.InjectedBy;
-import grapefruit.command.annotation.mapper.MappedBy;
+import grapefruit.command.annotation.Arg;
+import grapefruit.command.annotation.Flag;
+import grapefruit.command.annotation.meta.InjectedBy;
+import grapefruit.command.annotation.meta.MappedBy;
 import grapefruit.command.argument.CommandArguments;
 import grapefruit.command.argument.modifier.ArgumentModifier;
 import grapefruit.command.argument.modifier.ModifierBlueprint;
@@ -139,8 +139,8 @@ public abstract class ParameterGenerator implements Generator<ParameterGenerator
          Map<AnnotationMirror, TypeMirror> result = new HashMap<>();
          for (AnnotationMirror annotation : parameter.getAnnotationMirrors()) {
              for (AnnotationMirror _annotation : asType(annotation.getAnnotationType().asElement()).getAnnotationMirrors()) {
-                 if (matches(_annotation, grapefruit.command.annotation.modifier.Modifier.class)
-                         || matches(_annotation, grapefruit.command.annotation.modifier.Modifier.Factory.class)) {
+                 if (matches(_annotation, grapefruit.command.annotation.meta.Modifier.class)
+                         || matches(_annotation, grapefruit.command.annotation.meta.Modifier.Factory.class)) {
                      result.put(annotation, accessAnnotationValue(_annotation, "value", TypeMirror.class));
                      // We found a matching annotation, so move on to the next one (on the parameter)
                      break;

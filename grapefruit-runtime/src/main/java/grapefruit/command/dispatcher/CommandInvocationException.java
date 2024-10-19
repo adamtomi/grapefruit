@@ -1,11 +1,12 @@
 package grapefruit.command.dispatcher;
 
 import grapefruit.command.CommandException;
+import grapefruit.command.annotation.Command;
 
 import java.io.Serial;
 
 /**
- * This exception is thrown, when a command handler method (annotated with {@link grapefruit.command.annotation.CommandDefinition})
+ * This exception is thrown, when a command handler method (annotated with {@link Command})
  * throws an exception, which is caught by its wrapper {@link grapefruit.command.Command}'s {@link grapefruit.command.Command#run(CommandContext)}
  * method. The original exception will be set as the cause of this exception.
  */

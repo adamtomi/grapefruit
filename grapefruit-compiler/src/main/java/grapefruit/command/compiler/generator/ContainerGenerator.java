@@ -36,7 +36,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * For every class containing methods annotated with
- * {@link grapefruit.command.annotation.CommandDefinition}, this
+ * {@link grapefruit.command.annotation.Command}, this
  * class generates a corresponding {@link grapefruit.command.CommandContainer}
  * instance containing the {@link grapefruit.command.Command} implementations
  * generated for each method.

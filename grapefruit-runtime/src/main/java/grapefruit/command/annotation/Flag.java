@@ -1,4 +1,4 @@
-package grapefruit.command.annotation.argument;
+package grapefruit.command.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

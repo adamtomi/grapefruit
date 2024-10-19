@@ -17,7 +17,7 @@ import java.util.List;
  *     <li>A list of conditions that first need to pass before executing the actual command <bold>(Optional)</bold></li>
  * </ul>
  *
- * The code generator module will take command methods annotated with {@link grapefruit.command.annotation.CommandDefinition}
+ * The code generator module will take command methods annotated with {@link grapefruit.command.annotation.Command}
  * and through the use of {@link Command#wrap(List, CommandSpec, CommandAction)} will generate
  * executable command instances. These commands can be invoked without relying on the use of
  * reflection, increasing performance.

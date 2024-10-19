@@ -1,6 +1,6 @@
 package grapefruit.command.dispatcher;
 
-import grapefruit.command.annotation.CommandDefinition;
+import grapefruit.command.annotation.Command;
 import grapefruit.command.dispatcher.condition.CommandCondition;
 import grapefruit.command.dispatcher.tree.RouteNode;
 import org.jetbrains.annotations.Nullable;
@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Contains metadata initially held by {@link CommandDefinition}
+ * Contains metadata initially held by {@link Command}
  * about a specific command.
  */
 public interface CommandSpec {

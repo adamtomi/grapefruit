@@ -4,7 +4,7 @@ import java.util.Set;
 
 /**
  * Every java class containing at least one method annotated with
- * {@link grapefruit.command.annotation.CommandDefinition} a
+ * {@link grapefruit.command.annotation.Command} a
  * container class implementing this interface will be generated.
  * This makes it easier to retrieve and use the generated {@link Command}
  * instances.

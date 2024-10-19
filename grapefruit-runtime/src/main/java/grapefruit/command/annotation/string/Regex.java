@@ -1,6 +1,6 @@
-package grapefruit.command.annotation.modifier.string;
+package grapefruit.command.annotation.string;
 
-import grapefruit.command.annotation.modifier.Modifier;
+import grapefruit.command.annotation.meta.Modifier;
 import grapefruit.command.argument.modifier.builtin.RegexModifier;
 
 import java.lang.annotation.ElementType;

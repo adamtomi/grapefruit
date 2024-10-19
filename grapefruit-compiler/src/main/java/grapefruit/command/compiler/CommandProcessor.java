@@ -3,7 +3,7 @@ package grapefruit.command.compiler;
 import com.google.auto.common.MoreElements;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.JavaFile;
-import grapefruit.command.annotation.CommandDefinition;
+import grapefruit.command.annotation.Command;
 import grapefruit.command.compiler.generator.ContainerGenerator;
 import grapefruit.command.compiler.generator.GeneratorContext;
 
@@ -34,7 +34,7 @@ public class CommandProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        Set<? extends Element> commandMethods = roundEnv.getElementsAnnotatedWith(CommandDefinition.class);
+        Set<? extends Element> commandMethods = roundEnv.getElementsAnnotatedWith(Command.class);
         Map<TypeElement, List<ExecutableElement>> commandsByContainer = commandMethods.stream()
                 .map(MoreElements::asExecutable) // Since @CommandDefinition is only allowed on methods, this is a safe cast
                 .collect(groupingBy(x -> (TypeElement) x.getEnclosingElement())); // And that also means that the enclosing element is a class

@@ -1,6 +1,5 @@
 package grapefruit.command.annotation;
 
-import grapefruit.command.Command;
 import grapefruit.command.dispatcher.condition.CommandCondition;
 
 import java.lang.annotation.ElementType;
@@ -14,10 +13,10 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.METHOD)
-public @interface CommandDefinition {
+public @interface Command {
 
     /**
-     * The route at which the {@link Command} generated
+     * The route at which the {@link grapefruit.command.Command} generated
      * based on the method annotated by this annotation
      * will be registered at.
      */
