@@ -1,7 +1,7 @@
 package grapefruit.command.runtime.dispatcher.config;
 
-import grapefruit.command.runtime.Command;
 import grapefruit.command.runtime.dispatcher.CommandRegistrationHandler;
+import grapefruit.command.runtime.generated.CommandMirror;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +23,7 @@ final class RegistrationBuilderImpl implements RegistrationBuilder {
     }
 
     @Override
-    public RegistrationBuilder.Lambda on(Stage stage, Consumer<Command> handler) {
+    public RegistrationBuilder.Lambda on(Stage stage, Consumer<CommandMirror> handler) {
         requireNonNull(stage, "stage cannot be null");
         requireNonNull(handler, "handler cannot be null");
         Lambda builder = new Lambda(this.handler);
@@ -33,14 +33,14 @@ final class RegistrationBuilderImpl implements RegistrationBuilder {
 
     static final class Lambda implements RegistrationBuilder.Lambda {
         private final Consumer<CommandRegistrationHandler> handler;
-        private final Map<Stage, Consumer<Command>> consumers = new HashMap<>();
+        private final Map<Stage, Consumer<CommandMirror>> consumers = new HashMap<>();
 
         Lambda(Consumer<CommandRegistrationHandler> handler) {
             this.handler = requireNonNull(handler, "handler cannot be null");
         }
 
         @Override
-        public Lambda on(Stage stage, Consumer<Command> handler) {
+        public Lambda on(Stage stage, Consumer<CommandMirror> handler) {
             requireNonNull(stage, "stage cannot be null");
             requireNonNull(handler, "handler cannot be null");
             this.consumers.put(stage, handler);
@@ -57,23 +57,25 @@ final class RegistrationBuilderImpl implements RegistrationBuilder {
         }
     }
 
-    static final class ConsumerBackedRegistrationHandler extends CommandRegistrationHandler {
-        private final Consumer<Command> registerHandler;
-        private final Consumer<Command> unregisterHandler;
+    static final class ConsumerBackedRegistrationHandler implements CommandRegistrationHandler {
+        private final Consumer<CommandMirror> registerHandler;
+        private final Consumer<CommandMirror> unregisterHandler;
 
-        ConsumerBackedRegistrationHandler(Consumer<Command> registerHandler, Consumer<Command> unregisterHandler) {
+        ConsumerBackedRegistrationHandler(Consumer<CommandMirror> registerHandler, Consumer<CommandMirror> unregisterHandler) {
             this.registerHandler = requireNonNull(registerHandler, "registerHandler cannot be null");
             this.unregisterHandler = requireNonNull(unregisterHandler, "unregisterHandler cannot be null");
         }
 
         @Override
-        public void onRegister(Command command) {
+        public boolean register(CommandMirror command) {
             this.registerHandler.accept(command);
+            return true;
         }
 
         @Override
-        public void onUnregister(Command command) {
+        public boolean unregister(CommandMirror command) {
             this.unregisterHandler.accept(command);
+            return true;
         }
     }
 }

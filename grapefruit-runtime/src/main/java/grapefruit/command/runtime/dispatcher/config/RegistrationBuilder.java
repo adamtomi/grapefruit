@@ -1,7 +1,7 @@
 package grapefruit.command.runtime.dispatcher.config;
 
-import grapefruit.command.runtime.Command;
 import grapefruit.command.runtime.dispatcher.CommandRegistrationHandler;
+import grapefruit.command.runtime.generated.CommandMirror;
 
 import java.util.function.Consumer;
 
@@ -27,7 +27,7 @@ public interface RegistrationBuilder {
      * @param handler The registration handler
      * @return A newly created {@link Lambda} instance
      */
-    Lambda on(Stage stage, Consumer<Command> handler);
+    Lambda on(Stage stage, Consumer<CommandMirror> handler);
 
     /**
      * Utility class to create one-liner ("lambda") registration handlers.
@@ -37,7 +37,7 @@ public interface RegistrationBuilder {
         /**
          * @see RegistrationBuilder#on(Stage, Consumer)
          */
-        Lambda on(Stage stage, Consumer<Command> handler);
+        Lambda on(Stage stage, Consumer<CommandMirror> handler);
 
         /**
          * Registers the registration handler.
