@@ -16,6 +16,7 @@ import static java.util.stream.Collectors.toMap;
 
 final class ModifierImpl {
 
+    @Deprecated
     static final class ModifierChainImpl<T> implements ModifierChain<T> {
         private final List<ArgumentModifier<T>> bakedModifiers = new ArrayList<>();
         private final List<ModifierBlueprint> modifiers;

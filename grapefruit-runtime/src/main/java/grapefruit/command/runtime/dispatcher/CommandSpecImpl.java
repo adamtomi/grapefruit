@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
+@Deprecated
 final class CommandSpecImpl implements CommandSpec {
     private final List<RouteNode> route;
     private final @Nullable String permission;

@@ -13,6 +13,7 @@ import java.util.Optional;
  * Contains metadata initially held by {@link Command}
  * about a specific command.
  */
+@Deprecated
 public interface CommandSpec {
 
     /**

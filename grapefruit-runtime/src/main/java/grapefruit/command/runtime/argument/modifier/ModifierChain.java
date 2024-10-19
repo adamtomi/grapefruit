@@ -5,6 +5,7 @@ import grapefruit.command.runtime.argument.CommandArgumentException;
 import java.util.List;
 import java.util.function.Function;
 
+@Deprecated
 public interface ModifierChain<T> {
 
     T apply(T input) throws CommandArgumentException;

@@ -10,6 +10,7 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
+@Deprecated
 final class BoundArgumentImpl<T> implements BoundArgument<T> {
     private final CommandArgument<T> argument;
     private final ArgumentMapper<T> mapper;

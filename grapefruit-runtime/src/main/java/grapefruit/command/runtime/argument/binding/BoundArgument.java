@@ -11,6 +11,7 @@ import grapefruit.command.runtime.dispatcher.input.StringReader;
  *
  * @param <T> The argument type
  */
+@Deprecated
 public interface BoundArgument<T> {
 
     /**

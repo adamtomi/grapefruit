@@ -37,6 +37,7 @@ package grapefruit.command.runtime.argument;
  *
  * @param <T> The type of values to be supplied by the user to this argument
  */
+@Deprecated
 public interface FlagArgument<T> extends CommandArgument<T> {
 
     /**
