@@ -95,6 +95,10 @@ public class CommandNode {
         this.aliases.addAll(aliases);
     }
 
+    public RouteNode toRouteNode() {
+        return RouteNode.of(this.primaryAlias, this.aliases);
+    }
+
     @Override
     public String toString() {
         return "CommandNode(primaryAlias=%s, aliases=%s, command=%s)".formatted(

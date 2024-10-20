@@ -3,12 +3,15 @@ package grapefruit.command.runtime.dispatcher.tree;
 import grapefruit.command.runtime.CommandException;
 import grapefruit.command.runtime.dispatcher.CommandDefinition;
 import grapefruit.command.runtime.dispatcher.input.StringReader;
+import grapefruit.command.runtime.dispatcher.syntax.CommandSyntaxException;
 
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -118,7 +121,7 @@ public class CommandGraph {
      * @param input The reader wrapping user input
      * @return The command if it was found
      */
-    public SearchResult search(StringReader input) {
+    public CommandDefinition search(StringReader input) throws NoSuchCommandException {
         CommandNode node = this.rootNode;
         try {
             while (true) {
@@ -127,14 +130,13 @@ public class CommandGraph {
                 Optional<CommandNode> childCandidate = node.findChild(name);
                 if (childCandidate.isEmpty()) {
                     // There is no child node with the provided name, we throw an exception
-                    throw new NoSuchCommandException(name, input.consumed());
+                    throw new NoSuchCommandException(name, input.consumed(), children(node));
                 }
 
                 node = childCandidate.orElseThrow();
                 if (node.isLeaf()) {
                     Optional<CommandDefinition> command = node.command();
-                    // Not using Optional#orElseThrow(String), because node isn't final
-                    if (command.isPresent()) return SearchResult.success(command.orElseThrow());
+                    if (command.isPresent()) return command.orElseThrow();
 
                     /*
                      * If the node is a leaf node, we assume this is the command handler
@@ -146,9 +148,15 @@ public class CommandGraph {
                     throw new IllegalStateException("CommandNode '%s' is a leaf node, but has no command attached to it.".formatted(node));
                 }
             }
-        } catch (CommandException ex) {
-            return SearchResult.failure(node, ex);
+        } catch (CommandSyntaxException ex) {
+            throw new NoSuchCommandException("", input.consumed(), children(node));
         }
+    }
+
+    private Set<RouteNode> children(CommandNode node) {
+        return node.children().stream()
+                .map(CommandNode::toRouteNode)
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -176,11 +184,13 @@ public class CommandGraph {
         private static final long serialVersionUID = 1581132770833148304L;
         private final String name;
         private final String consumedArgs;
+        private final Set<RouteNode> options;
 
-        private NoSuchCommandException(String name, String consumedArgs) {
+        private NoSuchCommandException(String name, String consumedArgs, Set<RouteNode> options) {
             super();
             this.name = requireNonNull(name, "name cannot be null");
             this.consumedArgs = requireNonNull(consumedArgs, "consumedArgs cannot be null");
+            this.options = requireNonNull(options, "options cannot be null");
         }
 
         /**
@@ -201,12 +211,22 @@ public class CommandGraph {
         public String consumedArgs() {
             return this.consumedArgs;
         }
+
+        /**
+         * Returns valid {@link RouteNode} options.
+         *
+         * @return Valid options
+         */
+        public Set<RouteNode> options() {
+            return Set.copyOf(this.options);
+        }
     }
 
     /**
      * Represents a command search result. Implementations provide
      * more information.
      */
+    @Deprecated
     public interface SearchResult {
 
         /**

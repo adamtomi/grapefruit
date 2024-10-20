@@ -29,6 +29,18 @@ public interface RouteNode {
     Set<String> secondaryAliases();
 
     /**
+     * Returns a new route node instance with the provided
+     * primary and secondary aliases.
+     *
+     * @param primary The primary alias
+     * @param secondary The secondary aliases
+     * @return THe created route node
+     */
+    static RouteNode of(String primary, Set<String> secondary) {
+        return new RouteNodeImpl(primary, secondary);
+    }
+
+    /**
      * Parses the provided {@link String} representation of a
      * route node into a {@link RouteNode} instance.
      *

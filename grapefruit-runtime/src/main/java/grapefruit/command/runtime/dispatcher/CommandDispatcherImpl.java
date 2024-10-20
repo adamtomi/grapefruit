@@ -23,9 +23,11 @@ import grapefruit.command.runtime.util.key.Key;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
 
 import static grapefruit.command.runtime.argument.CommandArgument.Flag.PRESENCE_FLAG_TYPE;
 import static grapefruit.command.runtime.dispatcher.InternalContextKeys.COMMAND;
@@ -194,11 +196,7 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         // Construct a new reader from user input
         StringReader input = new StringReaderImpl(commandLine, context);
         // Find the command instance to execute
-        CommandGraph.SearchResult search = this.commandGraph.search(input);
-        if (search instanceof CommandGraph.SearchResult.Failure failure) throw failure.cause();
-
-        // The search was successful, we can extract the command instance
-        CommandDefinition command = ((CommandGraph.SearchResult.Success) search).command();
+        CommandDefinition command = this.commandGraph.search(input);
 
         // Save the command instance so that we can retrieve it later if needed
         // context.put(InternalContextKeys.COMMAND, command);
@@ -302,31 +300,19 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         // Construct a new reader from user input
         StringReader input = new StringReaderImpl(commandLine, context);
         // Find the command instance to create completions for
-        CommandGraph.SearchResult searchResult = this.commandGraph.search(input);
-
-        /*
-         * No command was matched, so we return the primary and
-         * secondary aliases of every single child node belonging
-         * to the last successfully matched CommandNode. If no
-         * CommandNode was matched, root command aliases will
-         * be returned.
-         */
-        if (searchResult instanceof CommandGraph.SearchResult.Failure failure) {
-            if (input.hasNext()) {
-                return List.of();
-            }
-
-            String prefix = failure.cause() instanceof CommandGraph.NoSuchCommandException noSuchCommandException
-                    ? noSuchCommandException.name()
-                    : "";
-            return failure.validOptions(true)
-                    .stream()
-                    .filter(x -> startsWithIgnoreCase(x, prefix))
+        CommandDefinition command;
+        try {
+            command = this.commandGraph.search(input);
+        } catch (CommandGraph.NoSuchCommandException ex) {
+            return ex.options().stream()
+                    .map(x -> {
+                        Set<String> result = new HashSet<>();
+                        result.add(x.primaryAlias());
+                        result.addAll(x.secondaryAliases());
+                        return result;
+                    }).flatMap(Collection::stream)
                     .toList();
         }
-
-        // Command can safely be extracted
-        CommandDefinition command = ((CommandGraph.SearchResult.Success) searchResult).command();
 
         // Check permission
         try {
