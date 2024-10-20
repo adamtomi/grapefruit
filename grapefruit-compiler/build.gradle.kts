@@ -14,6 +14,10 @@ dependencies {
     implementation(project(":grapefruit-runtime"))
 }
 
+tasks.named("build").configure {
+    finalizedBy("shadowJar")
+}
+
 tasks.named<ShadowJar>("shadowJar") {
     minimize()
     archiveFileName.set("${project.parent?.group}-compiler-${project.parent?.version}.jar")
