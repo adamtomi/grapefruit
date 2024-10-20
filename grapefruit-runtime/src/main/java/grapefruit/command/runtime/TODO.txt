@@ -50,6 +50,8 @@
 - [core]: Semi-related to the above, but hiding a command could potentially come in handy. It could be done via @CommandDefinition(route = "a", hidden = true).
   Low priority.
 
+- [core]: ToStringer
+
 - [core]: CommandNode could potentially implement RouteNode
 
 - [code-gen]: collectRelevantAnnotations (per parameter)
