@@ -1,10 +1,11 @@
 package grapefruit.command.runtime.dispatcher.syntax;
 
-import grapefruit.command.runtime.Command;
 import grapefruit.command.runtime.CommandException;
 import grapefruit.command.runtime.argument.mapper.ArgumentMapper;
+import grapefruit.command.runtime.dispatcher.CommandDefinition;
 import grapefruit.command.runtime.dispatcher.input.StringReader;
 import grapefruit.command.runtime.dispatcher.tree.CommandGraph;
+import grapefruit.command.runtime.generated.CommandMirror;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Serial;
@@ -41,9 +42,9 @@ public class CommandSyntaxException extends CommandException {
      *
      * @param reader The reader to generate syntax from
      */
-    public static CommandSyntaxException from(StringReader reader, @Nullable Command command, Reason reason) {
+    public static CommandSyntaxException from(StringReader reader, @Nullable CommandMirror mirror, @Nullable CommandDefinition command, Reason reason) {
         return new CommandSyntaxException(
-                command != null ? CommandSyntax.create(command) : null,
+                command != null ? CommandSyntax.create(mirror, command) : null,
                 reader.unwrap(),
                 reader.consumed(),
                 reason

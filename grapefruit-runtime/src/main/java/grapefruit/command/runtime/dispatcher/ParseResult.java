@@ -1,7 +1,7 @@
 package grapefruit.command.runtime.dispatcher;
 
 import grapefruit.command.runtime.CommandException;
-import grapefruit.command.runtime.argument.binding.BoundArgument;
+import grapefruit.command.runtime.argument.CommandArgument;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -14,10 +14,10 @@ import static java.util.Objects.requireNonNull;
  * Describes the result of the parsing of a command.
  */
 class ParseResult {
-    private final List<BoundArgument<?>> remaining;
-    private final List<BoundArgument<?>> remainingFlags;
+    private final List<CommandArgument<?>> remaining;
+    private final List<CommandArgument.Flag<?>> remainingFlags;
     @Nullable
-    private final BoundArgument<?> lastUnsuccessfulArgument;
+    private final CommandArgument<?> lastUnsuccessfulArgument;
     @Nullable
     private final String lastInput;
     @Nullable
@@ -37,7 +37,7 @@ class ParseResult {
         return Optional.ofNullable(this.lastInput);
     }
 
-    public Optional<BoundArgument<?>> lastUnsuccessfulArgument() {
+    public Optional<CommandArgument<?>> lastUnsuccessfulArgument() {
         return Optional.ofNullable(this.lastUnsuccessfulArgument);
     }
 
@@ -53,11 +53,11 @@ class ParseResult {
         return this.remaining.isEmpty() && this.remainingFlags.isEmpty();
     }
 
-    public List<BoundArgument<?>> remaining() {
+    public List<CommandArgument<?>> remaining() {
         return List.copyOf(this.remaining);
     }
 
-    public List<BoundArgument<?>> remainingFlags() {
+    public List<CommandArgument.Flag<?>> remainingFlags() {
         return List.copyOf(this.remainingFlags);
     }
 
@@ -68,31 +68,31 @@ class ParseResult {
         );
     }
 
-    static Builder parsing(CommandInfo commandInfo) {
-        requireNonNull(commandInfo, "commandInfo cannot be null");
+    static Builder parsing(CommandDefinition command) {
+        requireNonNull(command, "command cannot be null");
         // Create mutable copies
-        return new Builder(new ArrayList<>(commandInfo.arguments()), new ArrayList<>(commandInfo.flags()));
+        return new Builder(new ArrayList<>(command.arguments()), new ArrayList<>(command.flags()));
     }
 
     final static class Builder {
-        private final List<BoundArgument<?>> required;
-        private final List<BoundArgument<?>> flags;
+        private final List<CommandArgument<?>> required;
+        private final List<CommandArgument.Flag<?>> flags;
         @Nullable
         private String currentInput;
         @Nullable
-        private BoundArgument<?> currentArgument;
+        private CommandArgument<?> currentArgument;
         @Nullable
         private CommandException capturedException;
 
-        private Builder(List<BoundArgument<?>> required, List<BoundArgument<?>> flags) {
+        private Builder(List<CommandArgument<?>> required, List<CommandArgument.Flag<?>> flags) {
             this.required = requireNonNull(required, "required cannot be null");
             this.flags = requireNonNull(flags, "flags cannot be null");
         }
 
         /* Sets the argument currently being consumed */
-        public Builder consuming(BoundArgument<?> argument) {
+        public Builder consuming(CommandArgument<?> argument) {
             // Remove the argument from the remaining (unseen) arguments
-            (argument.argument().isFlag() ? this.flags : this.required).remove(argument);
+            (argument.isFlag() ? this.flags : this.required).remove(argument);
             this.currentArgument = argument;
             return this;
         }

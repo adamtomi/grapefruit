@@ -1,12 +1,12 @@
 package grapefruit.command.runtime.argument;
 
-import grapefruit.command.runtime.argument.binding.BoundArgument;
 import grapefruit.command.runtime.argument.mapper.ArgumentMapper;
-import grapefruit.command.runtime.argument.modifier.ModifierChain;
+import grapefruit.command.runtime.argument.modifier.ArgumentModifier;
 import grapefruit.command.runtime.dispatcher.CommandContext;
 import grapefruit.command.runtime.util.key.Key;
+import io.leangen.geantyref.TypeToken;
 
-import java.util.function.Function;
+import java.util.List;
 
 /**
  * Describes an argument of a command. {@link CommandArgument#name()} needs to be
@@ -35,14 +35,12 @@ public interface CommandArgument<T> {
     Key<T> key();
 
     /**
-     * The key that's used to retrieve the
-     * {@link ArgumentMapper}
-     * that is going to map user input passed
-     * to this argument.
+     * The argument mapper associated with this
+     * command argument instance.
      *
-     * @return The mapper key of this argument
+     * @return The argument mapper instance
      */
-    Key<T> mapperKey();
+    ArgumentMapper<T> mapper();
 
     /**
      * Returns whether this argument is a flag argument.
@@ -62,33 +60,12 @@ public interface CommandArgument<T> {
     Flag<T> asFlag();
 
     /**
-     * Returns the {@link ModifierChain} associated with this
-     * argument.
+     * Returns an immutable list of argument modifiers associated
+     * with this command argument instance.
      *
-     * @return The modifier chain
-     * @see ModifierChain
+     * @return List of modifiers
      */
-    ModifierChain<T> modifierChain();
-
-    /**
-     * Binds this command argument to the supplied {@link ArgumentMapper}
-     * instance and returns the resulting {@link BoundArgument}. Binding
-     * is performed at the command registration stage and is done
-     * to avoid having to perform a lookup for the correct
-     * argument mapper every time an argument is being parsed.
-     *
-     * @param mapper The argument mapper to bind to
-     * @return The resulting {@link BoundArgument} instance
-     */
-    BoundArgument<T> bind(ArgumentMapper<T> mapper);
-
-    /**
-     * @param mapperAccess Function providing argument mapper instances
-     * @see this#bind(ArgumentMapper)
-     */
-    default BoundArgument<T> bind(Function<Key<T>, ArgumentMapper<T>> mapperAccess) {
-        return bind(mapperAccess.apply(mapperKey()));
-    }
+    List<ArgumentModifier<T>> modifiers();
 
     /**
      * A flag argument is a special type of {@link CommandArgument}.
@@ -128,6 +105,7 @@ public interface CommandArgument<T> {
      * @param <T> The type of values to be supplied by the user to this argument
      */
     interface Flag<T> extends CommandArgument<T> {
+        TypeToken<Boolean> PRESENCE_FLAG_TYPE = TypeToken.get(Boolean.class);
 
         /**
          * The shorthand of the flag, or whitespace, if none was set.
@@ -142,4 +120,39 @@ public interface CommandArgument<T> {
          */
         boolean isPresence();
     }
+
+    static <T> RequiredBuilder<T> required(String name, Key<T> key) {
+        return new CommandArgumentImpl.RequiredBuilder<>(name, key);
+    }
+
+    static PresenceFlagBuilder presenceFlag(String name, Key<Boolean> key) {
+        return new CommandArgumentImpl.PresenceFlagBuilder(name, key);
+    }
+
+    static <T> ValueFlagBuilder<T> valueFlag(String name, Key<T> key) {
+        return new CommandArgumentImpl.ValueFlagBuilder<>(name, key);
+    }
+
+    interface Builder<T, C extends CommandArgument<T>> {
+
+        C build();
+    }
+
+    interface StandardBuilder<T, C extends CommandArgument<T>, B extends Builder<T, C>> extends Builder<T, C> {
+
+        B withMapper(ArgumentMapper<T> mapper);
+
+        B withModifiers(List<ArgumentModifier<T>> modifiers);
+    }
+
+    interface FlagBuilder<T, B extends Builder<T, CommandArgument.Flag<T>>> extends Builder<T, CommandArgument.Flag<T>> {
+
+        B shorthand(char shorthand);
+    }
+
+    interface RequiredBuilder<T> extends StandardBuilder<T, CommandArgument<T>, RequiredBuilder<T>> {}
+
+    interface PresenceFlagBuilder extends FlagBuilder<Boolean, PresenceFlagBuilder> {}
+
+    interface ValueFlagBuilder<T> extends FlagBuilder<T, ValueFlagBuilder<T>>, StandardBuilder<T, CommandArgument.Flag<T>, ValueFlagBuilder<T>> {}
 }

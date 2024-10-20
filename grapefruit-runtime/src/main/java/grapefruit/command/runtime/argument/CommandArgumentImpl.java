@@ -1,27 +1,26 @@
 package grapefruit.command.runtime.argument;
 
-import grapefruit.command.runtime.argument.binding.BoundArgument;
 import grapefruit.command.runtime.argument.mapper.ArgumentMapper;
-import grapefruit.command.runtime.argument.modifier.ModifierChain;
+import grapefruit.command.runtime.argument.modifier.ArgumentModifier;
 import grapefruit.command.runtime.util.key.Key;
 
-import java.util.function.Function;
+import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
 abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
     protected final String name;
     protected final Key<T> key;
-    protected final Key<T> mapperKey;
+    private final ArgumentMapper<T> mapper;
+    private final List<ArgumentModifier<T>> modifiers;
     protected final boolean isFlag;
-    protected final ModifierChain<T> modifierChain;
 
-    CommandArgumentImpl(String name, Key<T> key, Key<T> mapperKey, boolean isFlag, ModifierChain<T> modifierChain) {
+    CommandArgumentImpl(String name, Key<T> key, ArgumentMapper<T> mapper, List<ArgumentModifier<T>> modifiers, boolean isFlag) {
         this.name = requireNonNull(name, "name cannot be null");
         this.key = requireNonNull(key, "key cannot be null");
-        this.mapperKey = requireNonNull(mapperKey, "mapperKey cannot be null");
+        this.mapper = requireNonNull(mapper, "mapper cannot be null");
+        this.modifiers = requireNonNull(modifiers, "modifiers cannot be null");
         this.isFlag = isFlag;
-        this.modifierChain = requireNonNull(modifierChain, "modifierChain cannot be null");
     }
 
     @Override
@@ -35,8 +34,13 @@ abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
     }
 
     @Override
-    public Key<T> mapperKey() {
-        return this.mapperKey;
+    public ArgumentMapper<T> mapper() {
+        return this.mapper;
+    }
+
+    @Override
+    public List<ArgumentModifier<T>> modifiers() {
+        return List.copyOf(this.modifiers);
     }
 
     @Override
@@ -44,19 +48,9 @@ abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
         return this.isFlag;
     }
 
-    @Override
-    public ModifierChain<T> modifierChain() {
-        return this.modifierChain;
-    }
-
-    @Override
-    public BoundArgument<T> bind(ArgumentMapper<T> mapper) {
-        return BoundArgument.of(this, mapper);
-    }
-
     static final class Required<T> extends CommandArgumentImpl<T> {
-        Required(String name, Key<T> key, Key<T> mapperKey, ModifierChain<T> modifierChain) {
-            super(name, key, mapperKey, false, modifierChain);
+        Required(String name, Key<T> key, ArgumentMapper<T> mapper, List<ArgumentModifier<T>> modifiers) {
+            super(name, key, mapper, modifiers, false);
         }
 
         @Override
@@ -72,12 +66,12 @@ abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
 
     static abstract class Flag<T> extends CommandArgumentImpl<T> implements CommandArgument.Flag<T> {
         private final char shorthand;
-        private final boolean isPresenceFlag;
+        private final boolean isPresence;
 
-        Flag(String name, Key<T> key, Key<T> mapperKey, char shorthand, boolean isPresenceFlag, ModifierChain<T> modifierChain) {
-            super(name, key, mapperKey, true, modifierChain);
+        Flag(String name, char shorthand, Key<T> key, ArgumentMapper<T> mapper, List<ArgumentModifier<T>> modifiers, boolean isPresence) {
+            super(name, key, mapper, modifiers, true);
             this.shorthand = shorthand;
-            this.isPresenceFlag = isPresenceFlag;
+            this.isPresence = isPresence;
         }
 
         @Override
@@ -87,7 +81,7 @@ abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
 
         @Override
         public boolean isPresence() {
-            return this.isPresenceFlag;
+            return this.isPresence;
         }
 
         @Override
@@ -97,34 +91,112 @@ abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
 
         @Override
         public String toString() {
-            return "CommandArgumentImpl$Flag(name=%s, shorthand=%s, isPresenceFlag=%b)"
-                    .formatted(this.name, this.shorthand, this.isPresenceFlag);
+            return "CommandArgumentImpl$Flag(name=%s, shorthand=%s, isPresence=%b)"
+                    .formatted(this.name, this.shorthand, this.isPresence);
         }
     }
 
     static final class PresenceFlag extends Flag<Boolean> {
-        /* Store a mapper that always returns the value "true" */
-        private static final ArgumentMapper<Boolean> BOOLEAN_MAPPER = ArgumentMapper.constant(true);
         /*
-         * Dummy key, we are not going to use this, since presence flag values are
-         * determined by whether the flag has been set or not.
+         * Presence flags resolve to true if set, otherwise false.
          */
-        private static final Key<Boolean> BOOLEAN_KEY = Key.of(Boolean.class);
+        private static final ArgumentMapper<Boolean> MAPPER = ArgumentMapper.constant(true);
 
-        PresenceFlag(String name, Key<Boolean> key, char shorthand, ModifierChain<Boolean> modifierChain) {
-            super(name, key, BOOLEAN_KEY, shorthand, true, modifierChain);
-        }
-
-        @Override
-        public BoundArgument<Boolean> bind(Function<Key<Boolean>, ArgumentMapper<Boolean>> mapperAccess) {
-            // Since this is a presence flag, we always want to bind to BOOLEAN_MAPPER
-            return bind(BOOLEAN_MAPPER);
+        PresenceFlag(String name, char shorthand, Key<Boolean> key) {
+            super(name, shorthand, key, MAPPER, List.of(), true);
         }
     }
 
     static final class ValueFlag<T> extends Flag<T> {
-        ValueFlag(String name, Key<T> key, Key<T> mapperKey, char shorthand, ModifierChain<T> modifierChain) {
-            super(name, key, mapperKey, shorthand, false, modifierChain);
+        ValueFlag(String name, char shorthand, Key<T> key, ArgumentMapper<T> mapper, List<ArgumentModifier<T>> modifiers) {
+            super(name, shorthand, key, mapper, modifiers, false);
+        }
+    }
+
+    static final class RequiredBuilder<T> implements CommandArgument.RequiredBuilder<T> {
+        private final String name;
+        private final Key<T> key;
+        private ArgumentMapper<T> mapper;
+        private List<ArgumentModifier<T>> modifiers;
+
+        RequiredBuilder(String name, Key<T> key) {
+            this.name = requireNonNull(name, "name cannot be null");
+            this.key = requireNonNull(key, "key cannot be null");
+        }
+
+        @Override
+        public RequiredBuilder<T> withMapper(ArgumentMapper<T> mapper) {
+            this.mapper = mapper;
+            return this;
+        }
+
+        @Override
+        public RequiredBuilder<T> withModifiers(List<ArgumentModifier<T>> modifiers) {
+            this.modifiers = modifiers;
+            return this;
+        }
+
+        @Override
+        public CommandArgument<T> build() {
+            return new Required<>(this.name, this.key, this.mapper, this.modifiers);
+        }
+    }
+
+    static final class PresenceFlagBuilder implements CommandArgument.PresenceFlagBuilder {
+        private final String name;
+        private final Key<Boolean> key;
+        private char shorthand;
+
+        PresenceFlagBuilder(String name, Key<Boolean> key) {
+            this.name = requireNonNull(name, "name cannot be null");
+            this.key = requireNonNull(key, "key cannot be null");
+        }
+
+        @Override
+        public PresenceFlagBuilder shorthand(char shorthand) {
+            this.shorthand = shorthand;
+            return this;
+        }
+
+        @Override
+        public CommandArgument.Flag<Boolean> build() {
+            return new PresenceFlag(this.name, this.shorthand, this.key);
+        }
+    }
+
+    static final class ValueFlagBuilder<T> implements CommandArgument.ValueFlagBuilder<T> {
+        private final String name;
+        private final Key<T> key;
+        private ArgumentMapper<T> mapper;
+        private List<ArgumentModifier<T>> modifiers;
+        private char shorthand;
+
+        ValueFlagBuilder(String name, Key<T> key) {
+            this.name = requireNonNull(name, "name cannot be null");
+            this.key = requireNonNull(key, "key cannot be null");
+        }
+
+        @Override
+        public ValueFlagBuilder<T> withMapper(ArgumentMapper<T> mapper) {
+            this.mapper = mapper;
+            return this;
+        }
+
+        @Override
+        public ValueFlagBuilder<T> withModifiers(List<ArgumentModifier<T>> modifiers) {
+            this.modifiers = modifiers;
+            return this;
+        }
+
+        @Override
+        public ValueFlagBuilder<T> shorthand(char shorthand) {
+            this.shorthand = shorthand;
+            return this;
+        }
+
+        @Override
+        public CommandArgument.Flag<T> build() {
+            return new ValueFlag<>(this.name, this.shorthand, this.key, this.mapper, this.modifiers);
         }
     }
 }

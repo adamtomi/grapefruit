@@ -105,6 +105,7 @@ public class StringReaderImpl implements StringReader {
         return CommandSyntaxException.from(
                 this,
                 this.context.nullable(InternalContextKeys.COMMAND),
+                this.context.nullable(InternalContextKeys.COMMAND_DEF_KEY),
                 CommandSyntaxException.Reason.TOO_FEW_ARGUMENTS
         );
     }

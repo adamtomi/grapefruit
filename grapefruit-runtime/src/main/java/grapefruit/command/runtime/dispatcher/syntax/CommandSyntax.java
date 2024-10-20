@@ -1,8 +1,9 @@
 package grapefruit.command.runtime.dispatcher.syntax;
 
-import grapefruit.command.runtime.Command;
 import grapefruit.command.runtime.argument.CommandArgument;
+import grapefruit.command.runtime.dispatcher.CommandDefinition;
 import grapefruit.command.runtime.dispatcher.tree.RouteNode;
+import grapefruit.command.runtime.generated.CommandMirror;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,12 +55,12 @@ public interface CommandSyntax {
 
     /**
      * Creates a new {@link CommandSyntax} instance from
-     * the provided {@link Command} instance.
+     * the provided {@link CommandDefinition} instance.
      *
      * @param command The command to generate syntax from
      * @return The generated syntax
      */
-    static CommandSyntax create(Command command) {
+    static CommandSyntax create(CommandMirror mirror, CommandDefinition command) {
         List<SyntaxPart> parts = new ArrayList<>();
         // Loop through all command arguments
         for (CommandArgument<?> argument : command.arguments()) {
@@ -72,6 +73,6 @@ public interface CommandSyntax {
             parts.add(new CommandSyntaxImpl.SyntaxPartImpl(format, kind));
         }
 
-        return new CommandSyntaxImpl(command.spec().route(), parts);
+        return new CommandSyntaxImpl(mirror.route(), parts);
     }
 }

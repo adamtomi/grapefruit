@@ -16,9 +16,8 @@ import java.lang.annotation.Target;
 public @interface Command {
 
     /**
-     * The route at which the {@link grapefruit.command.runtime.Command} generated
-     * based on the method annotated by this annotation
-     * will be registered at.
+     * The route at which the {@link grapefruit.command.runtime.generated.CommandMirror}
+     *  generated based on the method annotated by this annotationwill be registered at.
      */
     String route();
 

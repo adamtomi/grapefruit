@@ -14,7 +14,6 @@ import grapefruit.command.runtime.annotation.meta.InjectedBy;
 import grapefruit.command.runtime.annotation.meta.MappedBy;
 import grapefruit.command.runtime.argument.modifier.ArgumentModifier;
 import grapefruit.command.runtime.argument.modifier.ModifierBlueprint;
-import grapefruit.command.runtime.argument.modifier.ModifierChain;
 import grapefruit.command.runtime.generated.ArgumentMirror;
 import grapefruit.command.runtime.util.PrimitivesUtil;
 import grapefruit.command.runtime.util.key.Key;

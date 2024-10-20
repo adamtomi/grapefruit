@@ -1,8 +1,8 @@
 package grapefruit.command.runtime.dispatcher.tree;
 
 import grapefruit.command.runtime.CommandException;
+import grapefruit.command.runtime.dispatcher.CommandDefinition;
 import grapefruit.command.runtime.dispatcher.input.StringReader;
-import grapefruit.command.runtime.generated.CommandMirror;
 
 import java.io.Serial;
 import java.util.ArrayList;
@@ -13,8 +13,8 @@ import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 
 /**
- * {@link CommandMirror} instances are stored in a so-called command tree. Each command
- * will be registered at the route specified by the corresponding
+ * {@link CommandDefinition} instances are stored in a so-called command tree.
+ * Each command will be registered at the route specified by the corresponding
  * {@link grapefruit.command.runtime.annotation.Command} annotation
  * The last node will hold the command instance itself.
  */
@@ -25,22 +25,24 @@ public class CommandGraph {
     /**
      * Inserts the given command into the command tree.
      *
+     * @param route The route at which the command should
+     *              be inserted.
      * @param command The command to insert
      */
-    public void insert(CommandMirror command) {
+    public void insert(List<RouteNode> route, CommandDefinition command) {
+        requireNonNull(route, "route cannot be null");
         requireNonNull(command, "command cannot be null");
-        List<RouteNode> parts = command.route();
         /*
          * A command handler cannot be registered directly on the
          * root node, at least one route part is required.
          */
-        if (parts.isEmpty()) {
+        if (route.isEmpty()) {
             throw new IllegalArgumentException("Cannot register a command handler on the root node");
         }
 
         CommandNode node = this.rootNode;
         // Loop through the route parts
-        for (Iterator<RouteNode> iter = parts.iterator(); iter.hasNext();) {
+        for (Iterator<RouteNode> iter = route.iterator(); iter.hasNext();) {
             RouteNode part = iter.next();
             boolean isLast = !iter.hasNext();
 
@@ -75,17 +77,16 @@ public class CommandGraph {
     /**
      * Deletes the given command from the command tree.
      *
-     * @param command The command to delete
+     * @param route The route to delete
      */
-    public void delete(CommandMirror command) {
-        requireNonNull(command, "command cannot be null");
-        List<RouteNode> parts = command.route();
+    public void delete(List<RouteNode> route) {
+        requireNonNull(route, "route cannot be null");
         // There's nothing to delete if the list is empty
-        if (parts.isEmpty()) return;
+        if (route.isEmpty()) return;
 
         CommandNode node = this.rootNode;
         // Find the last node in this command chain
-        for (RouteNode part : parts) {
+        for (RouteNode part : route) {
             Optional<CommandNode> childCandidate = findChild(node, part);
             if (childCandidate.isEmpty()) {
                 // This shouldn't happen
@@ -111,7 +112,7 @@ public class CommandGraph {
     }
 
     /**
-     * Attempts to find a {@link CommandMirror} instance attached to a
+     * Attempts to find a {@link CommandDefinition} instance attached to a
      * {@link CommandNode} based on user input.
      *
      * @param input The reader wrapping user input
@@ -131,7 +132,7 @@ public class CommandGraph {
 
                 node = childCandidate.orElseThrow();
                 if (node.isLeaf()) {
-                    Optional<CommandMirror> command = node.command();
+                    Optional<CommandDefinition> command = node.command();
                     // Not using Optional#orElseThrow(String), because node isn't final
                     if (command.isPresent()) return SearchResult.success(command.orElseThrow());
 
@@ -214,7 +215,7 @@ public class CommandGraph {
          * @param command The command instance
          * @return The created search result
          */
-        static SearchResult success(CommandMirror command) {
+        static SearchResult success(CommandDefinition command) {
             return new Success(command);
         }
 
@@ -232,7 +233,7 @@ public class CommandGraph {
         /**
          * Successful search result implementation.
          */
-        record Success(CommandMirror command) implements SearchResult {
+        record Success(CommandDefinition command) implements SearchResult {
             public Success {
                 requireNonNull(command, "command cannot be null");
             }
