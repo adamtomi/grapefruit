@@ -179,6 +179,14 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         return true;
     }
 
+    private void testPermission(CommandDefinition command, CommandContext context) throws CommandAuthorizationException {
+        Optional<String> permission = command.permission();
+        boolean mayExecute = permission.map(x -> this.authorizer.authorize(x, context))
+                .orElse(true);
+
+        if (!mayExecute) throw new CommandAuthorizationException(permission.orElseThrow());
+    }
+
     @Override
     public void dispatch(CommandContext context, String commandLine) throws CommandException {
         requireNonNull(context, "context cannot be null");
@@ -196,13 +204,8 @@ final class CommandDispatcherImpl implements CommandDispatcher {
         // context.put(InternalContextKeys.COMMAND, command);
         if (!invokeListeners(ExecutionStage.PRE_PROCESS, context)) return;
 
-        // Check permissions
-        Optional<String> permission = command.permission();
-        boolean mayExecute = permission.map(x -> this.authorizer.authorize(x, context))
-                .orElse(true);
-
-        // Throw an exception if the user lacks sufficient permissions
-        if (!mayExecute) throw new CommandAuthorizationException(permission.orElseThrow());
+        // Check permissions, throw an exception if the user lacks sufficient permissions
+        testPermission(command, context);
 
         // Check conditions
         for (CommandCondition condition : command.conditions()) {
@@ -324,6 +327,14 @@ final class CommandDispatcherImpl implements CommandDispatcher {
 
         // Command can safely be extracted
         CommandDefinition command = ((CommandGraph.SearchResult.Success) searchResult).command();
+
+        // Check permission
+        try {
+            testPermission(command, context);
+        } catch (CommandAuthorizationException ex) {
+            // Return empty list if user lacks permission to execute this command
+            return List.of();
+        }
 
         // Parse command
         ParseResult parseResult = parseArguments(context, command, input);
