@@ -20,7 +20,7 @@ public interface CommandDefinition extends CommandAction {
     List<CommandCondition> conditions();
 
     static Builder builder() {
-        throw new UnsupportedOperationException();
+        return new CommandDefinitionImpl.Builder();
     }
 
     interface Builder {

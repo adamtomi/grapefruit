@@ -62,4 +62,55 @@ final class CommandDefinitionImpl implements CommandDefinition {
             throw new CommandInvocationException(ex);
         }
     }
+
+    static final class Builder implements CommandDefinition.Builder {
+        private @Nullable String permission;
+        private List<CommandArgument<?>> arguments;
+        private List<CommandArgument.Flag<?>> flags;
+        private List<CommandCondition> conditions;
+        private CommandAction action;
+
+        Builder() {}
+
+        @Override
+        public CommandDefinition.Builder permission(@Nullable String permission) {
+            this.permission = permission;
+            return this;
+        }
+
+        @Override
+        public CommandDefinition.Builder arguments(List<CommandArgument<?>> arguments) {
+            this.arguments = arguments;
+            return this;
+        }
+
+        @Override
+        public CommandDefinition.Builder flags(List<CommandArgument.Flag<?>> flags) {
+            this.flags = flags;
+            return this;
+        }
+
+        @Override
+        public CommandDefinition.Builder conditions(List<CommandCondition> conditions) {
+            this.conditions = conditions;
+            return this;
+        }
+
+        @Override
+        public CommandDefinition.Builder action(CommandAction action) {
+            this.action = action;
+            return this;
+        }
+
+        @Override
+        public CommandDefinition build() {
+            return new CommandDefinitionImpl(
+                    this.permission,
+                    this.arguments,
+                    this.flags,
+                    this.conditions,
+                    this.action
+            );
+        }
+    }
 }
