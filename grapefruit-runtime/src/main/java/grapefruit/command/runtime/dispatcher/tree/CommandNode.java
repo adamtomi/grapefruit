@@ -1,7 +1,6 @@
 package grapefruit.command.runtime.dispatcher.tree;
 
 import grapefruit.command.runtime.dispatcher.CommandDefinition;
-import grapefruit.command.runtime.generated.CommandMirror;
 import grapefruit.command.runtime.util.StringUtil;
 import org.jetbrains.annotations.Nullable;
 
