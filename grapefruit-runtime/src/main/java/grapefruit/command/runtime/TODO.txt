@@ -13,6 +13,10 @@
 - [core]: Returning a result from a command handler could be cool. Generate code so that if the annotated method's return type
   isn't void, we store the result in the correct command context mapped to COMMAND_RESULT_KEY or something.
 
+- [core]: Refactor auth system, make it more flexible (dedicated Permission class)
+
+- [core]: Add ArgumentModifier.Filtering
+
 - [core]: Rework command syntax system. The current route() returning a List<RouteNode> could perhaps be replaced to
   a List<String> that would return the matched alias for each command node. Or perhaps we could have a wrapper record,
   something like SyntaxRoute(String matchedAlias, RouteNode routeNode) {}. Also, it would be neat to know which argument
