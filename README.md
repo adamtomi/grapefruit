@@ -1,4 +1,4 @@
-![a](https://github.com/HgeX/grapefruit/blob/main/grapefruit.svg)
+![Grapefruit logo](https://github.com/HgeX/grapefruit/blob/v2/grapefruit.svg)
 
 ### Welcome to Grapefuit town!
 ![Sonatype Nexus (Releases)](https://img.shields.io/nexus/r/grapefruit/grapefruit?nexusVersion=3&server=https%3A%2F%2Frepo.danifoldi.com)
