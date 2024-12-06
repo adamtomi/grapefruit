@@ -25,7 +25,7 @@ public interface CommandDispatcher<S> {
 
     List<String> complete(final S source, final String command);
 
-    static <S> CommandDispatcher<S> using(DispatcherConfig<S> config) {
+    static <S> CommandDispatcher<S> using(final DispatcherConfig<S> config) {
         return new CommandDispatcherImpl<>(config);
     }
 }

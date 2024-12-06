@@ -17,10 +17,16 @@ public final class StringUtil {
     }
 
     public static <T extends Collection<String>> boolean containsAnyIgnoreCase(final T a, final T b) {
-        for (String item : a) {
+        for (final String item : a) {
             if (containsIgnoreCase(item, a)) return true;
         }
 
         return false;
+    }
+
+    public static boolean startsWithIgnoreCase(final String arg, final String prefix) {
+        if (arg.length() < prefix.length()) return false;
+
+        return arg.regionMatches(true, 0, prefix, 0, prefix.length());
     }
 }

@@ -32,6 +32,10 @@ public interface CommandArgument<T> extends Keyed<T> {
     interface Dynamic<S, T> extends CommandArgument<T> {
 
         ArgumentMapper<S, T> mapper();
+
+        boolean isFlag();
+
+        Flag<S, T> asFlag();
     }
 
     interface Required<S, T> extends Dynamic<S, T> {
@@ -47,6 +51,8 @@ public interface CommandArgument<T> extends Keyed<T> {
         char shorthand();
 
         ArgumentMapper<S, T> mapper();
+
+        boolean isPresence();
 
         interface Builder<S, T, B extends Builder<S, T, B>> extends CommandArgument.Builder<T, Flag<S, T>, Builder<S, T, B>> {
 

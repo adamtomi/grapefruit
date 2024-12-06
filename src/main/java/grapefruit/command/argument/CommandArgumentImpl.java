@@ -80,6 +80,16 @@ public abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
         }
 
         @Override
+        public boolean isFlag() {
+            return false;
+        }
+
+        @Override
+        public CommandArgument.Flag<S, T> asFlag() {
+            throw new UnsupportedOperationException("Attempted to cast required argument to flag");
+        }
+
+        @Override
         public String toString() {
             return ToStringer.create(this)
                     .append("key", key())
@@ -91,15 +101,32 @@ public abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
 
     static final class Flag<S, T> extends Dynamic<S, T> implements CommandArgument.Flag<S, T> {
         private final char shorthand;
+        private final boolean isPresence;
 
-        Flag(final Key<T> key, final @Nullable String permission, final ArgumentMapper<S, T> mapper, final char shorthand) {
+        Flag(final Key<T> key, final @Nullable String permission, final ArgumentMapper<S, T> mapper, final char shorthand, final boolean isPresence) {
             super(key, permission, mapper);
             this.shorthand = shorthand;
+            this.isPresence = isPresence;
+        }
+
+        @Override
+        public boolean isFlag() {
+            return true;
+        }
+
+        @Override
+        public CommandArgument.Flag<S, T> asFlag() {
+            return this;
         }
 
         @Override
         public char shorthand() {
             return this.shorthand;
+        }
+
+        @Override
+        public boolean isPresence() {
+            return this.isPresence;
         }
 
         @Override
@@ -109,6 +136,7 @@ public abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
                     .append("permission", permission())
                     .append("mapper", mapper())
                     .append("shorthand", this.shorthand)
+                    .append("presence", this.isPresence)
                     .toString();
         }
     }
@@ -179,11 +207,13 @@ public abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
     }
 
     static abstract class FlagBuilder<S, T, B extends CommandArgument.Flag.Builder<S, T, B>> extends Builder<T, CommandArgument.Flag<S, T>, CommandArgument.Flag.Builder<S, T, B>> implements CommandArgument.Flag.Builder<S, T, B> {
+        private final boolean isPresence;
         private char shorthand;
         protected ArgumentMapper<S, T> mapper;
 
-        FlagBuilder(final Key<T> key) {
+        FlagBuilder(final Key<T> key, final boolean isPresence) {
             super(key);
+            this.isPresence = isPresence;
         }
 
         @Override
@@ -203,14 +233,14 @@ public abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
 
         @Override
         public CommandArgument.Flag<S, T> build() {
-            return new Flag<>(this.key, this.permission, this.mapper, this.shorthand);
+            return new Flag<>(this.key, this.permission, this.mapper, this.shorthand, this.isPresence);
         }
     }
 
     static final class ValueFlagBuilder<S, T> extends FlagBuilder<S, T, CommandArgument.Flag.ValueBuilder<S, T>> implements CommandArgument.Flag.ValueBuilder<S, T> {
 
         ValueFlagBuilder(final Key<T> key) {
-            super(key);
+            super(key, false);
         }
 
         @Override
@@ -228,7 +258,7 @@ public abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
     static final class PresenceFlagBuilder<S> extends FlagBuilder<S, Boolean, CommandArgument.Flag.PresenceBuilder<S>> implements CommandArgument.Flag.PresenceBuilder<S> {
 
         PresenceFlagBuilder(final Key<Boolean> key) {
-            super(key);
+            super(key, true);
             this.mapper = ArgumentMapper.constant(Boolean.class, true); // Presence flags always return true if set.
         }
 

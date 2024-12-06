@@ -5,6 +5,8 @@ import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import io.leangen.geantyref.TypeToken;
 
+import java.util.List;
+
 public interface ArgumentMapper<S, T> {
 
     TypeToken<T> type();
@@ -12,6 +14,8 @@ public interface ArgumentMapper<S, T> {
     boolean isTerminal();
 
     T tryMap(final CommandContext<S> context, final CommandInputTokenizer input) throws CommandException;
+
+    List<String> complete(final CommandContext<S> context, final String input);
 
     static <S, T> ArgumentMapper<S, T> constant(final Class<T> clazz, final T value) {
         return new AbstractArgumentMapper<>(TypeToken.get(clazz), false) {

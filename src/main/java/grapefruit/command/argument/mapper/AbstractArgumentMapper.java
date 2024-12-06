@@ -1,6 +1,10 @@
 package grapefruit.command.argument.mapper;
 
+import grapefruit.command.dispatcher.CommandContext;
+import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import io.leangen.geantyref.TypeToken;
+
+import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
@@ -21,5 +25,10 @@ public abstract class AbstractArgumentMapper<S, T> implements ArgumentMapper<S, 
     @Override
     public boolean isTerminal() {
         return this.isTerminal;
+    }
+
+    @Override
+    public List<String> complete(final CommandContext<S> context, final String input) {
+        return List.of();
     }
 }
