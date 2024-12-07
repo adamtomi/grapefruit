@@ -84,10 +84,15 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
 
     @Override
     public String readRemaining() throws CommandSyntaxException {
-        if (!hasNext()) throw generateException();
+        skipWhitespace();
         final int start = this.cursor;
         this.cursor = this.input.length();
-        return this.input.substring(start);
+        final String result = this.input.substring(start);
+        if (result.isEmpty()) {
+            throw generateException();
+        }
+
+        return result;
     }
 
     @Override

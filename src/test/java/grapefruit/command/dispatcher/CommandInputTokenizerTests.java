@@ -88,4 +88,21 @@ public class CommandInputTokenizerTests {
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(quoted);
         assertDoesNotThrow(() -> assertEquals(unquoted, input.readQuotable()));
     }
+
+    @ParameterizedTest
+    @CsvSource({
+            "hello this is a long message,this is a long message",
+            "'another message ','message '"
+    })
+    public void readRemaining_doesNotThrow(final String first, final String second) {
+        final CommandInputTokenizer input = CommandInputTokenizer.wrap(first);
+        assertDoesNotThrow(input::readWord);
+        assertDoesNotThrow(() -> assertEquals(second, input.readRemaining()));
+    }
+
+    @Test
+    public void readRemaining_doesThrow_empty() {
+        final CommandInputTokenizer input = CommandInputTokenizer.wrap("");
+        assertThrows(CommandSyntaxException.class, input::readRemaining);
+    }
 }
