@@ -1,35 +1,36 @@
 package grapefruit.command.argument;
 
+import grapefruit.command.argument.condition.CommandCondition;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.util.key.Keyed;
 
 import java.util.Optional;
 import java.util.Set;
 
-public interface CommandArgument<T> extends Keyed<T> {
+public interface CommandArgument<S, T> extends Keyed<T> {
 
     String name();
 
-    Optional<String> permission();
+    Optional<CommandCondition<S>> condition();
 
-    interface Builder<T, C extends CommandArgument<T>, B extends Builder<T, C, B>> {
+    interface Builder<S, T, C extends CommandArgument<S, T>, B extends Builder<S, T, C, B>> {
 
-        B require(final String permission);
+        B expect(final CommandCondition<S> condition);
 
         C build();
     }
 
-    interface Literal extends CommandArgument<String> {
+    interface Literal<S> extends CommandArgument<S, String> {
 
         Set<String> aliases();
 
-        interface Builder extends CommandArgument.Builder<String, Literal, Builder> {
+        interface Builder<S> extends CommandArgument.Builder<S, String, Literal<S>, Builder<S>> {
 
-            Builder aliases(final String... aliases);
+            Builder<S> aliases(final String... aliases);
         }
     }
 
-    interface Dynamic<S, T> extends CommandArgument<T> {
+    interface Dynamic<S, T> extends CommandArgument<S, T> {
 
         ArgumentMapper<S, T> mapper();
 
@@ -40,7 +41,7 @@ public interface CommandArgument<T> extends Keyed<T> {
 
     interface Required<S, T> extends Dynamic<S, T> {
 
-        interface Builder<S, T> extends CommandArgument.Builder<T, Required<S, T>, Builder<S, T>> {
+        interface Builder<S, T> extends CommandArgument.Builder<S, T, Required<S, T>, Builder<S, T>> {
 
             Builder<S, T> mapWith(final ArgumentMapper<S, T> mapper);
         }
@@ -54,7 +55,7 @@ public interface CommandArgument<T> extends Keyed<T> {
 
         boolean isPresence();
 
-        interface Builder<S, T, B extends Builder<S, T, B>> extends CommandArgument.Builder<T, Flag<S, T>, Builder<S, T, B>> {
+        interface Builder<S, T, B extends Builder<S, T, B>> extends CommandArgument.Builder<S, T, Flag<S, T>, Builder<S, T, B>> {
 
             B shorthand(final char shorthand);
 

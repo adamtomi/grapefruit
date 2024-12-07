@@ -4,7 +4,7 @@ import java.util.List;
 
 public interface CommandChain<S> {
 
-    List<CommandArgument.Literal> route();
+    List<CommandArgument.Literal<S>> route();
 
     List<CommandArgument.Required<S, ?>> arguments();
 
@@ -21,7 +21,7 @@ public interface CommandChain<S> {
         CommandChain<S> build();
     }
 
-    interface LiteralBuilder<S> extends Builder<S, CommandArgument.Literal, LiteralBuilder<S>> {
+    interface LiteralBuilder<S> extends Builder<S, CommandArgument.Literal<S>, LiteralBuilder<S>> {
 
         ArgumentBuilder<S> arguments();
 

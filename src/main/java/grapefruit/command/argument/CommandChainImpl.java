@@ -7,12 +7,12 @@ import static grapefruit.command.util.StringUtil.containsIgnoreCase;
 import static java.util.Objects.requireNonNull;
 
 final class CommandChainImpl<S> implements CommandChain<S> {
-    private final List<CommandArgument.Literal> route;
+    private final List<CommandArgument.Literal<S>> route;
     private final List<CommandArgument.Required<S, ?>> arguments;
     private final List<CommandArgument.Flag<S, ?>> flags;
 
     CommandChainImpl(
-            final List<CommandArgument.Literal> route,
+            final List<CommandArgument.Literal<S>> route,
             final List<CommandArgument.Required<S, ?>> arguments,
             final List<CommandArgument.Flag<S, ?>> flags
     ) {
@@ -22,7 +22,7 @@ final class CommandChainImpl<S> implements CommandChain<S> {
     }
 
     @Override
-    public List<CommandArgument.Literal> route() {
+    public List<CommandArgument.Literal<S>> route() {
         return List.copyOf(this.route);
     }
 
@@ -56,11 +56,11 @@ final class CommandChainImpl<S> implements CommandChain<S> {
         }
     }
 
-    private static final class LiteralBuilder<S> extends BaseBuilder<S, CommandArgument.Literal, CommandChain.LiteralBuilder<S>> implements CommandChain.LiteralBuilder<S> {
+    private static final class LiteralBuilder<S> extends BaseBuilder<S, CommandArgument.Literal<S>, CommandChain.LiteralBuilder<S>> implements CommandChain.LiteralBuilder<S> {
 
         // TODO check if the name is alphabetic?
         @Override
-        protected void validate(final CommandArgument.Literal element) {}
+        protected void validate(final CommandArgument.Literal<S> element) {}
 
         @Override
         protected CommandChain.LiteralBuilder<S> self() {
@@ -88,9 +88,9 @@ final class CommandChainImpl<S> implements CommandChain<S> {
     }
 
     private static final class ArgumentBuilder<S> extends BaseBuilder<S, CommandArgument.Required<S, ?>, CommandChain.ArgumentBuilder<S>> implements CommandChain.ArgumentBuilder<S> {
-        private final List<CommandArgument.Literal> route;
+        private final List<CommandArgument.Literal<S>> route;
 
-        private ArgumentBuilder(List<CommandArgument.Literal> route) {
+        private ArgumentBuilder(List<CommandArgument.Literal<S>> route) {
             this.route = requireNonNull(route, "route cannot be null");
         }
 
@@ -126,10 +126,10 @@ final class CommandChainImpl<S> implements CommandChain<S> {
     }
 
     private static final class FlagBuilder<S> extends BaseBuilder<S, CommandArgument.Flag<S, ?>, CommandChain.FlagBuilder<S>> implements CommandChain.FlagBuilder<S> {
-        private final List<CommandArgument.Literal> route;
+        private final List<CommandArgument.Literal<S>> route;
         private final List<CommandArgument.Required<S, ?>> arguments;
 
-        private FlagBuilder(final List<CommandArgument.Literal> route, final List<CommandArgument.Required<S, ?>> arguments) {
+        private FlagBuilder(final List<CommandArgument.Literal<S>> route, final List<CommandArgument.Required<S, ?>> arguments) {
             this.route = requireNonNull(route, "route cannot be null");
             this.arguments = requireNonNull(arguments, "arguments cannot be null");
         }

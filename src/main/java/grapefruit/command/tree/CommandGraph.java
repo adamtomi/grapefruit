@@ -25,8 +25,8 @@ public class CommandGraph<S> {
         }
 
         CommandNode<S> node = this.rootNode;
-        for (final Iterator<CommandArgument.Literal> iter = chain.route().iterator(); iter.hasNext();) {
-            final CommandArgument.Literal literal = iter.next();
+        for (final Iterator<CommandArgument.Literal<S>> iter = chain.route().iterator(); iter.hasNext();) {
+            final CommandArgument.Literal<S> literal = iter.next();
             boolean isLast = !iter.hasNext();
 
             final Optional<CommandNode<S>> childCandidate = queryChildOf(node, literal);
@@ -109,7 +109,7 @@ public class CommandGraph<S> {
         }
     }
 
-    private static <S> Optional<CommandNode<S>> queryChildOf(final CommandNode<S> parent, final CommandArgument.Literal literal) {
+    private static <S> Optional<CommandNode<S>> queryChildOf(final CommandNode<S> parent, final CommandArgument.Literal<S> literal) {
         Optional<CommandNode<S>> candidate = parent.queryChild(literal.name());
         if (candidate.isPresent()) return candidate;
 

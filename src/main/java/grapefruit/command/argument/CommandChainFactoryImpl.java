@@ -11,12 +11,12 @@ final class CommandChainFactoryImpl<S> implements CommandChainFactory<S> {
     }
 
     @Override
-    public CommandArgument.Literal.Builder literal(final Key<String> key) {
-        return new CommandArgumentImpl.LiteralBuilder(key);
+    public CommandArgument.Literal.Builder<S> literal(final Key<String> key) {
+        return new CommandArgumentImpl.LiteralBuilder<>(key);
     }
 
     @Override
-    public CommandArgument.Literal.Builder literal(final String name) {
+    public CommandArgument.Literal.Builder<S> literal(final String name) {
         return literal(Key.named(String.class, name));
     }
 

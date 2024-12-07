@@ -7,9 +7,9 @@ public interface CommandChainFactory<S> {
 
     CommandChain.LiteralBuilder<S> newChain();
 
-    CommandArgument.Literal.Builder literal(final Key<String> key);
+    CommandArgument.Literal.Builder<S> literal(final Key<String> key);
 
-    CommandArgument.Literal.Builder literal(final String name);
+    CommandArgument.Literal.Builder<S> literal(final String name);
 
     <T> CommandArgument.Required.Builder<S, T> required(final Key<T> key);
 

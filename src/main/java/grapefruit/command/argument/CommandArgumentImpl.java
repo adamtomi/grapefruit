@@ -1,5 +1,6 @@
 package grapefruit.command.argument;
 
+import grapefruit.command.argument.condition.CommandCondition;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.util.ToStringer;
 import grapefruit.command.util.key.Key;
@@ -12,13 +13,13 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
-public abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
+public abstract class CommandArgumentImpl<S, T> implements CommandArgument<S, T> {
     private final Key<T> key;
-    private final @Nullable String permission;
+    private final @Nullable CommandCondition<S> condition;
 
-    protected CommandArgumentImpl(final Key<T> key, final @Nullable String permission) {
+    protected CommandArgumentImpl(final Key<T> key, final @Nullable CommandCondition<S> condition) {
         this.key = requireNonNull(key, "key cannot be null");
-        this.permission = permission;
+        this.condition = condition;
     }
 
     @Override
@@ -32,15 +33,15 @@ public abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
     }
 
     @Override
-    public Optional<String> permission() {
-        return Optional.ofNullable(this.permission);
+    public Optional<CommandCondition<S>> condition() {
+        return Optional.ofNullable(this.condition);
     }
 
-    static final class Literal extends CommandArgumentImpl<String> implements CommandArgument.Literal {
+    static final class Literal<S> extends CommandArgumentImpl<S, String> implements CommandArgument.Literal<S> {
         private final Set<String> aliases;
 
-        Literal(final Key<String> key, final @Nullable String permission, final Set<String> aliases) {
-            super(key, permission);
+        Literal(final Key<String> key, final @Nullable CommandCondition<S> condition, final Set<String> aliases) {
+            super(key, condition);
             this.aliases = requireNonNull(aliases, "aliases cannot be null");
         }
 
@@ -53,17 +54,17 @@ public abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
         public String toString() {
             return ToStringer.create(this)
                     .append("key", key())
-                    .append("permission", permission())
+                    .append("permission", condition())
                     .append("aliases", this.aliases)
                     .toString();
         }
     }
 
-    static abstract class Dynamic<S, T> extends CommandArgumentImpl<T> implements CommandArgument.Dynamic<S, T> {
+    static abstract class Dynamic<S, T> extends CommandArgumentImpl<S, T> implements CommandArgument.Dynamic<S, T> {
         private final ArgumentMapper<S, T> mapper;
 
-        Dynamic(final Key<T> key, final @Nullable String permission, final ArgumentMapper<S, T> mapper) {
-            super(key, permission);
+        Dynamic(final Key<T> key, final @Nullable CommandCondition<S> condition, final ArgumentMapper<S, T> mapper) {
+            super(key, condition);
             this.mapper = requireNonNull(mapper, "mapper cannot be null");
         }
 
@@ -75,8 +76,8 @@ public abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
 
     static final class Required<S, T> extends Dynamic<S, T> implements CommandArgument.Required<S, T> {
 
-        Required(final Key<T> key, final @Nullable String permission, final ArgumentMapper<S, T> mapper) {
-            super(key, permission, mapper);
+        Required(final Key<T> key, final @Nullable CommandCondition<S> condition, final ArgumentMapper<S, T> mapper) {
+            super(key, condition, mapper);
         }
 
         @Override
@@ -93,7 +94,7 @@ public abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
         public String toString() {
             return ToStringer.create(this)
                     .append("key", key())
-                    .append("permission", permission())
+                    .append("permission", condition())
                     .append("mapper", mapper())
                     .toString();
         }
@@ -103,8 +104,8 @@ public abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
         private final char shorthand;
         private final boolean isPresence;
 
-        Flag(final Key<T> key, final @Nullable String permission, final ArgumentMapper<S, T> mapper, final char shorthand, final boolean isPresence) {
-            super(key, permission, mapper);
+        Flag(final Key<T> key, final @Nullable CommandCondition<S> condition, final ArgumentMapper<S, T> mapper, final char shorthand, final boolean isPresence) {
+            super(key, condition, mapper);
             this.shorthand = shorthand;
             this.isPresence = isPresence;
         }
@@ -133,7 +134,7 @@ public abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
         public String toString() {
             return ToStringer.create(this)
                     .append("key", key())
-                    .append("permission", permission())
+                    .append("permission", condition())
                     .append("mapper", mapper())
                     .append("shorthand", this.shorthand)
                     .append("presence", this.isPresence)
@@ -141,9 +142,9 @@ public abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
         }
     }
 
-    static abstract class Builder<T, C extends CommandArgument<T>, B extends CommandArgument.Builder<T, C, B>> implements CommandArgument.Builder<T, C, B> {
+    static abstract class Builder<S, T, C extends CommandArgument<S, T>, B extends CommandArgument.Builder<S, T, C, B>> implements CommandArgument.Builder<S, T, C, B> {
         protected final Key<T> key;
-        protected @Nullable String permission;
+        protected @Nullable CommandCondition<S> condition;
 
         Builder(final Key<T> key) {
             this.key = requireNonNull(key, "key cannot be null");
@@ -152,13 +153,13 @@ public abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
         protected abstract B self();
 
         @Override
-        public B require(final String permission) {
-            this.permission = requireNonNull(permission, "permission cannot be null");
+        public B expect(final CommandCondition<S> condition) {
+            this.condition = requireNonNull(condition, "condition cannot be null");
             return self();
         }
     }
 
-    static final class LiteralBuilder extends Builder<String, CommandArgument.Literal, CommandArgument.Literal.Builder> implements CommandArgument.Literal.Builder {
+    static final class LiteralBuilder<S> extends Builder<S, String, CommandArgument.Literal<S>, CommandArgument.Literal.Builder<S>> implements CommandArgument.Literal.Builder<S> {
         private final Set<String> aliases = new HashSet<>();
 
         LiteralBuilder(final Key<String> key) {
@@ -166,23 +167,23 @@ public abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
         }
 
         @Override
-        protected LiteralBuilder self() {
+        protected LiteralBuilder<S> self() {
             return this;
         }
 
         @Override
-        public CommandArgument.Literal.Builder aliases(final String... aliases) {
+        public CommandArgument.Literal.Builder<S> aliases(final String... aliases) {
             this.aliases.addAll(Arrays.asList(aliases));
             return this;
         }
 
         @Override
-        public CommandArgument.Literal build() {
-            return new Literal(this.key, this.permission, this.aliases);
+        public CommandArgument.Literal<S> build() {
+            return new Literal<>(this.key, this.condition, this.aliases);
         }
     }
 
-    static final class RequiredBuilder<S, T> extends Builder<T, CommandArgument.Required<S, T>, CommandArgument.Required.Builder<S, T>> implements CommandArgument.Required.Builder<S, T> {
+    static final class RequiredBuilder<S, T> extends Builder<S, T, CommandArgument.Required<S, T>, CommandArgument.Required.Builder<S, T>> implements CommandArgument.Required.Builder<S, T> {
         private ArgumentMapper<S, T> mapper;
 
         RequiredBuilder(final Key<T> key) {
@@ -202,11 +203,13 @@ public abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
 
         @Override
         public CommandArgument.Required<S, T> build() {
-            return new Required<>(this.key, this.permission, this.mapper);
+            return new Required<>(this.key, this.condition, this.mapper);
         }
     }
 
-    static abstract class FlagBuilder<S, T, B extends CommandArgument.Flag.Builder<S, T, B>> extends Builder<T, CommandArgument.Flag<S, T>, CommandArgument.Flag.Builder<S, T, B>> implements CommandArgument.Flag.Builder<S, T, B> {
+    static abstract class FlagBuilder<S, T, B extends CommandArgument.Flag.Builder<S, T, B>>
+            extends Builder<S, T, CommandArgument.Flag<S, T>, CommandArgument.Flag.Builder<S, T, B>>
+            implements CommandArgument.Flag.Builder<S, T, B> {
         private final boolean isPresence;
         private char shorthand;
         protected ArgumentMapper<S, T> mapper;
@@ -233,7 +236,7 @@ public abstract class CommandArgumentImpl<T> implements CommandArgument<T> {
 
         @Override
         public CommandArgument.Flag<S, T> build() {
-            return new Flag<>(this.key, this.permission, this.mapper, this.shorthand, this.isPresence);
+            return new Flag<>(this.key, this.condition, this.mapper, this.shorthand, this.isPresence);
         }
     }
 

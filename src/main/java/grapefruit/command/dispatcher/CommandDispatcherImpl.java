@@ -7,6 +7,8 @@ import grapefruit.command.argument.CommandChain;
 import grapefruit.command.argument.CommandChainFactory;
 import grapefruit.command.argument.DuplicateFlagException;
 import grapefruit.command.argument.UnrecognizedFlagException;
+import grapefruit.command.argument.condition.CommandCondition;
+import grapefruit.command.argument.condition.UnfulfilledConditionException;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.CommandSyntaxException;
@@ -86,7 +88,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         final CommandContext<S> context = new CommandContextImpl<>(source, requireChain(cmd));
 
         // 2) Authorize user
-        checkPermissions(context);
+        // checkPermissions(context);
+        testRequiredConditions(context);
+
 
         // 3) Check command conditions
 
@@ -173,8 +177,20 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         return chain;
     }
 
+    // Test conditions of literal and required arguments
+    private static <S> void testRequiredConditions(final CommandContext<S> context) throws UnfulfilledConditionException {
+        final CommandChain<S> chain = context.chain();
+        final List<CommandCondition<S>> conditions = Stream.concat(chain.route().stream(), chain.arguments().stream())
+                .map(CommandArgument::condition)
+                .filter(Optional::isPresent)
+                .map(Optional::orElseThrow)
+                .toList();
+
+        for (final CommandCondition<S> condition : conditions) condition.test(context);
+    }
+
     // TODO only check flag permissions if the flag is set.
-    private void checkPermissions(CommandContext<S> context) throws CommandAuthorizationException {
+    /*private void checkPermissions(CommandContext<S> context) throws CommandAuthorizationException {
         final CommandChain<S> chain = context.chain();
         final Set<String> lacking = Stream.of(chain.route(), chain.arguments(), chain.flags())
                 .flatMap(Collection::stream)
@@ -195,8 +211,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
          *      if (!condition.test(context)) throw new UnfulfilledConditionException(condition);
          *
          * }
-         */
-    }
+
+    }*/
 
     private static <S> CommandParseResult<S> processCommand(final CommandContext<S> context, final CommandInputTokenizer input) {
         String arg;
@@ -285,6 +301,16 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     ) throws CommandException {
         if (context.has(flag.key())) {
             throw DuplicateFlagException.fromInput(input, expression);
+        }
+
+        /*
+         * Because flags are optional, we can't test their conditions
+         * early like we do with literal and required arguments. So,
+         * do the check now.
+         */
+        final Optional<CommandCondition<S>> condition = flag.condition();
+        if (condition.isPresent()) {
+            condition.orElseThrow().test(context);
         }
 
         consumeArgument(flag, context, input, builder, expression);
