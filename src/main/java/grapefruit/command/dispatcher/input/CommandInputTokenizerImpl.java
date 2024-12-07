@@ -14,20 +14,41 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
     }
 
     @Override
+    public String unwrap() {
+        return this.input;
+    }
+
+    @Override
     public boolean hasNext() {
-        return this.cursor < this.input.length();
+        return this.cursor < this.input.length() - 1;
     }
 
     @Override
     public char next() throws CommandSyntaxException {
-        if (hasNext()) return this.input.charAt(this.cursor++);
+        if (hasNext()) {
+            return this.input.charAt(++this.cursor);
+        }
 
         throw generateException();
     }
 
     @Override
-    public String raw() {
-        return this.input;
+    public boolean canRead() {
+        return this.cursor < this.input.length();
+    }
+
+    @Override
+    public char peek() {
+        return this.input.charAt(this.cursor);
+    }
+
+    @Override
+    public void advance() throws CommandSyntaxException {
+        if (canRead()) {
+            this.cursor++;
+        } else {
+            throw generateException();
+        }
     }
 
     @Override
@@ -45,9 +66,7 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
     @Override
     public String readWord() throws CommandSyntaxException {
         skipWhitespace();
-        final int start = this.cursor;
-        readWhile(x -> !Character.isWhitespace(x) && hasNext());
-        return this.input.substring(start, this.cursor);
+        return readWhile(x -> !Character.isWhitespace(x));
     }
 
     @Override
@@ -59,8 +78,7 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
             next(); // Get rid of leading ("|')
             int start = this.cursor;
             // Require the argument to be surrounded by the same kind of
-            // quotation marks, meaning "some argument' for instance is
-            // invalid.
+            // quotation marks.
             readWhile(x -> x != next);
             final String result = this.input.substring(start, this.cursor);
             next(); // Get rid of trailing ("|')
@@ -92,14 +110,20 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
         }
     }
 
-    private char peek() {
-        if (hasNext()) return this.input.charAt(this.cursor);
+    private String readWhile(final CharPredicate condition) throws CommandSyntaxException {
+        System.out.println("--------------------");
+        System.out.println("readWhile, length is %d".formatted(this.input.length()));
+        System.out.println("Start: %d".formatted(this.cursor));
+        final StringBuilder builder = new StringBuilder();
+        char c;
+        while (canRead() && condition.test((c = peek()))) {
+            System.out.println("%d -> '%s'".formatted(this.cursor, c));
+            builder.append(c);
+            next();
+        }
 
-        return ' ';
-    }
-
-    private void readWhile(final CharPredicate condition) throws CommandSyntaxException {
-        while (condition.test(peek())) next();
+        System.out.println("End: %d".formatted(this.cursor));
+        return builder.toString();
     }
 
     private void skipWhitespace() throws CommandSyntaxException {

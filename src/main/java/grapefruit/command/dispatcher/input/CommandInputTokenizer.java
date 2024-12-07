@@ -7,11 +7,17 @@ public interface CommandInputTokenizer {
     char SINGLE_QUOTE = '\'';
     char DOUBLE_QUOTE = '"';
 
+    String unwrap();
+
     boolean hasNext();
 
     char next() throws CommandSyntaxException;
 
-    String raw();
+    boolean canRead();
+
+    char peek();
+
+    void advance() throws CommandSyntaxException;
 
     @Nullable String peekWord();
 
