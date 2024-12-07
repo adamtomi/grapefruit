@@ -7,13 +7,12 @@ public interface CommandInputTokenizer {
     char SINGLE_QUOTE = '\'';
     char DOUBLE_QUOTE = '"';
 
+    // Return the original user input
     String unwrap();
 
     boolean hasNext();
 
     char next() throws CommandSyntaxException;
-
-    boolean canRead();
 
     char peek();
 

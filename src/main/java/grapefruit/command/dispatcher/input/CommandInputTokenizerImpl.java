@@ -33,18 +33,13 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
     }
 
     @Override
-    public boolean canRead() {
-        return this.cursor < this.input.length();
-    }
-
-    @Override
     public char peek() {
         return this.input.charAt(this.cursor);
     }
 
     @Override
     public void advance() throws CommandSyntaxException {
-        if (canRead()) {
+        if (hasNext()) {
             this.cursor++;
         } else {
             throw generateException();
@@ -111,18 +106,18 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
     }
 
     private String readWhile(final CharPredicate condition) throws CommandSyntaxException {
-        System.out.println("--------------------");
-        System.out.println("readWhile, length is %d".formatted(this.input.length()));
-        System.out.println("Start: %d".formatted(this.cursor));
+        if (!hasNext()) throw generateException();
         final StringBuilder builder = new StringBuilder();
         char c;
-        while (canRead() && condition.test((c = peek()))) {
-            System.out.println("%d -> '%s'".formatted(this.cursor, c));
+        while (condition.test((c = peek()))) {
             builder.append(c);
-            next();
+            if (hasNext()) {
+                advance();
+            } else {
+                break;
+            }
         }
 
-        System.out.println("End: %d".formatted(this.cursor));
         return builder.toString();
     }
 
