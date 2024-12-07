@@ -18,6 +18,7 @@ public interface CommandInputTokenizer {
 
     void advance() throws CommandSyntaxException;
 
+    @Deprecated
     @Nullable String peekWord();
 
     String readWord() throws CommandSyntaxException;
