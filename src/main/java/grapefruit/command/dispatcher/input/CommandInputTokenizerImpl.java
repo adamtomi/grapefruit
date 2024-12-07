@@ -39,15 +39,11 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
 
     @Override
     public void advance() throws CommandSyntaxException {
-        if (hasNext()) {
+        if (this.cursor < this.input.length()) {
             this.cursor++;
         } else {
             throw generateException();
         }
-    }
-
-    private void advanceUnsafe() {
-        this.cursor++;
     }
 
     @Override
@@ -74,11 +70,11 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
         final char start = peek();
         // This means we're dealing with a quoted string
         if (start == SINGLE_QUOTE || start == DOUBLE_QUOTE) {
-            advanceUnsafe(); // Get rid of leading ("|')
+            advance(); // Get rid of leading ("|')
             // Require the argument to be surrounded by the same kind of
             // quotation marks.
             final String result = readWhile(x -> x != start);
-            advanceUnsafe(); // Get rid of trailing ("|')
+            advance(); // Get rid of trailing ("|')
 
             return result;
         }

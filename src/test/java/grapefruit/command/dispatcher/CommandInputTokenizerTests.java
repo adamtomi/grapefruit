@@ -24,6 +24,7 @@ public class CommandInputTokenizerTests {
         assertEquals('b', input.peek());
         assertDoesNotThrow(input::advance); // -> ' '
         assertEquals(' ', input.peek());
+        assertDoesNotThrow(input::advance); // -> Mark the input consumed
         assertThrows(CommandSyntaxException.class, input::advance);
     }
 
