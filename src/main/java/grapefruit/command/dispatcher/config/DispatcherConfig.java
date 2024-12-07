@@ -1,13 +1,10 @@
 package grapefruit.command.dispatcher.config;
 
 import grapefruit.command.argument.CommandChain;
-import grapefruit.command.dispatcher.CommandAuthorizer;
 import grapefruit.command.dispatcher.CommandRegistrationHandler;
 import grapefruit.command.util.function.ToBooleanFunction;
 
 public interface DispatcherConfig<S> {
-
-    CommandAuthorizer<S> authorizer();
 
     CommandRegistrationHandler<S> registrationHandler();
 
@@ -16,8 +13,6 @@ public interface DispatcherConfig<S> {
     }
 
     interface Builder<S> {
-
-        Builder<S> authorize(final CommandAuthorizer<S> authorizer);
 
         Builder<S> registrations(final CommandRegistrationHandler<S> handler);
 

@@ -38,12 +38,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     // Store computed CommandChain instances mapped to their respective CommandModule.
     private final Map<CommandModule<S>, CommandChain<S>> computedChains = new HashMap<>();
     /* Configurable properties */
-    private final CommandAuthorizer<S> authorizer;
     private final CommandRegistrationHandler<S> registrationHandler;
 
     CommandDispatcherImpl(final DispatcherConfig<S> config) {
         requireNonNull(config, "config cannot be null");
-        this.authorizer = config.authorizer();
         this.registrationHandler = config.registrationHandler();
     }
 
