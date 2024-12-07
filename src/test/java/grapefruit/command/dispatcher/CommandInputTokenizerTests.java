@@ -4,6 +4,7 @@ import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.CommandSyntaxException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -49,5 +50,41 @@ public class CommandInputTokenizerTests {
     public void peekWord_null(final String arg) {
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(arg);
         assertNull(input.peekWord());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = { " hello ", "value ", " world" })
+    public void readWord_doesNotThrow(final String arg) {
+        final CommandInputTokenizer input = CommandInputTokenizer.wrap(arg);
+        assertDoesNotThrow(() -> assertEquals(arg.trim(), input.readWord()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "",
+            " ",
+            "      "
+    })
+    public void readWord_doesThrow(final String arg) {
+        final CommandInputTokenizer input = CommandInputTokenizer.wrap(arg);
+        assertThrows(CommandSyntaxException.class, input::readWord);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = { " hello ", "value ", " world" })
+    public void readQuotable_notQuoted(final String arg) {
+        final CommandInputTokenizer input = CommandInputTokenizer.wrap(arg);
+        assertDoesNotThrow(() -> assertEquals(arg.trim(), input.readQuotable()));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "\" hello\",' hello'",
+            "' world ', world ",
+            "\"hello world \",'hello world '"
+    })
+    public void readQuotable_quoted(final String quoted, final String unquoted) {
+        final CommandInputTokenizer input = CommandInputTokenizer.wrap(quoted);
+        assertDoesNotThrow(() -> assertEquals(unquoted, input.readQuotable()));
     }
 }

@@ -46,6 +46,10 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
         }
     }
 
+    private void advanceUnsafe() {
+        this.cursor++;
+    }
+
     @Override
     public @Nullable String peekWord() {
         final int start = this.cursor;
@@ -67,16 +71,15 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
     @Override
     public String readQuotable() throws CommandSyntaxException {
         skipWhitespace();
-        final char next = peek();
+        final char start = peek();
         // This means we're dealing with a quoted string
-        if (next == SINGLE_QUOTE || next == DOUBLE_QUOTE) {
-            next(); // Get rid of leading ("|')
-            int start = this.cursor;
+        if (start == SINGLE_QUOTE || start == DOUBLE_QUOTE) {
+            advanceUnsafe(); // Get rid of leading ("|')
             // Require the argument to be surrounded by the same kind of
             // quotation marks.
-            readWhile(x -> x != next);
-            final String result = this.input.substring(start, this.cursor);
-            next(); // Get rid of trailing ("|')
+            final String result = readWhile(x -> x != start);
+            advanceUnsafe(); // Get rid of trailing ("|')
+
             return result;
         }
 
