@@ -189,31 +189,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         for (final CommandCondition<S> condition : conditions) condition.test(context);
     }
 
-    // TODO only check flag permissions if the flag is set.
-    /*private void checkPermissions(CommandContext<S> context) throws CommandAuthorizationException {
-        final CommandChain<S> chain = context.chain();
-        final Set<String> lacking = Stream.of(chain.route(), chain.arguments(), chain.flags())
-                .flatMap(Collection::stream)
-                .map(CommandArgument::permission)
-                .filter(Optional::isPresent)
-                .map(Optional::orElseThrow)
-                .filter(x -> !this.authorizer.authorize(context.source(), x))
-                .collect(Collectors.toSet());
-
-        if (!lacking.isEmpty()) throw new CommandAuthorizationException(lacking);
-
-        /*
-         * perm("a.b.c"); -> PermissionCondition
-         *
-         * perm("a.b.c").and(isPlayer()); -> CommandDistpatcher$112$lambda$.......
-         *
-         * for (CommandCondition condition : chain.conditions()) {
-         *      if (!condition.test(context)) throw new UnfulfilledConditionException(condition);
-         *
-         * }
-
-    }*/
-
     private static <S> CommandParseResult<S> processCommand(final CommandContext<S> context, final CommandInputTokenizer input) {
         String arg;
         final CommandChain<S> chain = context.chain();
