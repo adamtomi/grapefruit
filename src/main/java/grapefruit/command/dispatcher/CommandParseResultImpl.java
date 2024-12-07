@@ -1,5 +1,6 @@
 package grapefruit.command.dispatcher;
 
+import grapefruit.command.CommandException;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.util.ToStringer;
 import org.jetbrains.annotations.Nullable;
@@ -12,19 +13,32 @@ import static java.util.Objects.requireNonNull;
 final class CommandParseResultImpl<S> implements CommandParseResult<S> {
     private final @Nullable String input;
     private final @Nullable CommandArgument.Dynamic<S, ?> argument;
+    private final @Nullable CommandException ex;
     private final List<CommandArgument.Required<S, ?>> arguments;
     private final List<CommandArgument.Flag<S, ?>> flags;
 
     private CommandParseResultImpl(
             final @Nullable String input,
             final @Nullable CommandArgument.Dynamic<S, ?> argument,
+            final @Nullable CommandException ex,
             final List<CommandArgument.Required<S, ?>> arguments,
             final List<CommandArgument.Flag<S, ?>> flags
     ) {
         this.input = input;
         this.argument = argument;
+        this.ex = ex;
         this.arguments = requireNonNull(arguments, "arguments cannot be null");
         this.flags = requireNonNull(flags, "flags cannot be null");
+    }
+
+    @Override
+    public Optional<CommandException> capturedException() {
+        return Optional.ofNullable(this.ex);
+    }
+
+    @Override
+    public void rethrowCaptured() throws CommandException {
+        if (this.ex != null) throw this.ex;
     }
 
     @Override
@@ -62,6 +76,7 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
         private final List<CommandArgument.Flag<S, ?>> flags;
         private CommandArgument.Dynamic<S, ?> argument;
         private String input;
+        private CommandException capturedException;
 
         Builder(final List<CommandArgument.Required<S, ?>> arguments, final List<CommandArgument.Flag<S, ?>> flags) {
             this.arguments = requireNonNull(arguments, "arguments cannot be null");
@@ -84,8 +99,13 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
         }
 
         @Override
+        public void capture(final CommandException ex) {
+            this.capturedException = requireNonNull(ex, "ex cannot be null");
+        }
+
+        @Override
         public CommandParseResult<S> build() {
-            return new CommandParseResultImpl<>(this.input, this.argument, this.arguments, this.flags);
+            return new CommandParseResultImpl<>(this.input, this.argument, this.capturedException, this.arguments, this.flags);
         }
     }
 }

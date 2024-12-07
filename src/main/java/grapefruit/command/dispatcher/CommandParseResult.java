@@ -1,5 +1,6 @@
 package grapefruit.command.dispatcher;
 
+import grapefruit.command.CommandException;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.argument.CommandChain;
 
@@ -8,6 +9,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CommandParseResult<S> {
+
+    Optional<CommandException> capturedException();
+
+    void rethrowCaptured() throws CommandException;
 
     /*
      * The last input that was being parsed (whether the
@@ -40,6 +45,8 @@ public interface CommandParseResult<S> {
         void begin(final CommandArgument.Dynamic<S, ?> argument, final String input);
 
         void end();
+
+        void capture(final CommandException ex);
 
         CommandParseResult<S> build();
     }

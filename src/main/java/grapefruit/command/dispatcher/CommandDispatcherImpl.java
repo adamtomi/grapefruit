@@ -25,7 +25,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static grapefruit.command.util.StringUtil.startsWithIgnoreCase;
 import static java.util.Objects.requireNonNull;
 
 final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
@@ -94,7 +93,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         // 4) Invoke pre-process listeners
 
         // 5) Process command
-        processCommand(context, input);
+        final CommandParseResult<S> parseResult = processCommand(context, input);
+        parseResult.rethrowCaptured();
 
         // 6) Invoke pre-execution listeners
 
@@ -113,27 +113,52 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         requireNonNull(source, "source cannot be null");
         requireNonNull(command, "command cannot be null");
 
+        System.out.println("====================== COMPLETE ======================");
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(command);
         final CommandModule<S> cmd;
         try {
             cmd = this.commandGraph.search(input);
         } catch (final NoSuchCommandException ex) {
+            System.out.println("nosuchcommand: %s".formatted(ex.argument()));
+            if (input.unwrap().endsWith(" ")) {
+                System.out.println("space");
+                return List.of();
+            }
+
             return ex.alternatives().stream()
                     .flatMap(x -> Stream.concat(Stream.of(x.name()), x.aliases().stream()))
+                    // TODO fix this.
+                    // .filter(x -> startsWithIgnoreCase(ex.argument(), x))
                     .toList();
         } catch (final CommandException ex) {
+            System.out.println("generic cmd exception 1");
             // TODO
             return List.of();
         }
 
-        final CommandContext<S> context = new CommandContextImpl<>(source, requireChain(cmd));
-        final CommandParseResult<S> parseResult;
-        // TODO perm check
-        try {
-            parseResult = processCommand(context, input);
-        } catch (final CommandException ex) {
-            // TODO
+        if (!input.hasNext() && !input.unwrap().endsWith(" ")) {
+            System.out.println("No space && !hasNext");
             return List.of();
+        }
+
+        final CommandContext<S> context = new CommandContextImpl<>(source, requireChain(cmd));
+        final CommandParseResult<S> parseResult = processCommand(context, input);
+        final Optional<CommandException> capturedOpt = parseResult.capturedException();
+
+        if (capturedOpt.isPresent()) {
+            System.out.println("captured ex is present");
+            final CommandException ex = capturedOpt.orElseThrow();
+            if (ex instanceof DuplicateFlagException) {
+                System.out.println("duplicate flag");
+                return List.of();
+            } else if (ex instanceof UnrecognizedFlagException ufe) {
+                if (ufe.argument().startsWith(SHORT_FLAG_PREFIX)) {
+                    System.out.println("looks like a flag prefix");
+                } else {
+                    System.out.println("Unrecognized flag, returning empty list");
+                    return List.of();
+                }
+            }
         }
 
         return collectCompletions(context, input, parseResult);
@@ -173,58 +198,63 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
          */
     }
 
-    private static <S> CommandParseResult<S> processCommand(final CommandContext<S> context, final CommandInputTokenizer input) throws CommandException {
+    private static <S> CommandParseResult<S> processCommand(final CommandContext<S> context, final CommandInputTokenizer input) {
         String arg;
         final CommandChain<S> chain = context.chain();
         final CommandParseResult.Builder<S> builder = CommandParseResult.createBuilder(chain);
-        while ((arg = input.peekWord()) != null) {
-            // Attempt to parse arg into a single flag or a group of flags
-            final Tuple2<List<CommandArgument.Flag<S, ?>>, Supplier<UnrecognizedFlagException>> flagResult = parseFlagGroup(arg, input, chain.flags());
-            if (flagResult.right().isPresent()) {
-                /*
-                 * We do this to stay consistent with the rest of the library. If an
-                 * argument is inspected and was found to be incorrect, we remove it
-                 * from the remaining argument list.
-                 */
-                input.readWord();
-                throw flagResult.right().orElseThrow().get();
-            }
-
-            final List<CommandArgument.Flag<S, ?>> flags = flagResult.left().orElseThrow();
-            // If the list is not empty, we managed to parse into at least one flag
-            if (flags.isEmpty()) {
-                // No flags were, matched, we retrieve the first unseen
-                // required argument.
-                final Optional<CommandArgument.Required<S, ?>> required = firstUnseen(chain.arguments(), context);
-                if (required.isPresent()) {
-                    consumeArgument(required.orElseThrow(), context, input, builder, arg);
-                } else {
+        try {
+            while ((arg = input.peekWord()) != null) {
+                // Attempt to parse arg into a single flag or a group of flags
+                final Tuple2<List<CommandArgument.Flag<S, ?>>, Supplier<UnrecognizedFlagException>> flagResult = parseFlagGroup(arg, input, chain.flags());
+                if (flagResult.right().isPresent()) {
                     /*
-                     * At this point, we need to throw an exception to indicate to the
-                     * user that no more required arguments need to be passed.
-                     *
-                     * 1) We either have more flags that can take values, in which
-                     *    case we throw an unrecognized flag exception, or
-                     *
-                     * 2) There could be no more flags, in which case we throw
-                     *    a syntax exception with the "TOO_MANY_ARGUMENTS" reason,
-                     *    because we can't handle more arguments.
+                     * We do this to stay consistent with the rest of the library. If an
+                     * argument is inspected and was found to be incorrect, we remove it
+                     * from the remaining argument list.
                      */
-                    throw firstUnseen(chain.flags(), context).isPresent()
-                            ? UnrecognizedFlagException.fromInput(input, arg, arg)
-                            : new CommandSyntaxException(chain, CommandSyntaxException.Reason.TOO_MANY_ARGUMENTS);
+                    input.readWord();
+                    throw flagResult.right().orElseThrow().get();
                 }
 
+                final List<CommandArgument.Flag<S, ?>> flags = flagResult.left().orElseThrow();
+                // If the list is not empty, we managed to parse into at least one flag
+                if (flags.isEmpty()) {
+                    // No flags were, matched, we retrieve the first unseen
+                    // required argument.
+                    final Optional<CommandArgument.Required<S, ?>> required = firstUnseen(chain.arguments(), context);
+                    if (required.isPresent()) {
+                        consumeArgument(required.orElseThrow(), context, input, builder, arg);
+                    } else {
+                        /*
+                         * At this point, we need to throw an exception to indicate to the
+                         * user that no more required arguments need to be passed.
+                         *
+                         * 1) We either have more flags that can take values, in which
+                         *    case we throw an unrecognized flag exception, or
+                         *
+                         * 2) There could be no more flags, in which case we throw
+                         *    a syntax exception with the "TOO_MANY_ARGUMENTS" reason,
+                         *    because we can't handle more arguments.
+                         */
+                        throw firstUnseen(chain.flags(), context).isPresent()
+                                ? UnrecognizedFlagException.fromInput(input, arg, arg)
+                                : new CommandSyntaxException(chain, CommandSyntaxException.Reason.TOO_MANY_ARGUMENTS);
+                    }
 
-            } else {
-                // Get rid of the flag expression itself
-                input.readWord();
-                // Parse each flag argument
-                for (final CommandArgument.Flag<S, ?> flag : flags) consumeFlag(flag, arg, context, input, builder);
+
+                } else {
+                    // Get rid of the flag expression itself
+                    input.readWord();
+                    // Parse each flag argument
+                    for (final CommandArgument.Flag<S, ?> flag : flags) consumeFlag(flag, arg, context, input, builder);
+                }
             }
+
+            verifyRequiredArguments(context, chain);
+        } catch (final CommandException ex) {
+            builder.capture(ex);
         }
 
-        verifyRequiredArguments(context, chain);
         return builder.build();
     }
 
@@ -276,7 +306,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         context.store(argument.key(), result);
         // 4) Mark end
         // TODO we'd need to get acccess to the actual argument that was consumed by the mapper (greedy, quotable string mappers)
-        if (arg.endsWith(" ")) builder.end();
+        // TODO this approach might be fucked.
+        if (input.hasNext() && input.peek() == ' ') builder.end();
     }
 
     private static <S> Tuple2<List<CommandArgument.Flag<S, ?>>, Supplier<UnrecognizedFlagException>> parseFlagGroup(
@@ -346,6 +377,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         final String remaining = input.remainingOrEmpty();
         final boolean completeNext = remaining.endsWith(" ");
 
+        System.out.println("Remaining: '%s'".formatted(remaining));
+        System.out.println("completeNext: '%s'".formatted(completeNext));
+
         final CommandArgument.Dynamic<S, ?> firstUnseen = parseResult.remainingArguments().isEmpty()
                 ? parseResult.remainingFlags().getFirst()
                 : parseResult.remainingArguments().getFirst();
@@ -353,26 +387,46 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         final CommandArgument.Dynamic<S, ?> selectedArgument = parseResult.lastArgument().orElse(firstUnseen);
         final String selectedInput = completeNext ? remaining : parseResult.lastInput().orElse(remaining);
 
+        System.out.println("firstUnseen: '%s'".formatted(firstUnseen));
+        System.out.println("selectedArgument: '%s'".formatted(selectedArgument));
+        System.out.println("selectedInput: '%s'".formatted(selectedInput));
+
         final List<String> base = new ArrayList<>();
 
         if (selectedArgument.isFlag()) {
-            if (selectedArgument.asFlag().isPresence() && completeNext) {
-                base.addAll(completeFlag(firstUnseen.asFlag()));
+            System.out.println("This is a flag");
+            if (selectedArgument.asFlag().isPresence()) { //  && completeNext
+                // TODO well this is fucked
+                // TODO Why are we taking firstUnseen.asFlag? shouldn't this be selectedArgument.asFlag?
+                System.out.println("Presence flag && completeNext, completing flags");
+                // base.addAll(completeFlag(firstUnseen.asFlag()));
+                base.addAll(completeFlags(parseResult.remainingFlags()));
             } else {
+                System.out.println("Not a presence flag"); // , or completeNext is false
                 // TODO only include these suggestions, if a) completeNext is true or b) the flag name (or group) has been completed already
-                base.addAll(selectedArgument.mapper().complete(context, selectedInput));
-                base.addAll(completeFlagGroup(selectedInput, parseResult.remainingFlags()));
+                if (!completeNext) {
+                    System.out.println("Including flag group completions");
+                    base.addAll(completeFlagGroup(selectedInput, parseResult.remainingFlags()));
+                }
+
+                System.out.println("Including suggestions from mapper");
+                final String arg = input.remainingOrEmpty();
+                System.out.println("Completing for: '%s'".formatted(arg));
+                base.addAll(selectedArgument.mapper().complete(context, arg));
             }
         } else {
+            System.out.println("not a flag, adding mapper suggestions");
             base.addAll(selectedArgument.mapper().complete(context, selectedInput));
 
             if (!selectedInput.isEmpty() && selectedInput.charAt(0) == SHORT_FLAG_PREFIX_CH) {
+                System.out.println("looks like the beginning of a flag/flag group, adding flag suggestions");
                 base.addAll(completeFlags(parseResult.remainingFlags()));
             }
         }
 
+        System.out.println("returning...");
         return base.stream()
-                .filter(x -> startsWithIgnoreCase(x, selectedInput.trim()))
+                // .filter(x -> startsWithIgnoreCase(x, selectedInput.trim()))
                 .toList();
     }
 
@@ -396,6 +450,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         final List<String> result = new ArrayList<>();
         // If charAt(0) is not alphabetic, this is not a flag group.
         if (argument.length() > 1 && Character.isAlphabetic(argument.charAt(1))) {
+            System.out.println("Including flag group completions");
             for (final CommandArgument.Flag<S, ?> flag : flags) {
                 // If we don't have a valid shorthand, or it is already in 'argument', ignore this flag
                 if (flag.shorthand() == 0 || argument.indexOf(flag.shorthand()) != -1) continue;
