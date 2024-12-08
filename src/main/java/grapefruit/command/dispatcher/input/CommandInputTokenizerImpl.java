@@ -72,7 +72,7 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
     @Override
     public String readWord() throws CommandSyntaxException {
         skipWhitespace();
-        return readWhile(x -> !Character.isWhitespace(x), true);
+        return readWhileThrowOnEmpty(x -> !Character.isWhitespace(x));
     }
 
     @Override
@@ -84,7 +84,7 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
             advance(); // Get rid of leading ("|')
             // Require the argument to be surrounded by the same kind of
             // quotation marks.
-            final String result = readWhile(x -> x != start, true);
+            final String result = readWhileThrowOnEmpty(x -> x != start);
             advance(); // Get rid of trailing ("|')
 
             return result;
@@ -124,7 +124,7 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
         if (this.consumed) throw generateException();
     }
 
-    private String readWhile(final CharPredicate condition, final boolean throwOnEmpty) throws CommandSyntaxException {
+    private String readWhile(final CharPredicate condition) throws CommandSyntaxException {
         checkConsumed();
         if (this.cursor >= this.input.length()) {
             throw generateException();
@@ -144,16 +144,18 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
             }
         }
 
-        if (builder.isEmpty() && throwOnEmpty) {
-            // Couldn't read anything
-            throw generateException();
-        }
-
         return builder.toString();
     }
 
+    private String readWhileThrowOnEmpty(final CharPredicate condition) throws CommandSyntaxException {
+        final String result = readWhile(condition);
+        if (result.isEmpty()) throw generateException();
+
+        return result;
+    }
+
     private void skipWhitespace() throws CommandSyntaxException {
-        readWhile(Character::isWhitespace, false);
+        readWhile(Character::isWhitespace);
     }
 
     private static CommandSyntaxException generateException() {
