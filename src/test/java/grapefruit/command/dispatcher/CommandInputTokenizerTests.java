@@ -72,6 +72,18 @@ public class CommandInputTokenizerTests {
     }
 
     @ParameterizedTest
+    @CsvSource({
+            "a b,b",
+            "c 1,1",
+            "-p 3,3"
+    })
+    public void readWord_singleCharacter(final String arg, final String expected) {
+        final CommandInputTokenizer input = CommandInputTokenizer.wrap(arg);
+        assertDoesNotThrow(input::readWord);
+        assertDoesNotThrow(() -> assertEquals(expected, input.readWord()));
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = { " hello ", "value ", " world" })
     public void readQuotable_notQuoted(final String arg) {
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(arg);

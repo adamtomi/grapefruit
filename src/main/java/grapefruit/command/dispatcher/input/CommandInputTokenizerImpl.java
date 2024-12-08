@@ -61,7 +61,7 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
     @Override
     public String readWord() throws CommandSyntaxException {
         skipWhitespace();
-        return readWhile(x -> !Character.isWhitespace(x));
+        return readWhile(x -> !Character.isWhitespace(x), true);
     }
 
     @Override
@@ -73,7 +73,7 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
             advance(); // Get rid of leading ("|')
             // Require the argument to be surrounded by the same kind of
             // quotation marks.
-            final String result = readWhile(x -> x != start);
+            final String result = readWhile(x -> x != start, true);
             advance(); // Get rid of trailing ("|')
 
             return result;
@@ -109,24 +109,44 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
         }
     }
 
-    private String readWhile(final CharPredicate condition) throws CommandSyntaxException {
-        if (!hasNext()) throw generateException();
+    private String readWhile(final CharPredicate condition, final boolean throwOnEmpty) throws CommandSyntaxException {
+        System.out.println("--------------- readwhile(%d / %d) ---------------".formatted(this.cursor, this.input.length()));
+        // this.cursor < this.input.length()
+        if (/* !hasNext() */this.cursor >= this.input.length()) {
+            System.out.println("cannot read char at current index");
+            throw generateException();
+        }
+
         final StringBuilder builder = new StringBuilder();
         char c;
+        System.out.println("starting loop");
         while (condition.test((c = peek()))) {
+            System.out.println(c);
             builder.append(c);
             if (hasNext()) {
+                System.out.println("hasNext, advance()");
                 advance();
+                System.out.println("done");
             } else {
+                System.out.println("nothing to read");
                 break;
             }
         }
 
-        return builder.toString();
+        if (builder.isEmpty() && throwOnEmpty) {
+            System.out.println("builder is empty");
+            // Couldn't read anything
+            throw generateException();
+        }
+
+        System.out.println("return");
+        final String result = builder.toString();
+        System.out.println(result);
+        return result;
     }
 
     private void skipWhitespace() throws CommandSyntaxException {
-        readWhile(Character::isWhitespace);
+        readWhile(Character::isWhitespace, false);
     }
 
     private static CommandSyntaxException generateException() {
