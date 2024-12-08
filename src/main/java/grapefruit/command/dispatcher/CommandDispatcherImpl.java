@@ -86,7 +86,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.DISPATCH);
 
         // 2) Authorize user
-        // checkPermissions(context);
         testRequiredConditions(context);
 
 
