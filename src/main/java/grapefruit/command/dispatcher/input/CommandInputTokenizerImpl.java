@@ -36,7 +36,9 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
 
     @Override
     public char peek() {
-        return this.input.charAt(this.cursor);
+        return this.consumed
+                ? 0
+                : this.input.charAt(this.cursor);
     }
 
     @Override
@@ -44,9 +46,7 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
         checkConsumed();
         if (this.cursor < this.input.length()) {
             this.cursor++;
-            System.out.println("advance: %d, %d".formatted(this.cursor, this.input.length()));
             if (this.cursor >= this.input.length()) {
-                System.out.println("mark as consumed");
                 this.consumed = true;
             }
 
@@ -58,12 +58,14 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
     @Override
     public @Nullable String peekWord() {
         final int start = this.cursor;
+        final boolean consumed = this.consumed;
         try {
             return readWord();
         } catch (CommandSyntaxException ex) {
             return null;
         } finally {
             this.cursor = start;
+            this.consumed = consumed;
         }
     }
 
@@ -124,43 +126,30 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
 
     private String readWhile(final CharPredicate condition, final boolean throwOnEmpty) throws CommandSyntaxException {
         checkConsumed();
-        System.out.println("--------------- readwhile(%d / %d) ---------------".formatted(this.cursor, this.input.length()));
-        // this.cursor < this.input.length()
-        if (/* !hasNext() */this.cursor >= this.input.length()) {
-            System.out.println("cannot read char at current index");
+        if (this.cursor >= this.input.length()) {
             throw generateException();
         }
 
         final StringBuilder builder = new StringBuilder();
         char c;
-        System.out.println("starting loop");
         while (condition.test((c = peek()))) {
-            System.out.println(c);
             builder.append(c);
             if (this.cursor < this.input.length()) {
-                System.out.println("hasNext, advance()");
                 advance();
-                System.out.println("done");
                 if (this.consumed) {
-                    System.out.println("consumed, out");
                     break;
                 }
             } else {
-                System.out.println("nothing to read");
                 break;
             }
         }
 
         if (builder.isEmpty() && throwOnEmpty) {
-            System.out.println("builder is empty");
             // Couldn't read anything
             throw generateException();
         }
 
-        System.out.println("return");
-        final String result = builder.toString();
-        System.out.println(result);
-        return result;
+        return builder.toString();
     }
 
     private void skipWhitespace() throws CommandSyntaxException {

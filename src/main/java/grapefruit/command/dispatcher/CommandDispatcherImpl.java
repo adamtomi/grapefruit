@@ -88,7 +88,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         // 2) Authorize user
         testRequiredConditions(context);
 
-
         // 3) Check command conditions
 
         // 4) Invoke pre-process listeners
@@ -311,7 +310,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         // 4) Mark end
         // TODO we'd need to get acccess to the actual argument that was consumed by the mapper (greedy, quotable string mappers)
         // TODO this approach might be fucked.
-        if (input.hasNext() && input.peek() == ' ') builder.end();
+        if (input.peek() == ' ' || input.peek() == 0) builder.end();
     }
 
     private static <S> Tuple2<List<CommandArgument.Flag<S, ?>>, Supplier<UnrecognizedFlagException>> parseFlagGroup(
