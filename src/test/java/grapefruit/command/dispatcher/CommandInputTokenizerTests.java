@@ -83,6 +83,13 @@ public class CommandInputTokenizerTests {
         assertDoesNotThrow(() -> assertEquals(expected, input.readWord()));
     }
 
+    @Test
+    public void readWord_consumed() {
+        final CommandInputTokenizer input = CommandInputTokenizer.wrap("test");
+        assertDoesNotThrow(() -> assertEquals("test", input.readWord()));
+        assertThrows(CommandSyntaxException.class, input::readWord);
+    }
+
     @ParameterizedTest
     @ValueSource(strings = { " hello ", "value ", " world" })
     public void readQuotable_notQuoted(final String arg) {

@@ -8,6 +8,7 @@ import static java.util.Objects.requireNonNull;
 final class CommandInputTokenizerImpl implements CommandInputTokenizer {
     private final String input;
     private int cursor;
+    private boolean consumed;
 
     public CommandInputTokenizerImpl(final String input) {
         this.input = requireNonNull(input, "input cannot be null");
@@ -25,6 +26,7 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
 
     @Override
     public char next() throws CommandSyntaxException {
+        checkConsumed();
         if (hasNext()) {
             return this.input.charAt(++this.cursor);
         }
@@ -39,8 +41,15 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
 
     @Override
     public void advance() throws CommandSyntaxException {
+        checkConsumed();
         if (this.cursor < this.input.length()) {
             this.cursor++;
+            System.out.println("advance: %d, %d".formatted(this.cursor, this.input.length()));
+            if (this.cursor >= this.input.length()) {
+                System.out.println("mark as consumed");
+                this.consumed = true;
+            }
+
         } else {
             throw generateException();
         }
@@ -109,7 +118,12 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
         }
     }
 
+    private void checkConsumed() throws CommandSyntaxException {
+        if (this.consumed) throw generateException();
+    }
+
     private String readWhile(final CharPredicate condition, final boolean throwOnEmpty) throws CommandSyntaxException {
+        checkConsumed();
         System.out.println("--------------- readwhile(%d / %d) ---------------".formatted(this.cursor, this.input.length()));
         // this.cursor < this.input.length()
         if (/* !hasNext() */this.cursor >= this.input.length()) {
@@ -123,10 +137,14 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
         while (condition.test((c = peek()))) {
             System.out.println(c);
             builder.append(c);
-            if (hasNext()) {
+            if (this.cursor < this.input.length()) {
                 System.out.println("hasNext, advance()");
                 advance();
                 System.out.println("done");
+                if (this.consumed) {
+                    System.out.println("consumed, out");
+                    break;
+                }
             } else {
                 System.out.println("nothing to read");
                 break;
