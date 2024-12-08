@@ -59,7 +59,7 @@ public class CommandGraph<S> {
         if (chain.route().isEmpty() || this.rootNode.isLeaf()) return;
 
         CommandNode<S> node = this.rootNode;
-        for (final CommandArgument.Literal literal : chain.route()) {
+        for (final CommandArgument.Literal<S> literal : chain.route()) {
             final Optional<CommandNode<S>> childCandidate = queryChildOf(node, literal);
             if (childCandidate.isEmpty()) {
                 throw new IllegalStateException("Command node '%s' does not have a suitable child".formatted(node));
