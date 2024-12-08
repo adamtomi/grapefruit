@@ -56,7 +56,8 @@ public class CommandGraph<S> {
 
     public void delete(final CommandChain<S> chain) {
         requireNonNull(chain, "chain cannot be null");
-        if (chain.route().isEmpty() || this.rootNode.isLeaf()) return;
+        if (chain.route().isEmpty()) return;
+        if (this.rootNode.isLeaf()) throw new IllegalStateException("Root node is leaf");
 
         CommandNode<S> node = this.rootNode;
         for (final CommandArgument.Literal<S> literal : chain.route()) {
