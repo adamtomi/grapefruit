@@ -22,9 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
@@ -39,10 +37,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final Map<CommandModule<S>, CommandChain<S>> computedChains = new HashMap<>();
     /* Configurable properties */
     private final CommandRegistrationHandler<S> registrationHandler;
+    private final ContextDecorator<S> contextDecorator;
 
     CommandDispatcherImpl(final DispatcherConfig<S> config) {
         requireNonNull(config, "config cannot be null");
         this.registrationHandler = config.registrationHandler();
+        this.contextDecorator = config.contextDecorator();
     }
 
     @Override
@@ -83,7 +83,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(command);
         // 1) Find corresponding command module
         final CommandModule<S> cmd = this.commandGraph.search(input);
-        final CommandContext<S> context = new CommandContextImpl<>(source, requireChain(cmd));
+        final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.DISPATCH);
 
         // 2) Authorize user
         // checkPermissions(context);
@@ -143,7 +143,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             return List.of();
         }
 
-        final CommandContext<S> context = new CommandContextImpl<>(source, requireChain(cmd));
+        final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.COMPLETE);
         final CommandParseResult<S> parseResult = processCommand(context, input);
         final Optional<CommandException> capturedOpt = parseResult.capturedException();
 
@@ -164,6 +164,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
 
         return collectCompletions(context, input, parseResult);
+    }
+
+    private CommandContext<S> createContext(final S source, final CommandChain<S> chain, final ContextDecorator.Mode mode) {
+        final CommandContext<S> context = new CommandContextImpl<>(source, chain);
+        this.contextDecorator.apply(context, mode);
+        return context;
     }
 
     private CommandChain<S> requireChain(final CommandModule<S> command) {
