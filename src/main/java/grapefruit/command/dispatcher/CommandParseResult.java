@@ -44,14 +44,16 @@ public interface CommandParseResult<S> {
 
     int cursor();
 
-    static <S> Builder<S> createBuilder(final CommandChain<S> chain) {
+    static <S> Builder<S> createBuilder(final CommandChain<S> chain, final CommandInputTokenizer input) {
         // Make mutable copies
-        return new CommandParseResultImpl.Builder<>(new ArrayList<>(chain.arguments()), new ArrayList<>(chain.flags()));
+        return new CommandParseResultImpl.Builder<>(new ArrayList<>(chain.arguments()), new ArrayList<>(chain.flags()), input);
     }
 
     interface Builder<S> {
 
-        void begin(final CommandArgument.Dynamic<S, ?> argument, final CommandInputTokenizer input, final String value);
+        void begin(final CommandArgument.Dynamic<S, ?> argument, final String value);
+
+        void mapped();
 
         void end();
 

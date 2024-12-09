@@ -88,24 +88,33 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
     static final class Builder<S> implements CommandParseResult.Builder<S> {
         private final List<CommandArgument.Required<S, ?>> arguments;
         private final List<CommandArgument.Flag<S, ?>> flags;
+        private final CommandInputTokenizer inputTokenizer;
         private CommandArgument.Dynamic<S, ?> argument;
         private String input;
         private CommandException capturedException;
         private int cursor;
 
-        Builder(final List<CommandArgument.Required<S, ?>> arguments, final List<CommandArgument.Flag<S, ?>> flags) {
+        Builder(final List<CommandArgument.Required<S, ?>> arguments, final List<CommandArgument.Flag<S, ?>> flags, final CommandInputTokenizer inputTokenizer) {
             this.arguments = requireNonNull(arguments, "arguments cannot be null");
             this.flags = requireNonNull(flags, "flags cannot be null");
+            this.inputTokenizer = requireNonNull(inputTokenizer, "inputTokenizer cannot be null");
+            this.cursor = inputTokenizer.cursor();
         }
 
         @Override
-        public void begin(final CommandArgument.Dynamic<S, ?> argument, final CommandInputTokenizer input, final String value) {
+        public void begin(final CommandArgument.Dynamic<S, ?> argument, final String value) {
             requireNonNull(argument, "argument cannot be null");
-            requireNonNull(input, "input cannot be null");
+            requireNonNull(value, "input cannot be null");
             (argument.isFlag() ? this.flags : this.arguments).remove(argument);
             this.argument = argument;
             this.input = value;
-            this.cursor = input.cursor();
+            this.cursor = this.inputTokenizer.cursor();
+        }
+
+        @Override
+        public void mapped() {
+            final String consumedValue = this.inputTokenizer.unwrap().substring(this.cursor);
+            this.input = consumedValue.trim();
         }
 
         @Override

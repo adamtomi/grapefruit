@@ -202,7 +202,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private static <S> CommandParseResult<S> processCommand(final CommandContext<S> context, final CommandInputTokenizer input) {
         String arg;
         final CommandChain<S> chain = context.chain();
-        final CommandParseResult.Builder<S> builder = CommandParseResult.createBuilder(chain);
+        final CommandParseResult.Builder<S> builder = CommandParseResult.createBuilder(chain, input);
         try {
             while ((arg = input.peekWord()) != null) {
                 // Attempt to parse arg into a single flag or a group of flags
@@ -309,10 +309,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final String value
     ) throws CommandException {
         // 1) Mark beginning
-        builder.begin(argument, input, value);
+        builder.begin(argument, value);
         // 2) Map argument into the correct type. This will throw an exceptioniif
         //    the conversion fails.
         final T result = argument.mapper().tryMap(context, input);
+        builder.mapped();
         // 3) Store the result in the current context
         context.store(argument.key(), result);
         // TODO builder.push(mappingResult.argument()); // update consumed argument
