@@ -66,7 +66,7 @@ final class DispatcherConfigImpl<S> implements DispatcherConfig<S> {
 
             final ContextDecorator<S> contextDecorator = this.contextDecorator != null
                     ? this.contextDecorator
-                    : (context, mode) -> {};
+                    : ContextDecorator.nil();
 
             return new DispatcherConfigImpl<>(registrationHandler, contextDecorator);
         }
