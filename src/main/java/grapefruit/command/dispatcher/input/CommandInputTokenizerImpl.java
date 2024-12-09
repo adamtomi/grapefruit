@@ -20,6 +20,21 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
     }
 
     @Override
+    public int cursor() {
+        return this.cursor;
+    }
+
+    @Override
+    public void moveTo(final int position) {
+        if (position < 0) {
+            throw new IllegalArgumentException("Position cannot be negative");
+        }
+
+        this.cursor = position;
+        this.consumed = this.cursor >= this.input.length();
+    }
+
+    @Override
     public boolean hasNext() {
         return this.cursor < this.input.length() - 1;
     }

@@ -3,6 +3,7 @@ package grapefruit.command.dispatcher;
 import grapefruit.command.CommandException;
 import grapefruit.command.CommandModule;
 import grapefruit.command.argument.CommandArgument;
+import grapefruit.command.argument.CommandArgumentException;
 import grapefruit.command.argument.CommandChain;
 import grapefruit.command.argument.CommandChainFactory;
 import grapefruit.command.argument.DuplicateFlagException;
@@ -161,6 +162,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     System.out.println("Unrecognized flag, returning empty list");
                     return List.of();
                 }
+            } else if (ex instanceof CommandArgumentException) { // This means we couldn't map user input into some type.
+                // Move the cursor back for completions.
+                input.moveTo(parseResult.cursor());
+                // parseResult = parseResult.withInput(input.remainingOrEmpty());
             }
         }
 
@@ -301,15 +306,16 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final CommandContext<S> context,
             final CommandInputTokenizer input,
             final CommandParseResult.Builder<S> builder,
-            final String arg
+            final String value
     ) throws CommandException {
         // 1) Mark beginning
-        builder.begin(argument, arg);
+        builder.begin(argument, input, value);
         // 2) Map argument into the correct type. This will throw an exceptioniif
         //    the conversion fails.
         final T result = argument.mapper().tryMap(context, input);
         // 3) Store the result in the current context
         context.store(argument.key(), result);
+        // TODO builder.push(mappingResult.argument()); // update consumed argument
         // 4) Mark end
         // TODO we'd need to get acccess to the actual argument that was consumed by the mapper (greedy, quotable string mappers)
         // TODO this approach might be fucked.
@@ -387,7 +393,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         System.out.println("completeNext: '%s'".formatted(completeNext));
 
         final CommandArgument.Dynamic<S, ?> selectedArgument = resolveArgumentToComplete(parseResult);
-        final String selectedInput = completeNext ? remaining : parseResult.lastInput().orElse(remaining);
+        final String selectedInput = !remaining.isEmpty()
+                ? remaining
+                : completeNext ? remaining : parseResult.lastInput().orElse(remaining);
 
         System.out.println("selectedArgument: '%s'".formatted(selectedArgument));
         System.out.println("selectedInput: '%s'".formatted(selectedInput));
@@ -407,9 +415,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 }
 
                 System.out.println("Including suggestions from mapper");
-                final String arg = input.remainingOrEmpty();
-                System.out.println("Completing for: '%s'".formatted(arg));
-                base.addAll(selectedArgument.mapper().complete(context, arg));
+                // final String arg = input.remainingOrEmpty();
+                System.out.println("Completing for: '%s'".formatted(selectedInput));
+                base.addAll(selectedArgument.mapper().complete(context, selectedInput));
             }
         } else {
             System.out.println("not a flag, adding mapper suggestions");

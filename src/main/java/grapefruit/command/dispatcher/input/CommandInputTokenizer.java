@@ -10,6 +10,10 @@ public interface CommandInputTokenizer {
     // Return the original user input
     String unwrap();
 
+    int cursor();
+
+    void moveTo(final int position);
+
     boolean hasNext();
 
     char next() throws CommandSyntaxException;

@@ -3,6 +3,7 @@ package grapefruit.command.dispatcher;
 import grapefruit.command.CommandException;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.argument.CommandChain;
+import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +42,8 @@ public interface CommandParseResult<S> {
      */
     List<CommandArgument.Flag<S, ?>> remainingFlags();
 
+    int cursor();
+
     static <S> Builder<S> createBuilder(final CommandChain<S> chain) {
         // Make mutable copies
         return new CommandParseResultImpl.Builder<>(new ArrayList<>(chain.arguments()), new ArrayList<>(chain.flags()));
@@ -48,7 +51,7 @@ public interface CommandParseResult<S> {
 
     interface Builder<S> {
 
-        void begin(final CommandArgument.Dynamic<S, ?> argument, final String input);
+        void begin(final CommandArgument.Dynamic<S, ?> argument, final CommandInputTokenizer input, final String value);
 
         void end();
 
