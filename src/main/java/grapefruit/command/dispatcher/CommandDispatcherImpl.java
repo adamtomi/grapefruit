@@ -316,10 +316,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         builder.mapped();
         // 3) Store the result in the current context
         context.store(argument.key(), result);
-        // TODO builder.push(mappingResult.argument()); // update consumed argument
         // 4) Mark end
-        // TODO we'd need to get acccess to the actual argument that was consumed by the mapper (greedy, quotable string mappers)
-        // TODO this approach might be fucked.
         if (input.unwrap().endsWith(" ")) builder.end();
     }
 
@@ -435,11 +432,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     private static <S> CommandArgument.Dynamic<S, ?> resolveArgumentToComplete(final CommandParseResult<S> parseResult) {
-        System.out.println("resolve...");
         final Optional<CommandArgument.Dynamic<S, ?>> lastArgument = parseResult.lastArgument();
-        System.out.println("last arg: " + lastArgument);
         if (lastArgument.isPresent()) {
-            System.out.println("present, returning");
             return lastArgument.orElseThrow();
         }
 
@@ -450,11 +444,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             throw new IllegalStateException("No arguments are left to complete.");
         }
 
-        System.out.println("selecting first unseen");
-        final CommandArgument.Dynamic<S, ?> firstUnseen = (remainingArgs.isEmpty() ? remainingFlags : remainingArgs).getFirst();
-
-        System.out.println(firstUnseen);
-        return firstUnseen;
+        return (remainingArgs.isEmpty() ? remainingFlags : remainingArgs).getFirst();
     }
 
     private static <S> List<String> completeFlag(final CommandArgument.Flag<S, ?> flag) {
@@ -477,7 +467,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         final List<String> result = new ArrayList<>();
         // If charAt(0) is not alphabetic, this is not a flag group.
         if (argument.length() > 1 && Character.isAlphabetic(argument.charAt(1))) {
-            System.out.println("Including flag group completions");
             for (final CommandArgument.Flag<S, ?> flag : flags) {
                 // If we don't have a valid shorthand, or it is already in 'argument', ignore this flag
                 if (flag.shorthand() == 0 || argument.indexOf(flag.shorthand()) != -1) continue;
