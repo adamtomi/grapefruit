@@ -142,7 +142,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
 
         final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.COMPLETE);
-        final CommandParseResult<S> parseResult = processCommand(context, input);
+        CommandParseResult<S> parseResult = processCommand(context, input);
         final Optional<CommandException> capturedOpt = parseResult.capturedException();
 
         if (capturedOpt.isPresent()) {
@@ -156,7 +156,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 if (ufe.argument().startsWith(SHORT_FLAG_PREFIX)) {
                     System.out.println("looks like a flag prefix, arg is " + ufe.argument());
                     System.out.println("updating last input");
-                    parseResult.setLastInput(ufe.argument());
+                    // parseResult.setLastInput(ufe.argument());
+                    parseResult = parseResult.withInput(ufe.argument());
                 } else {
                     System.out.println("Unrecognized flag, returning empty list");
                     return List.of();

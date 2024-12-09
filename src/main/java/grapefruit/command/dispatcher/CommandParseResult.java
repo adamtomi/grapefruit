@@ -20,8 +20,11 @@ public interface CommandParseResult<S> {
      */
     Optional<String> lastInput();
 
-    @Deprecated
-    void setLastInput(final String lastInput);
+    /*
+     * Create a new parse result instance from the current one wrapping
+     * the provided input string.
+     */
+    CommandParseResult<S> withInput(final String input);
 
     /*
      * The last argument that was being parsed.
