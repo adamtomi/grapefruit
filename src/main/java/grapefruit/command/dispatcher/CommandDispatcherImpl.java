@@ -156,7 +156,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 if (ufe.argument().startsWith(SHORT_FLAG_PREFIX)) {
                     System.out.println("looks like a flag prefix, arg is " + ufe.argument());
                     System.out.println("updating last input");
-                    // parseResult.setLastInput(ufe.argument());
                     parseResult = parseResult.withInput(ufe.argument());
                 } else {
                     System.out.println("Unrecognized flag, returning empty list");
@@ -381,12 +380,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
     private static <S> List<String> collectCompletions(final CommandContext<S> context, final CommandInputTokenizer input, final CommandParseResult<S> parseResult) {
         System.out.println(parseResult);
-        // final boolean a = input.peek() == ' ';
-        // final boolean b = input.unwrap().endsWith(" ");
-        // System.out.println("a: %b".formatted(a));
-        // System.out.println("b: %b".formatted(b));
         final String remaining = input.remainingOrEmpty();
-        // final boolean completeNext = remaining.endsWith(" ");
         final boolean completeNext = input.unwrap().endsWith(" ");
 
         System.out.println("Remaining: '%s'".formatted(remaining));
@@ -403,14 +397,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         if (selectedArgument.isFlag()) {
             System.out.println("This is a flag");
             if (selectedArgument.asFlag().isPresence()) { //  && completeNext
-                // TODO well this is fucked
-                // TODO Why are we taking firstUnseen.asFlag? shouldn't this be selectedArgument.asFlag?
                 System.out.println("Presence flag && completeNext, completing flags");
-                // base.addAll(completeFlag(firstUnseen.asFlag()));
                 base.addAll(completeFlags(parseResult.remainingFlags()));
             } else {
                 System.out.println("Not a presence flag"); // , or completeNext is false
-                // TODO only include these suggestions, if a) completeNext is true or b) the flag name (or group) has been completed already
                 if (!completeNext) {
                     System.out.println("Including flag group completions");
                     base.addAll(completeFlagGroup(selectedInput, parseResult.remainingFlags()));
@@ -426,10 +416,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             base.addAll(selectedArgument.mapper().complete(context, selectedInput));
             System.out.println("looks like the beginning of a flag/flag group, adding flag suggestions");
             base.addAll(completeFlags(parseResult.remainingFlags()));
-
-            /*if (!selectedInput.isEmpty() && selectedInput.charAt(0) == SHORT_FLAG_PREFIX_CH) {
-
-            } */
         }
 
         System.out.println("returning...");
