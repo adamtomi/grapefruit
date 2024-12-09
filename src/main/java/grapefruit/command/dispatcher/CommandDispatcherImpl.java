@@ -148,12 +148,15 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         if (capturedOpt.isPresent()) {
             System.out.println("captured ex is present");
             final CommandException ex = capturedOpt.orElseThrow();
+            System.out.println(ex.getClass());
             if (ex instanceof DuplicateFlagException) {
                 System.out.println("duplicate flag");
                 return List.of();
             } else if (ex instanceof UnrecognizedFlagException ufe) {
                 if (ufe.argument().startsWith(SHORT_FLAG_PREFIX)) {
-                    System.out.println("looks like a flag prefix");
+                    System.out.println("looks like a flag prefix, arg is " + ufe.argument());
+                    System.out.println("updating last input");
+                    parseResult.setLastInput(ufe.argument());
                 } else {
                     System.out.println("Unrecognized flag, returning empty list");
                     return List.of();

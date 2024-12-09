@@ -11,7 +11,7 @@ import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 
 final class CommandParseResultImpl<S> implements CommandParseResult<S> {
-    private final @Nullable String input;
+    private @Nullable String input;
     private final @Nullable CommandArgument.Dynamic<S, ?> argument;
     private final @Nullable CommandException ex;
     private final List<CommandArgument.Required<S, ?>> arguments;
@@ -44,6 +44,11 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
     @Override
     public Optional<String> lastInput() {
         return Optional.ofNullable(this.input);
+    }
+
+    @Override
+    public void setLastInput(final String lastInput) {
+        this.input = lastInput;
     }
 
     @Override
