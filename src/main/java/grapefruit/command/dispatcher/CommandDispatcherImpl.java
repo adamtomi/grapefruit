@@ -410,15 +410,16 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 base.addAll(completeFlags(parseResult.remainingFlags()));
             } else {
                 System.out.println("Not a presence flag"); // , or completeNext is false
-                if (!completeNext) {
+                if (!completeNext && remaining.isEmpty()) {
                     System.out.println("Including flag group completions");
                     base.addAll(completeFlagGroup(selectedInput, parseResult.remainingFlags()));
                 }
 
-                System.out.println("Including suggestions from mapper");
-                // final String arg = input.remainingOrEmpty();
-                System.out.println("Completing for: '%s'".formatted(selectedInput));
-                base.addAll(selectedArgument.mapper().complete(context, selectedInput));
+                if (completeNext || !remaining.isEmpty()) {
+                    System.out.println("Including suggestions from mapper");
+                    System.out.println("Completing for: '%s'".formatted(selectedInput));
+                    base.addAll(selectedArgument.mapper().complete(context, selectedInput));
+                }
             }
         } else {
             System.out.println("not a flag, adding mapper suggestions");
