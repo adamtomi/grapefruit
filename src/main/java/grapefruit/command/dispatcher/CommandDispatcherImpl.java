@@ -380,8 +380,13 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
     private static <S> List<String> collectCompletions(final CommandContext<S> context, final CommandInputTokenizer input, final CommandParseResult<S> parseResult) {
         System.out.println(parseResult);
+        // final boolean a = input.peek() == ' ';
+        // final boolean b = input.unwrap().endsWith(" ");
+        // System.out.println("a: %b".formatted(a));
+        // System.out.println("b: %b".formatted(b));
         final String remaining = input.remainingOrEmpty();
-        final boolean completeNext = remaining.endsWith(" ");
+        // final boolean completeNext = remaining.endsWith(" ");
+        final boolean completeNext = input.unwrap().endsWith(" ");
 
         System.out.println("Remaining: '%s'".formatted(remaining));
         System.out.println("completeNext: '%s'".formatted(completeNext));
@@ -423,11 +428,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         } else {
             System.out.println("not a flag, adding mapper suggestions");
             base.addAll(selectedArgument.mapper().complete(context, selectedInput));
+            System.out.println("looks like the beginning of a flag/flag group, adding flag suggestions");
+            base.addAll(completeFlags(parseResult.remainingFlags()));
 
-            if (!selectedInput.isEmpty() && selectedInput.charAt(0) == SHORT_FLAG_PREFIX_CH) {
-                System.out.println("looks like the beginning of a flag/flag group, adding flag suggestions");
-                base.addAll(completeFlags(parseResult.remainingFlags()));
-            }
+            /*if (!selectedInput.isEmpty() && selectedInput.charAt(0) == SHORT_FLAG_PREFIX_CH) {
+
+            } */
         }
 
         System.out.println("returning...");
