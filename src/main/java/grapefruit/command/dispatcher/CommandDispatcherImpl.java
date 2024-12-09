@@ -313,7 +313,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         // 4) Mark end
         // TODO we'd need to get acccess to the actual argument that was consumed by the mapper (greedy, quotable string mappers)
         // TODO this approach might be fucked.
-        if (input.peek() == ' ' || input.peek() == 0) builder.end();
+        if (input.unwrap().endsWith(" ")) builder.end();
     }
 
     private static <S> Tuple2<List<CommandArgument.Flag<S, ?>>, Supplier<UnrecognizedFlagException>> parseFlagGroup(
@@ -391,14 +391,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         System.out.println("Remaining: '%s'".formatted(remaining));
         System.out.println("completeNext: '%s'".formatted(completeNext));
 
-        final CommandArgument.Dynamic<S, ?> firstUnseen = parseResult.remainingArguments().isEmpty()
-                ? parseResult.remainingFlags().getFirst()
-                : parseResult.remainingArguments().getFirst();
-
-        final CommandArgument.Dynamic<S, ?> selectedArgument = parseResult.lastArgument().orElse(firstUnseen);
+        final CommandArgument.Dynamic<S, ?> selectedArgument = resolveArgumentToComplete(parseResult);
         final String selectedInput = completeNext ? remaining : parseResult.lastInput().orElse(remaining);
 
-        System.out.println("firstUnseen: '%s'".formatted(firstUnseen));
         System.out.println("selectedArgument: '%s'".formatted(selectedArgument));
         System.out.println("selectedInput: '%s'".formatted(selectedInput));
 
@@ -440,6 +435,29 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         return base.stream()
                 // .filter(x -> startsWithIgnoreCase(x, selectedInput.trim()))
                 .toList();
+    }
+
+    private static <S> CommandArgument.Dynamic<S, ?> resolveArgumentToComplete(final CommandParseResult<S> parseResult) {
+        System.out.println("resolve...");
+        final Optional<CommandArgument.Dynamic<S, ?>> lastArgument = parseResult.lastArgument();
+        System.out.println("last arg: " + lastArgument);
+        if (lastArgument.isPresent()) {
+            System.out.println("present, returning");
+            return lastArgument.orElseThrow();
+        }
+
+        final List<CommandArgument.Required<S, ?>> remainingArgs = parseResult.remainingArguments();
+        final List<CommandArgument.Flag<S, ?>> remainingFlags = parseResult.remainingFlags();
+
+        if (remainingArgs.isEmpty() && remainingFlags.isEmpty()) {
+            throw new IllegalStateException("No arguments are left to complete.");
+        }
+
+        System.out.println("selecting first unseen");
+        final CommandArgument.Dynamic<S, ?> firstUnseen = (remainingArgs.isEmpty() ? remainingFlags : remainingArgs).getFirst();
+
+        System.out.println(firstUnseen);
+        return firstUnseen;
     }
 
     private static <S> List<String> completeFlag(final CommandArgument.Flag<S, ?> flag) {
