@@ -93,7 +93,7 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
         return ToStringer.create(this)
                 .append("input", this.input)
                 .append("argument", this.argument)
-                .append("remainingArguments", this.arguments)
+                .append("arguments", this.arguments)
                 .append("flags", this.flags)
                 .toString();
     }
@@ -120,7 +120,6 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
             requireNonNull(argument, "argument cannot be null");
             requireNonNull(value, "input cannot be null");
             this.flagNameConsumed = true;
-            (argument.isFlag() ? this.flags : this.arguments).remove(argument);
             this.argument = argument;
             this.input = value;
             this.cursor = this.inputTokenizer.cursor();
@@ -134,6 +133,7 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
 
         @Override
         public void end() {
+            if (this.argument != null) (this.argument.isFlag() ? this.flags : this.arguments).remove(this.argument);
             this.argument = null;
             this.input = null;
             this.flagNameConsumed = false;
