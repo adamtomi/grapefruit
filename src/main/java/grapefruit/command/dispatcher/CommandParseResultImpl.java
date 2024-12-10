@@ -18,7 +18,6 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
     private final List<CommandArgument.Required<S, ?>> arguments;
     private final List<CommandArgument.Flag<S, ?>> flags;
     private final int cursor;
-    private final boolean flagNameConsumed;
 
     private CommandParseResultImpl(
             final @Nullable String input,
@@ -26,8 +25,7 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
             final @Nullable CommandException ex,
             final List<CommandArgument.Required<S, ?>> arguments,
             final List<CommandArgument.Flag<S, ?>> flags,
-            final int cursor,
-            final boolean flagNameConsumed
+            final int cursor
     ) {
         this.input = input;
         this.argument = argument;
@@ -35,7 +33,6 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
         this.arguments = requireNonNull(arguments, "arguments cannot be null");
         this.flags = requireNonNull(flags, "flags cannot be null");
         this.cursor = cursor;
-        this.flagNameConsumed = flagNameConsumed;
     }
 
     @Override
@@ -55,7 +52,7 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
 
     @Override
     public CommandParseResult<S> withInput(final String input) {
-        return new CommandParseResultImpl<>(this.input, this.argument, this.ex, this.arguments, this.flags, this.cursor, this.flagNameConsumed);
+        return new CommandParseResultImpl<>(this.input, this.argument, this.ex, this.arguments, this.flags, this.cursor);
     }
 
     @Override
@@ -84,11 +81,6 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
     }
 
     @Override
-    public boolean flagNameConsumed() {
-        return this.flagNameConsumed;
-    }
-
-    @Override
     public String toString() {
         return ToStringer.create(this)
                 .append("input", this.input)
@@ -106,7 +98,6 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
         private String input;
         private CommandException capturedException;
         private int cursor;
-        private boolean flagNameConsumed;
 
         Builder(final List<CommandArgument.Required<S, ?>> arguments, final List<CommandArgument.Flag<S, ?>> flags, final CommandInputTokenizer inputTokenizer) {
             this.arguments = requireNonNull(arguments, "arguments cannot be null");
@@ -119,7 +110,6 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
         public void begin(final CommandArgument.Dynamic<S, ?> argument, final String value) {
             requireNonNull(argument, "argument cannot be null");
             requireNonNull(value, "input cannot be null");
-            this.flagNameConsumed = true;
             this.argument = argument;
             this.input = value;
             this.cursor = this.inputTokenizer.cursor();
@@ -130,7 +120,6 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
             if (this.argument != null) (this.argument.isFlag() ? this.flags : this.arguments).remove(this.argument);
             this.argument = null;
             this.input = null;
-            this.flagNameConsumed = false;
         }
 
         @Override
@@ -140,7 +129,7 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
 
         @Override
         public CommandParseResult<S> build() {
-            return new CommandParseResultImpl<>(this.input, this.argument, this.capturedException, this.arguments, this.flags, this.cursor, this.flagNameConsumed);
+            return new CommandParseResultImpl<>(this.input, this.argument, this.capturedException, this.arguments, this.flags, this.cursor);
         }
     }
 }
