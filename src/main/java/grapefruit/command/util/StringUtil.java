@@ -16,14 +16,6 @@ public final class StringUtil {
         return items.stream().map(mapper).anyMatch(item::equalsIgnoreCase);
     }
 
-    public static <T extends Collection<String>> boolean containsAnyIgnoreCase(final T a, final T b) {
-        for (final String item : a) {
-            if (containsIgnoreCase(item, a)) return true;
-        }
-
-        return false;
-    }
-
     public static boolean startsWithIgnoreCase(final String arg, final String prefix) {
         if (arg.length() < prefix.length()) return false;
 
