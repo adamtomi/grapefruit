@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static grapefruit.command.argument.mapper.builtin.StringArgumentMapper.word;
-import static grapefruit.command.util.AlwaysFailingCondition.fail;
+import static grapefruit.command.util.AlwaysCondition.fail;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
