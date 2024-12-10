@@ -384,7 +384,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     private static <S> List<String> collectCompletions(final CommandContext<S> context, final CommandInputTokenizer input, final CommandParseResult<S> parseResult) {
-        System.out.println("--------------------------------");
         final String remaining = input.remainingOrEmpty();
         final boolean completeNext = input.unwrap().endsWith(" ");
 
@@ -393,14 +392,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 ? remaining
                 : completeNext ? remaining : parseResult.lastInput().orElse(remaining);
 
-        System.out.println("collectCompletions");
-        System.out.println("completeNext: " + completeNext);
-        System.out.println("argToComplete: " + argToComplete);
-        System.out.println("remaining: " + remaining);
-        System.out.println("lastInput: " + parseResult.lastInput());
-
         final List<String> base = argument.isFlag()
-                ? collectFlagCompletions(context, parseResult, argument.asFlag(), argToComplete, completeNext)
+                ? collectFlagCompletions(context, parseResult, argument.asFlag(), argToComplete)
                 : collectArgumentCompletions(context, parseResult, argument, argToComplete);
 
         return base.stream()
@@ -412,17 +405,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final CommandContext<S> context,
             final CommandParseResult<S> parseResult,
             final CommandArgument.Flag<S, ?> argument,
-            final String argToComplete,
-            final boolean completeNext
+            final String argToComplete
     ) {
-        System.out.println("collectFlagCompletions");
-        System.out.println(context);
-        System.out.println(parseResult);
-        System.out.println(argument);
-        System.out.println("'%s'".formatted(argToComplete));
-        System.out.println(completeNext);
-        System.out.println("flagNameConsumed: " + parseResult.flagNameConsumed());
-
         if (argument.asFlag().isPresence()) {
             return Stream.of(completeFlags(parseResult.remainingFlags()), completeFlagGroup(argToComplete, parseResult.remainingFlags()))
                     .flatMap(Collection::stream)
@@ -493,7 +477,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         final List<String> result = new ArrayList<>();
         // If charAt(1) is not alphabetic, this is not a flag group. This is to prevent
         // interpreting flag names (--flag-name) as flag groups.
-        if (argument.length() > 1 && Character.isAlphabetic(argument.charAt(1))) {
+        if (argument.length() > 1 && argument.charAt(0) == SHORT_FLAG_PREFIX_CH && Character.isAlphabetic(argument.charAt(1))) {
             for (final CommandArgument.Flag<S, ?> flag : flags) {
                 // If we don't have a valid shorthand, or it is already in 'argument', ignore this flag
                 if (flag.shorthand() == 0 || argument.indexOf(flag.shorthand()) != -1) continue;
