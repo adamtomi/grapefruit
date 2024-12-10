@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static grapefruit.command.util.StringUtil.startsWithIgnoreCase;
 import static java.util.Objects.requireNonNull;
 
 final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
@@ -383,7 +384,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 : collectArgumentCompletions(context, parseResult, argument, argToComplete);
 
         return base.stream()
-                // .filter(x -> startsWithIgnoreCase(x, selectedInput.trim()))
+                .filter(x -> startsWithIgnoreCase(x, argToComplete.trim()))
                 .toList();
     }
 

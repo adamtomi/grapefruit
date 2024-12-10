@@ -46,8 +46,6 @@ public interface CommandParseResult<S> {
 
     int cursor();
 
-    boolean flagNameConsumed();
-
     static <S> Builder<S> createBuilder(final CommandChain<S> chain, final CommandInputTokenizer input) {
         // Make mutable copies
         return new CommandParseResultImpl.Builder<>(new ArrayList<>(chain.arguments()), new ArrayList<>(chain.flags()), input);
