@@ -82,31 +82,18 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         requireNonNull(command, "command cannot be null");
 
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(command);
-        // 1) Find corresponding command module
         final CommandModule<S> cmd = this.commandGraph.search(input);
         final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.DISPATCH);
-
-        // 2) Authorize user
         testRequiredConditions(context);
 
-        // 3) Check command conditions
-
-        // 4) Invoke pre-process listeners
-
-        // 5) Process command
         final CommandParseResult<S> parseResult = processCommand(context, input);
         parseResult.rethrowCaptured();
 
-        // 6) Invoke pre-execution listeners
-
-        // 7) Execute command
         try {
             cmd.execute(context);
         } catch (final Throwable ex) {
             throw new CommandInvocationException(ex);
         }
-
-        // 8) Invoke post-execution listeners
     }
 
     @Override
