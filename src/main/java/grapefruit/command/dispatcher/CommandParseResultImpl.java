@@ -126,12 +126,6 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
         }
 
         @Override
-        public void mapped() {
-            final String consumedValue = this.inputTokenizer.unwrap().substring(this.cursor);
-            this.input = consumedValue.trim();
-        }
-
-        @Override
         public void end() {
             if (this.argument != null) (this.argument.isFlag() ? this.flags : this.arguments).remove(this.argument);
             this.argument = null;

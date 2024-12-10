@@ -57,8 +57,6 @@ public interface CommandParseResult<S> {
 
         void begin(final CommandArgument.Dynamic<S, ?> argument, final String value);
 
-        void mapped();
-
         void end();
 
         void capture(final CommandException ex);

@@ -301,7 +301,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         // 2) Map argument into the correct type. This will throw an exceptioniif
         //    the conversion fails.
         final T result = argument.mapper().tryMap(context, input);
-        builder.mapped();
         // 3) Store the result in the current context
         context.store(argument.key(), result);
         // 4) Mark end
