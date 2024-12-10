@@ -16,7 +16,6 @@ import static java.util.Objects.requireNonNull;
 public class CommandNode<S> {
     private final String name;
     private final Set<String> aliases;
-    // TODO why on earth was this linkedhashset in previous implementations?
     private final Set<CommandNode<S>> children;
     private final WeakReference<CommandNode<S>> parent;
     private @Nullable CommandModule<S> command;
