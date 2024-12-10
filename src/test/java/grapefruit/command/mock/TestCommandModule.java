@@ -1,4 +1,4 @@
-package grapefruit.command.util;
+package grapefruit.command.mock;
 
 import grapefruit.command.CommandModule;
 import grapefruit.command.argument.CommandChain;

@@ -5,8 +5,8 @@ import grapefruit.command.argument.CommandChain;
 import grapefruit.command.argument.CommandChainFactory;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.CommandSyntaxException;
-import grapefruit.command.util.EmptyCommandChain;
-import grapefruit.command.util.TestCommandModule;
+import grapefruit.command.mock.EmptyCommandChain;
+import grapefruit.command.mock.TestCommandModule;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;

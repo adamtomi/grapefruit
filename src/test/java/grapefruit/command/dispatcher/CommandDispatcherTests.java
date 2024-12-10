@@ -7,16 +7,16 @@ import grapefruit.command.argument.UnrecognizedFlagException;
 import grapefruit.command.argument.condition.UnfulfilledConditionException;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
 import grapefruit.command.dispatcher.input.CommandSyntaxException;
+import grapefruit.command.mock.TestArgumentMapper;
+import grapefruit.command.mock.TestCommandModule;
 import grapefruit.command.tree.NoSuchCommandException;
-import grapefruit.command.util.TestArgumentMapper;
-import grapefruit.command.util.TestCommandModule;
 import grapefruit.command.util.key.Key;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static grapefruit.command.argument.mapper.builtin.StringArgumentMapper.word;
-import static grapefruit.command.util.AlwaysCondition.fail;
+import static grapefruit.command.mock.AlwaysCondition.fail;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;

@@ -1,4 +1,4 @@
-package grapefruit.command.util;
+package grapefruit.command.mock;
 
 import grapefruit.command.CommandException;
 import grapefruit.command.argument.CommandArgumentException;

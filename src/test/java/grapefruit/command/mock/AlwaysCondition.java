@@ -1,4 +1,4 @@
-package grapefruit.command.util;
+package grapefruit.command.mock;
 
 import grapefruit.command.argument.condition.CommandCondition;
 import grapefruit.command.argument.condition.UnfulfilledConditionException;
