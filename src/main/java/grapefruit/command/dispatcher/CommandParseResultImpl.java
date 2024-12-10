@@ -74,6 +74,11 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
     }
 
     @Override
+    public boolean isComplete() {
+        return this.arguments.isEmpty() && this.flags.isEmpty();
+    }
+
+    @Override
     public int cursor() {
         return this.cursor;
     }

@@ -42,6 +42,8 @@ public interface CommandParseResult<S> {
      */
     List<CommandArgument.Flag<S, ?>> remainingFlags();
 
+    boolean isComplete();
+
     int cursor();
 
     boolean flagNameConsumed();
