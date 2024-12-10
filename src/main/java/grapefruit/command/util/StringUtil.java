@@ -29,4 +29,12 @@ public final class StringUtil {
 
         return arg.regionMatches(true, 0, prefix, 0, prefix.length());
     }
+
+    public static boolean containsWhitespace(final String arg) {
+        for (char c : arg.toCharArray()) {
+            if (Character.isWhitespace(c)) return true;
+        }
+
+        return false;
+    }
 }

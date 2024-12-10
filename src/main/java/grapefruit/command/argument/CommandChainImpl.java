@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static grapefruit.command.util.StringUtil.containsIgnoreCase;
+import static grapefruit.command.util.StringUtil.containsWhitespace;
 import static java.util.Objects.requireNonNull;
 
 final class CommandChainImpl<S> implements CommandChain<S> {
@@ -58,9 +59,19 @@ final class CommandChainImpl<S> implements CommandChain<S> {
 
     private static final class LiteralBuilder<S> extends BaseBuilder<S, CommandArgument.Literal<S>, CommandChain.LiteralBuilder<S>> implements CommandChain.LiteralBuilder<S> {
 
-        // TODO check if the name is alphabetic?
         @Override
-        protected void validate(final CommandArgument.Literal<S> element) {}
+        protected void validate(final CommandArgument.Literal<S> element) {
+            final String name = element.name();
+            if (containsWhitespace(name)) {
+                throw new IllegalArgumentException("Literal argument name '%s' contains whitespace".formatted(name));
+            }
+
+            for (final String alias : element.aliases()) {
+                if (containsWhitespace(alias)) {
+                    throw new IllegalArgumentException("Literal argument alias '%s' (belonging to '%s') contains whitespace".formatted(alias, name));
+                }
+            }
+        }
 
         @Override
         protected CommandChain.LiteralBuilder<S> self() {
