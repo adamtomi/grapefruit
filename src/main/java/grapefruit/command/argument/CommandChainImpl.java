@@ -62,14 +62,21 @@ final class CommandChainImpl<S> implements CommandChain<S> {
         @Override
         protected void validate(final CommandArgument.Literal<S> element) {
             final String name = element.name();
-            if (containsWhitespace(name)) {
-                throw new IllegalArgumentException("Literal argument name '%s' contains whitespace".formatted(name));
-            }
+            validate(name, "name");
 
             for (final String alias : element.aliases()) {
-                if (containsWhitespace(alias)) {
-                    throw new IllegalArgumentException("Literal argument alias '%s' (belonging to '%s') contains whitespace".formatted(alias, name));
-                }
+                validate(alias, "alias");
+            }
+        }
+
+        private void validate(final String value, final String label) {
+            if (value.isBlank()) {
+                throw new IllegalArgumentException("Literal argument %s '%s' is blank".formatted(label, value));
+            }
+
+            // Check if the argument contains whitespace surrounded by non-whitespace characters
+            if (containsWhitespace(value)) {
+                throw new IllegalArgumentException("Literal argument %s '%s' contains whitespace".formatted(label, value));
             }
         }
 
@@ -132,6 +139,10 @@ final class CommandChainImpl<S> implements CommandChain<S> {
 
         @Override
         public CommandChain<S> build() {
+            if (this.route.isEmpty()) {
+                throw new IllegalStateException("No command route part has been added yet");
+            }
+
             return new CommandChainImpl<>(this.route, this.elements, List.of());
         }
     }
@@ -178,6 +189,10 @@ final class CommandChainImpl<S> implements CommandChain<S> {
 
         @Override
         public CommandChain<S> build() {
+            if (this.route.isEmpty()) {
+                throw new IllegalStateException("No command route part has been added yet");
+            }
+
             return new CommandChainImpl<>(this.route, this.arguments, this.elements);
         }
     }
