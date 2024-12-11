@@ -5,6 +5,8 @@ import grapefruit.command.CommandModule;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.argument.CommandChain;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
+import grapefruit.command.tree.node.CommandNode;
+import grapefruit.command.tree.node.InternalCommandNode;
 
 import java.util.Iterator;
 import java.util.Optional;
@@ -14,7 +16,7 @@ import java.util.stream.Collectors;
 import static java.util.Objects.requireNonNull;
 
 public class CommandGraph<S> {
-    private final CommandNode<S> rootNode = new CommandNode<>("__ROOT__", Set.of(), null);
+    private final InternalCommandNode<S> rootNode = InternalCommandNode.of("__ROOT__", Set.of(), null);
 
     public void insert(final CommandChain<S> chain, final CommandModule<S> command) {
         requireNonNull(chain, "chain cannot be null");
@@ -24,14 +26,14 @@ public class CommandGraph<S> {
             throw new IllegalStateException("Cannot register a command handler directly on the root node");
         }
 
-        CommandNode<S> node = this.rootNode;
+        InternalCommandNode<S> node = this.rootNode;
         for (final Iterator<CommandArgument.Literal<S>> iter = chain.route().iterator(); iter.hasNext();) {
             final CommandArgument.Literal<S> literal = iter.next();
             boolean isLast = !iter.hasNext();
 
-            final Optional<CommandNode<S>> childCandidate = queryChildOf(node, literal);
+            final Optional<InternalCommandNode<S>> childCandidate = queryChildOf(node, literal);
             if (childCandidate.isPresent()) {
-                final CommandNode<S> child = childCandidate.orElseThrow();
+                final InternalCommandNode<S> child = childCandidate.orElseThrow();
                 if (isLast) {
                     /*
                      * We throw an exception if a child node exists, and we don't have
@@ -45,7 +47,7 @@ public class CommandGraph<S> {
                 child.mergeAliases(literal.aliases());
                 node = child;
             } else {
-                final CommandNode<S> child = new CommandNode<>(literal.name(), literal.aliases(), node);
+                final InternalCommandNode<S> child = InternalCommandNode.of(literal.name(), literal.aliases(), node);
                 node.addChild(child);
                 node = child;
                 // Register command if we're at the end of the chain
@@ -59,9 +61,9 @@ public class CommandGraph<S> {
         if (chain.route().isEmpty()) return;
         if (this.rootNode.isLeaf()) throw new IllegalStateException("Root node is leaf");
 
-        CommandNode<S> node = this.rootNode;
+        InternalCommandNode<S> node = this.rootNode;
         for (final CommandArgument.Literal<S> literal : chain.route()) {
-            final Optional<CommandNode<S>> childCandidate = queryChildOf(node, literal);
+            final Optional<InternalCommandNode<S>> childCandidate = queryChildOf(node, literal);
             if (childCandidate.isEmpty()) {
                 throw new IllegalStateException("Command node '%s' does not have a suitable child".formatted(node));
             }
@@ -72,7 +74,7 @@ public class CommandGraph<S> {
         // Check just in case
         if (!node.isLeaf()) throw new IllegalStateException("Attempting to delete non-leaf command node");
         while (!node.equals(this.rootNode)) {
-            final CommandNode<S> parent = node.parent().orElseThrow();
+            final InternalCommandNode<S> parent = node.parent().orElseThrow();
             // If the node is a leaf node, we can safely delete it from its parent
             if (node.isLeaf()) {
                 parent.removeChild(node);
@@ -85,10 +87,10 @@ public class CommandGraph<S> {
     }
 
     public CommandModule<S> search(final CommandInputTokenizer input) throws CommandException {
-        CommandNode<S> node = this.rootNode;
+        InternalCommandNode<S> node = this.rootNode;
         while (true) {
             final String name = input.readWord();
-            final Optional<CommandNode<S>> childCandidate = node.queryChild(name);
+            final Optional<InternalCommandNode<S>> childCandidate = node.queryChild(name);
             if (childCandidate.isEmpty()) {
                 throw generateNoSuchCommand(node, input, name);
             }
@@ -110,8 +112,8 @@ public class CommandGraph<S> {
         }
     }
 
-    private static <S> Optional<CommandNode<S>> queryChildOf(final CommandNode<S> parent, final CommandArgument.Literal<S> literal) {
-        Optional<CommandNode<S>> candidate = parent.queryChild(literal.name());
+    private static <S> Optional<InternalCommandNode<S>> queryChildOf(final InternalCommandNode<S> parent, final CommandArgument.Literal<S> literal) {
+        Optional<InternalCommandNode<S>> candidate = parent.queryChild(literal.name());
         if (candidate.isPresent()) return candidate;
 
         for (String alias : literal.aliases()) {
@@ -122,9 +124,9 @@ public class CommandGraph<S> {
         return Optional.empty();
     }
 
-    private static <S> NoSuchCommandException generateNoSuchCommand(final CommandNode<S> node, final CommandInputTokenizer input, final String argument) {
-        final Set<NoSuchCommandException.Alternative> alternatives = node.children().stream()
-                .map(x -> new NoSuchCommandException.Alternative(x.name(), x.aliases()))
+    private static <S> NoSuchCommandException generateNoSuchCommand(final InternalCommandNode<S> node, final CommandInputTokenizer input, final String argument) {
+        final Set<CommandNode> alternatives = node.children().stream()
+                .map(InternalCommandNode::asImmutable)
                 .collect(Collectors.toSet());
 
         return NoSuchCommandException.fromInput(input, argument, alternatives);
