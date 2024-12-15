@@ -40,13 +40,13 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
     }
 
     @Override
-    public char next() throws CommandSyntaxException {
+    public char next() throws MissingInputException {
         checkConsumed();
         if (hasNext()) {
             return this.input.charAt(++this.cursor);
         }
 
-        throw generateException();
+        throw new MissingInputException();
     }
 
     @Override
@@ -57,7 +57,7 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
     }
 
     @Override
-    public void advance() throws CommandSyntaxException {
+    public void advance() throws MissingInputException {
         checkConsumed();
         if (this.cursor < this.input.length()) {
             this.cursor++;
@@ -66,7 +66,7 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
             }
 
         } else {
-            throw generateException();
+            throw new MissingInputException();
         }
     }
 
@@ -76,7 +76,7 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
         final boolean consumed = this.consumed;
         try {
             return readWord();
-        } catch (CommandSyntaxException ex) {
+        } catch (final MissingInputException ex) {
             return null;
         } finally {
             this.cursor = start;
@@ -85,13 +85,13 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
     }
 
     @Override
-    public String readWord() throws CommandSyntaxException {
+    public String readWord() throws MissingInputException {
         skipWhitespace();
         return readWhileThrowOnEmpty(x -> !Character.isWhitespace(x));
     }
 
     @Override
-    public String readQuotable() throws CommandSyntaxException {
+    public String readQuotable() throws MissingInputException {
         skipWhitespace();
         final char start = peek();
         // This means we're dealing with a quoted string
@@ -109,13 +109,13 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
     }
 
     @Override
-    public String readRemaining() throws CommandSyntaxException {
+    public String readRemaining() throws MissingInputException {
         skipWhitespace();
         final int start = this.cursor;
         this.cursor = this.input.length();
         final String result = this.input.substring(start);
         if (result.isEmpty()) {
-            throw generateException();
+            throw new MissingInputException();
         }
 
         return result;
@@ -130,19 +130,19 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
     public String remainingOrEmpty() {
         try {
             return readRemaining();
-        } catch (final CommandSyntaxException ex) {
+        } catch (final MissingInputException ex) {
             return "";
         }
     }
 
-    private void checkConsumed() throws CommandSyntaxException {
-        if (this.consumed) throw generateException();
+    private void checkConsumed() throws MissingInputException {
+        if (this.consumed) throw new MissingInputException();
     }
 
-    private String readWhile(final CharPredicate condition) throws CommandSyntaxException {
+    private String readWhile(final CharPredicate condition) throws MissingInputException {
         checkConsumed();
         if (this.cursor >= this.input.length()) {
-            throw generateException();
+            throw new MissingInputException();
         }
 
         final StringBuilder builder = new StringBuilder();
@@ -162,18 +162,14 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
         return builder.toString();
     }
 
-    private String readWhileThrowOnEmpty(final CharPredicate condition) throws CommandSyntaxException {
+    private String readWhileThrowOnEmpty(final CharPredicate condition) throws MissingInputException {
         final String result = readWhile(condition);
-        if (result.isEmpty()) throw generateException();
+        if (result.isEmpty()) throw new MissingInputException();
 
         return result;
     }
 
-    private void skipWhitespace() throws CommandSyntaxException {
+    private void skipWhitespace() throws MissingInputException {
         readWhile(Character::isWhitespace);
-    }
-
-    private static CommandSyntaxException generateException() {
-        return new CommandSyntaxException(null, CommandSyntaxException.Reason.TOO_FEW_ARGUMENTS);
     }
 }

@@ -12,7 +12,7 @@ import grapefruit.command.argument.condition.CommandCondition;
 import grapefruit.command.argument.condition.UnfulfilledConditionException;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
-import grapefruit.command.dispatcher.input.CommandSyntaxException;
+import grapefruit.command.dispatcher.input.MissingInputException;
 import grapefruit.command.tree.CommandGraph;
 import grapefruit.command.tree.NoSuchCommandException;
 import grapefruit.command.util.Tuple2;
@@ -297,15 +297,19 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final CommandParseResult.Builder<S> builder,
             final String value
     ) throws CommandException {
-        // 1) Mark beginning
-        builder.begin(argument, value);
-        // 2) Map argument into the correct type. This will throw an exceptioniif
-        //    the conversion fails.
-        final T result = argument.mapper().tryMap(context, input);
-        // 3) Store the result in the current context
-        context.store(argument.key(), result);
-        // 4) Mark end
-        if (input.unwrap().endsWith(" ")) builder.end();
+        try {
+            // 1) Mark beginning
+            builder.begin(argument, value);
+            // 2) Map argument into the correct type. This will throw an exceptioniif
+            //    the conversion fails.
+            final T result = argument.mapper().tryMap(context, input);
+            // 3) Store the result in the current context
+            context.store(argument.key(), result);
+            // 4) Mark end
+            if (input.unwrap().endsWith(" ")) builder.end();
+        } catch (final MissingInputException ex) {
+            throw new CommandSyntaxException(context.chain(), CommandSyntaxException.Reason.TOO_FEW_ARGUMENTS);
+        }
     }
 
     private static <S> Tuple2<List<CommandArgument.Flag<S, ?>>, Supplier<UnrecognizedFlagException>> parseFlagGroup(

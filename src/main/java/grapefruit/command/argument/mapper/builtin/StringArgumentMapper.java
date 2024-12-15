@@ -5,7 +5,8 @@ import grapefruit.command.argument.CommandArgumentException;
 import grapefruit.command.argument.mapper.AbstractArgumentMapper;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
-import grapefruit.command.dispatcher.input.CommandSyntaxException;
+import grapefruit.command.dispatcher.CommandSyntaxException;
+import grapefruit.command.dispatcher.input.MissingInputException;
 import io.leangen.geantyref.TypeToken;
 
 import java.io.Serial;
@@ -48,7 +49,7 @@ public abstract class StringArgumentMapper<S> extends AbstractArgumentMapper<S, 
         return value;
     }
 
-    protected abstract String extract(final CommandInputTokenizer input) throws CommandSyntaxException;
+    protected abstract String extract(final CommandInputTokenizer input) throws MissingInputException;
 
     @FunctionalInterface
     private interface RegexHandler {
@@ -116,7 +117,7 @@ public abstract class StringArgumentMapper<S> extends AbstractArgumentMapper<S, 
         }
 
         @Override
-        protected String extract(final CommandInputTokenizer input) throws CommandSyntaxException {
+        protected String extract(final CommandInputTokenizer input) throws MissingInputException {
             return input.readWord();
         }
     }
@@ -128,7 +129,7 @@ public abstract class StringArgumentMapper<S> extends AbstractArgumentMapper<S, 
         }
 
         @Override
-        protected String extract(final CommandInputTokenizer input) throws CommandSyntaxException {
+        protected String extract(final CommandInputTokenizer input) throws MissingInputException {
             return input.readQuotable();
         }
     }
@@ -140,7 +141,7 @@ public abstract class StringArgumentMapper<S> extends AbstractArgumentMapper<S, 
         }
 
         @Override
-        protected String extract(final CommandInputTokenizer input) throws CommandSyntaxException {
+        protected String extract(final CommandInputTokenizer input) throws MissingInputException {
             return input.readRemaining();
         }
     }

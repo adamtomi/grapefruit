@@ -6,7 +6,6 @@ import grapefruit.command.argument.DuplicateFlagException;
 import grapefruit.command.argument.UnrecognizedFlagException;
 import grapefruit.command.argument.condition.UnfulfilledConditionException;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
-import grapefruit.command.dispatcher.input.CommandSyntaxException;
 import grapefruit.command.mock.TestArgumentMapper;
 import grapefruit.command.mock.TestCommandModule;
 import grapefruit.command.tree.NoSuchCommandException;

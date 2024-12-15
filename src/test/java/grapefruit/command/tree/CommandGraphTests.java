@@ -4,7 +4,7 @@ import grapefruit.command.CommandModule;
 import grapefruit.command.argument.CommandChain;
 import grapefruit.command.argument.CommandChainFactory;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
-import grapefruit.command.dispatcher.input.CommandSyntaxException;
+import grapefruit.command.dispatcher.CommandSyntaxException;
 import grapefruit.command.mock.EmptyCommandChain;
 import grapefruit.command.mock.TestCommandModule;
 import org.junit.jupiter.api.Test;
@@ -172,7 +172,7 @@ public class CommandGraphTests {
     @Test
     public void search_emptyTree_emptyInput() {
         final CommandGraph<Object> graph = new CommandGraph<>();
-        assertThrows(CommandSyntaxException.class, () -> graph.search(CommandInputTokenizer.wrap("")));
+        assertThrows(NoSuchCommandException.class, () -> graph.search(CommandInputTokenizer.wrap("")));
     }
 
     @Test

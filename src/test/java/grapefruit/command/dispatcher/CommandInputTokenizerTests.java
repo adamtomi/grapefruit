@@ -1,7 +1,7 @@
 package grapefruit.command.dispatcher;
 
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
-import grapefruit.command.dispatcher.input.CommandSyntaxException;
+import grapefruit.command.dispatcher.input.MissingInputException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -25,7 +25,7 @@ public class CommandInputTokenizerTests {
         assertDoesNotThrow(input::advance); // -> ' '
         assertEquals(' ', input.peek());
         assertDoesNotThrow(input::advance); // -> Mark the input consumed
-        assertThrows(CommandSyntaxException.class, input::advance);
+        assertThrows(MissingInputException.class, input::advance);
     }
 
     @Test
@@ -68,7 +68,7 @@ public class CommandInputTokenizerTests {
     })
     public void readWord_doesThrow(final String arg) {
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(arg);
-        assertThrows(CommandSyntaxException.class, input::readWord);
+        assertThrows(MissingInputException.class, input::readWord);
     }
 
     @ParameterizedTest
@@ -87,7 +87,7 @@ public class CommandInputTokenizerTests {
     public void readWord_consumed() {
         final CommandInputTokenizer input = CommandInputTokenizer.wrap("test");
         assertDoesNotThrow(() -> assertEquals("test", input.readWord()));
-        assertThrows(CommandSyntaxException.class, input::readWord);
+        assertThrows(MissingInputException.class, input::readWord);
     }
 
     @Test
@@ -129,6 +129,6 @@ public class CommandInputTokenizerTests {
     @Test
     public void readRemaining_doesThrow_empty() {
         final CommandInputTokenizer input = CommandInputTokenizer.wrap("");
-        assertThrows(CommandSyntaxException.class, input::readRemaining);
+        assertThrows(MissingInputException.class, input::readRemaining);
     }
 }

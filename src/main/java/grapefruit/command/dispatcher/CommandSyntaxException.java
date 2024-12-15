@@ -1,11 +1,9 @@
-package grapefruit.command.dispatcher.input;
+package grapefruit.command.dispatcher;
 
 import grapefruit.command.CommandException;
 import grapefruit.command.argument.CommandChain;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.Serial;
-import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
@@ -15,13 +13,13 @@ public class CommandSyntaxException extends CommandException {
     private final CommandChain<?> chain;
     private final Reason reason;
 
-    public CommandSyntaxException(final @Nullable CommandChain<?> chain, final Reason reason) {
-        this.chain = chain;
+    public CommandSyntaxException(final CommandChain<?> chain, final Reason reason) {
+        this.chain = requireNonNull(chain, "chain cannot be null");
         this.reason = requireNonNull(reason, "reason cannot be null");
     }
 
-    public Optional<CommandChain<?>> chain() {
-        return Optional.ofNullable(this.chain);
+    public CommandChain<?> chain() {
+        return this.chain;
     }
 
     public Reason reason() {

@@ -5,6 +5,7 @@ import grapefruit.command.CommandModule;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.argument.CommandChain;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
+import grapefruit.command.dispatcher.input.MissingInputException;
 import grapefruit.command.tree.node.CommandNode;
 import grapefruit.command.tree.node.InternalCommandNode;
 
@@ -88,27 +89,31 @@ public class CommandGraph<S> {
 
     public CommandModule<S> search(final CommandInputTokenizer input) throws CommandException {
         InternalCommandNode<S> node = this.rootNode;
-        while (true) {
-            final String name = input.readWord();
-            final Optional<InternalCommandNode<S>> childCandidate = node.queryChild(name);
-            if (childCandidate.isEmpty()) {
-                throw generateNoSuchCommand(node, input, name);
-            }
+        try {
+            while (true) {
+                final String name = input.readWord();
+                final Optional<InternalCommandNode<S>> childCandidate = node.queryChild(name);
+                if (childCandidate.isEmpty()) {
+                    throw generateNoSuchCommand(node, input, name);
+                }
 
-            node = childCandidate.orElseThrow();
-            if (node.isLeaf()) {
-                final Optional<CommandModule<S>> commandCandidate = node.command();
-                if (commandCandidate.isPresent()) return commandCandidate.orElseThrow();
+                node = childCandidate.orElseThrow();
+                if (node.isLeaf()) {
+                    final Optional<CommandModule<S>> commandCandidate = node.command();
+                    if (commandCandidate.isPresent()) return commandCandidate.orElseThrow();
 
-                /*
-                 * If the node is a leaf node, we assume this is the command handler
-                 * we're looking for. Technically it should always exist, because
-                 * leaf nodes must have a command attached to them, and this#insert
-                 * makes sure of that. Just to be safe though, if the command handler
-                 * still happens to be missing.
-                 */
-                throw new IllegalStateException("CommandNode '%s' is a leaf node, but has no command attached to it.".formatted(node));
+                    /*
+                     * If the node is a leaf node, we assume this is the command handler
+                     * we're looking for. Technically it should always exist, because
+                     * leaf nodes must have a command attached to them, and this#insert
+                     * makes sure of that. Just to be safe though, if the command handler
+                     * still happens to be missing.
+                     */
+                    throw new IllegalStateException("CommandNode '%s' is a leaf node, but has no command attached to it.".formatted(node));
+                }
             }
+        } catch (final MissingInputException ex) {
+            throw generateNoSuchCommand(node, input, "");
         }
     }
 

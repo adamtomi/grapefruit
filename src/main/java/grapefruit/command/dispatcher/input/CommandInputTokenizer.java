@@ -16,19 +16,19 @@ public interface CommandInputTokenizer {
 
     boolean hasNext();
 
-    char next() throws CommandSyntaxException;
+    char next() throws MissingInputException;
 
     char peek();
 
-    void advance() throws CommandSyntaxException;
+    void advance() throws MissingInputException;
 
     @Nullable String peekWord();
 
-    String readWord() throws CommandSyntaxException;
+    String readWord() throws MissingInputException;
 
-    String readQuotable() throws CommandSyntaxException;
+    String readQuotable() throws MissingInputException;
 
-    String readRemaining() throws CommandSyntaxException;
+    String readRemaining() throws MissingInputException;
 
     String consumed();
 
