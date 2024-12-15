@@ -2,8 +2,10 @@ package grapefruit.command.mock;
 
 import grapefruit.command.CommandException;
 import grapefruit.command.argument.mapper.AbstractArgumentMapper;
+import grapefruit.command.argument.mapper.ArgumentMappingException;
 import grapefruit.command.argument.mapper.CommandInputAccess;
 import grapefruit.command.dispatcher.CommandContext;
+import grapefruit.command.dispatcher.input.MissingInputException;
 import io.leangen.geantyref.TypeToken;
 
 import java.io.Serial;
@@ -17,7 +19,7 @@ public class TestArgumentMapper extends AbstractArgumentMapper<Object, String> {
     }
 
     @Override
-    public String tryMap(final CommandContext<Object> context, final CommandInputAccess access) throws CommandException {
+    public String tryMap(final CommandContext<Object> context, final CommandInputAccess access) throws ArgumentMappingException, MissingInputException {
         final String arg = access.input().readWord();
         if (!arg.equals(this.expected)) {
             throw access.generateFrom(new DummyException());

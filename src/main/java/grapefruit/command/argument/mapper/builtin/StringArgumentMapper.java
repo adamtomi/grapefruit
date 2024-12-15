@@ -5,6 +5,7 @@ import grapefruit.command.argument.mapper.AbstractArgumentMapper;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.argument.mapper.CommandInputAccess;
 import grapefruit.command.dispatcher.CommandContext;
+import grapefruit.command.dispatcher.input.MissingInputException;
 
 import java.io.Serial;
 import java.util.function.Supplier;
@@ -49,7 +50,7 @@ public abstract class StringArgumentMapper<S> extends AbstractArgumentMapper<S, 
         }
 
         @Override
-        public String tryMap(final CommandContext<S> context, final CommandInputAccess access) throws CommandException {
+        public String tryMap(final CommandContext<S> context, final CommandInputAccess access) throws MissingInputException {
             return access.input().readWord();
         }
     }
@@ -60,7 +61,7 @@ public abstract class StringArgumentMapper<S> extends AbstractArgumentMapper<S, 
         }
 
         @Override
-        public String tryMap(final CommandContext<S> context, final CommandInputAccess access) throws CommandException {
+        public String tryMap(final CommandContext<S> context, final CommandInputAccess access) throws MissingInputException {
             return access.input().readQuotable();
         }
     }
@@ -71,7 +72,7 @@ public abstract class StringArgumentMapper<S> extends AbstractArgumentMapper<S, 
         }
 
         @Override
-        public String tryMap(final CommandContext<S> context, final CommandInputAccess access) throws CommandException {
+        public String tryMap(final CommandContext<S> context, final CommandInputAccess access) throws MissingInputException {
             return access.input().readRemaining();
         }
     }

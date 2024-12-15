@@ -2,6 +2,7 @@ package grapefruit.command.argument.mapper;
 
 import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.CommandContext;
+import grapefruit.command.dispatcher.input.MissingInputException;
 import io.leangen.geantyref.TypeToken;
 
 import java.util.Collection;
@@ -14,7 +15,7 @@ public interface ArgumentMapper<S, T> {
 
     boolean isTerminal();
 
-    T tryMap(final CommandContext<S> context, final CommandInputAccess access) throws CommandException;
+    T tryMap(final CommandContext<S> context, final CommandInputAccess access) throws ArgumentMappingException, MissingInputException;
 
     List<String> complete(final CommandContext<S> context, final String input);
 
@@ -31,7 +32,7 @@ public interface ArgumentMapper<S, T> {
             }
 
             @Override
-            public T tryMap(final CommandContext<S> context, final CommandInputAccess access) throws CommandException {
+            public T tryMap(final CommandContext<S> context, final CommandInputAccess access) throws ArgumentMappingException, MissingInputException {
                 final T value = ArgumentMapper.this.tryMap(context, access);
                 for (final Filter<S, T> filter : filters) {
                     if (!filter.test(context, value)) {
