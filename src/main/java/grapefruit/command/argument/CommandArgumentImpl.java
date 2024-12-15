@@ -3,8 +3,8 @@ package grapefruit.command.argument;
 import grapefruit.command.argument.condition.CommandCondition;
 import grapefruit.command.argument.mapper.AbstractArgumentMapper;
 import grapefruit.command.argument.mapper.ArgumentMapper;
+import grapefruit.command.argument.mapper.CommandInputAccess;
 import grapefruit.command.dispatcher.CommandContext;
-import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.util.ToStringer;
 import grapefruit.command.util.key.Key;
 import org.jetbrains.annotations.Nullable;
@@ -280,7 +280,7 @@ public abstract class CommandArgumentImpl<S, T> implements CommandArgument<S, T>
         }
 
         @Override
-        public Boolean tryMap(final CommandContext<S> context, final CommandInputTokenizer input) {
+        public Boolean tryMap(final CommandContext<S> context, final CommandInputAccess access) {
             // Presence flags always return true if set.
             return true;
         }

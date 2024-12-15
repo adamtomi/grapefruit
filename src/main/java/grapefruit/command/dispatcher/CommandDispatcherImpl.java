@@ -10,6 +10,7 @@ import grapefruit.command.argument.DuplicateFlagException;
 import grapefruit.command.argument.UnrecognizedFlagException;
 import grapefruit.command.argument.condition.CommandCondition;
 import grapefruit.command.argument.condition.UnfulfilledConditionException;
+import grapefruit.command.argument.mapper.CommandInputAccess;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
@@ -300,9 +301,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         try {
             // 1) Mark beginning
             builder.begin(argument, value);
-            // 2) Map argument into the correct type. This will throw an exceptioniif
+            // 2) Map argument into the correct type. This will throw an exception if
             //    the conversion fails.
-            final T result = argument.mapper().tryMap(context, input);
+            final T result = argument.mapper().tryMap(context, CommandInputAccess.wrap(input));
             // 3) Store the result in the current context
             context.store(argument.key(), result);
             // 4) Mark end
