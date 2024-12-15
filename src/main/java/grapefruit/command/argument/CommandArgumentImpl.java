@@ -1,7 +1,10 @@
 package grapefruit.command.argument;
 
 import grapefruit.command.argument.condition.CommandCondition;
+import grapefruit.command.argument.mapper.AbstractArgumentMapper;
 import grapefruit.command.argument.mapper.ArgumentMapper;
+import grapefruit.command.dispatcher.CommandContext;
+import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.util.ToStringer;
 import grapefruit.command.util.key.Key;
 import org.jetbrains.annotations.Nullable;
@@ -262,12 +265,24 @@ public abstract class CommandArgumentImpl<S, T> implements CommandArgument<S, T>
 
         PresenceFlagBuilder(final Key<Boolean> key) {
             super(key, true);
-            this.mapper = ArgumentMapper.constant(Boolean.class, true); // Presence flags always return true if set.
+            this.mapper = new PresenceFlagMapper<>();
         }
 
         @Override
         protected CommandArgument.Flag.PresenceBuilder<S> self() {
             return this;
+        }
+    }
+
+    private static final class PresenceFlagMapper<S> extends AbstractArgumentMapper<S, Boolean> {
+        private PresenceFlagMapper() {
+            super(Boolean.class, false);
+        }
+
+        @Override
+        public Boolean tryMap(final CommandContext<S> context, final CommandInputTokenizer input) {
+            // Presence flags always return true if set.
+            return true;
         }
     }
 }

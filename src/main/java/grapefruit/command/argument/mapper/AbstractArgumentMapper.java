@@ -16,6 +16,10 @@ public abstract class AbstractArgumentMapper<S, T> implements ArgumentMapper<S, 
         this.isTerminal = isTerminal;
     }
 
+    protected AbstractArgumentMapper(final Class<T> type, final boolean isTerminal) {
+        this(TypeToken.get(requireNonNull(type, "type cannot be null")), isTerminal);
+    }
+
     @Override
     public TypeToken<T> type() {
         return this.type;
