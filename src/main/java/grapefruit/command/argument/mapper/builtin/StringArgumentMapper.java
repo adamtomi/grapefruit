@@ -5,7 +5,9 @@ import grapefruit.command.argument.mapper.AbstractArgumentMapper;
 import grapefruit.command.argument.mapper.ArgumentMapper;
 import grapefruit.command.argument.mapper.CommandInputAccess;
 import grapefruit.command.dispatcher.CommandContext;
+import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
+import grapefruit.command.util.function.CheckedFunction;
 
 import java.io.Serial;
 import java.util.function.Supplier;
@@ -14,22 +16,27 @@ import java.util.regex.Pattern;
 
 import static java.util.Objects.requireNonNull;
 
-public abstract class StringArgumentMapper<S> extends AbstractArgumentMapper<S, String> {
+public final class StringArgumentMapper<S> extends AbstractArgumentMapper<S, String> {
+    private final CheckedFunction<CommandInputTokenizer, String, MissingInputException> internalMapper;
 
-    protected StringArgumentMapper(final boolean isTerminal) {
+    private StringArgumentMapper(
+            final boolean isTerminal,
+            final CheckedFunction<CommandInputTokenizer, String, MissingInputException> internalMapper
+    ) {
         super(String.class, isTerminal);
+        this.internalMapper = requireNonNull(internalMapper, "internalMapper cannot be null");
     }
 
     public static <S> StringArgumentMapper<S> word() {
-        return new Word<>();
+        return new StringArgumentMapper<>(false, CommandInputTokenizer::readWord);
     }
 
     public static <S> StringArgumentMapper<S> quotable() {
-        return new Quotable<>();
+        return new StringArgumentMapper<>(false, CommandInputTokenizer::readQuotable);
     }
 
     public static <S> StringArgumentMapper<S> greedy() {
-        return new Greedy<>();
+        return new StringArgumentMapper<>(true, CommandInputTokenizer::readRemaining);
     }
 
     public static <S> Filter<S, String> regex(final Pattern pattern, final Filter.ExceptionFactory<S, String> exceptionFactory) {
@@ -44,37 +51,9 @@ public abstract class StringArgumentMapper<S> extends AbstractArgumentMapper<S, 
         return regex(pattern, () -> new RegexException(pattern));
     }
 
-    private static final class Word<S> extends StringArgumentMapper<S> {
-        private Word() {
-            super(false);
-        }
-
-        @Override
-        public String tryMap(final CommandContext<S> context, final CommandInputAccess access) throws MissingInputException {
-            return access.input().readWord();
-        }
-    }
-
-    private static final class Quotable<S> extends StringArgumentMapper<S> {
-        private Quotable() {
-            super(false);
-        }
-
-        @Override
-        public String tryMap(final CommandContext<S> context, final CommandInputAccess access) throws MissingInputException {
-            return access.input().readQuotable();
-        }
-    }
-
-    private static final class Greedy<S> extends StringArgumentMapper<S> {
-        private Greedy() {
-            super(true);
-        }
-
-        @Override
-        public String tryMap(final CommandContext<S> context, final CommandInputAccess access) throws MissingInputException {
-            return access.input().readRemaining();
-        }
+    @Override
+    public String tryMap(final CommandContext<S> context, final CommandInputAccess access) throws MissingInputException {
+        return this.internalMapper.apply(access.input());
     }
 
     private static final class Regex<S> implements ArgumentMapper.Filter<S, String> {
