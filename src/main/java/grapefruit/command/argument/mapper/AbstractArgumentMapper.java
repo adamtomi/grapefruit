@@ -1,7 +1,6 @@
 package grapefruit.command.argument.mapper;
 
 import grapefruit.command.dispatcher.CommandContext;
-import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import io.leangen.geantyref.TypeToken;
 
 import java.util.List;

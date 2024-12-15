@@ -5,7 +5,6 @@ import grapefruit.command.argument.CommandArgumentException;
 import grapefruit.command.argument.mapper.AbstractArgumentMapper;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
-import grapefruit.command.dispatcher.CommandSyntaxException;
 import grapefruit.command.dispatcher.input.MissingInputException;
 import io.leangen.geantyref.TypeToken;
 
