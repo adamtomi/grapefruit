@@ -6,7 +6,7 @@
 
 Hey! 👋
 
-To find out more about Grapefruit, please check out the [wiki](https://github.com/HgeX/grapefruit/wiki)! Wiki for the latest (`v2`) version of grapefruit is 🚧**WIP**.
+To find out more about Grapefruit, please check out the [wiki](https://github.com/HgeX/grapefruit/wiki)! Wiki for the latest (`v3`) version of grapefruit is 🚧**WIP**.
 
 ⚙️**Requirements**
 - Java 17 or higher
