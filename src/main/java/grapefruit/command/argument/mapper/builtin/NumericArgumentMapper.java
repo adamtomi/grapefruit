@@ -13,7 +13,6 @@ import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-// TODO completions
 public final class NumericArgumentMapper<S, N extends Number> extends AbstractArgumentMapper<S, N> {
     private final Function<String, N> internalMapper;
     private final Supplier<CommandException> exceptionSupplier;
