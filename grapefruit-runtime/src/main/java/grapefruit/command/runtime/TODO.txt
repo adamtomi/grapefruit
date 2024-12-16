@@ -1,0 +1,67 @@
+- [core]: Add more documentation.
+
+- [core]: Add tests.
+
+- [core]: Introduce description system. @CommandDefinition, @Arg, and @Flag annotations should have a "description"
+  parameter ("" by default), and if a command syntax exception is thrown, these descriptions should be included
+  so that they can be printed to the user. Optionally, we might want to have description lookup/provider system,
+  which could be used for the localization of descriptions.
+
+- [core]: Investigate if having a @Completions(String[]) annotation to provide custom suggestions for a command
+  argument is a good idea. Maybe it is, maybe it isn't.
+
+- [core]: Returning a result from a command handler could be cool. Generate code so that if the annotated method's return type
+  isn't void, we store the result in the correct command context mapped to COMMAND_RESULT_KEY or something.
+
+- [core]: Refactor auth system, make it more flexible (dedicated Permission class)
+
+- [core]: Add ArgumentModifier.Filtering
+
+- [core]: Rework command syntax system. The current route() returning a List<RouteNode> could perhaps be replaced to
+  a List<String> that would return the matched alias for each command node. Or perhaps we could have a wrapper record,
+  something like SyntaxRoute(String matchedAlias, RouteNode routeNode) {}. Also, it would be neat to know which argument
+  caused the command execution to fail, so that we could highlight it like this:
+
+  Could not find sub-command!
+  some command route
+               ~~~~~
+
+  Or something similar.
+
+- [core]: Have command manuals/help. This is semi-related to the point above. Specifying the -? flag (which will not
+  interfere with any user-specified flags as shorthands need to return true for Character#isAlphabetic, which ? is not)
+  should return command information to the user instead of executing the command, even if all the necessary argument values
+  are provided. Opting out (if that's desirable) could perhaps be done via @CommandDefinition(route = "my command route", disableHelp = true).
+
+- [core]: Get rid of some of the exception classes, if possible.
+
+- [core]: Investigate, if having some sort of proper chain when parsing an argument would make sense. Something like mapper->filters->modifiers
+
+- [core]: ArgumentMapper#isTerminal (default false). Terminal argument mappers consume the remaining part of input
+  (currently the greedy string mapper is the only one) and thus cannot be followed by any other arguments. This also means that we
+  potentially need to restrict the usage of terminal mappers to required arguments, since flags are non-positional thus
+  can appear practically anywhere in user input.
+
+- [core]: Adding a better completion API could be useful. Something like Completable { List<Completion> complete(CommandContext context, String input); }
+  And of course Completion could have neat stuff... Completion.concat(), Completion.filter(), etc. We'll see...
+
+- [core]: If permissions could be attached to command nodes as well, we could hide completions from the user that they aren't permitted to see. Sounds cool
+
+- [core]: Semi-related to the above, but hiding a command could potentially come in handy. It could be done via @CommandDefinition(route = "a", hidden = true).
+  Low priority.
+
+- [core]: ToStringer
+
+- [core]: CommandNode could potentially implement RouteNode
+
+- [code-gen]: collectRelevantAnnotations (per parameter)
+
+- [code-gen]: Refactor parameter generation
+
+- [code-gen]: Add more documentation.
+
+- [code-gen]: Add tests.
+
+- [configuration]: Investigate publishing to GitHub Packages
+
+- [configuration]: Proper gradle setup
