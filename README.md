@@ -1,4 +1,4 @@
-![Grapefruit logo](https://github.com/HgeX/grapefruit/blob/v2/grapefruit.svg)
+![Grapefruit logo](https://github.com/HgeX/grapefruit/blob/main/grapefruit.svg)
 
 ### Welcome to Grapefuit town!
 [![GitHub license](https://img.shields.io/github/license/HgeX/grapefruit)](https://github.com/HgeX/grapefruit/blob/main/LICENSE)
