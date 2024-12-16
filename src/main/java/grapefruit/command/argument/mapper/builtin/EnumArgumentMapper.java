@@ -51,7 +51,7 @@ public final class EnumArgumentMapper<S, E extends Enum<E>> extends AbstractArgu
             if (this.resolver.matches(e, value)) return e;
         }
 
-        throw access.generateFrom(this.exceptionSupplier.get());
+        throw access.wrapException(this.exceptionSupplier.get());
     }
 
     @Override

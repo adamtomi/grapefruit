@@ -22,7 +22,7 @@ public class TestArgumentMapper extends AbstractArgumentMapper<Object, String> {
     public String tryMap(final CommandContext<Object> context, final CommandInputAccess access) throws ArgumentMappingException, MissingInputException {
         final String arg = access.input().readWord();
         if (!arg.equals(this.expected)) {
-            throw access.generateFrom(new DummyException());
+            throw access.wrapException(new DummyException());
         }
 
         return arg;

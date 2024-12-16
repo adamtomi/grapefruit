@@ -36,7 +36,7 @@ public interface ArgumentMapper<S, T> {
                 final T value = ArgumentMapper.this.tryMap(context, access);
                 for (final Filter<S, T> filter : filters) {
                     if (!filter.test(context, value)) {
-                        throw access.generateFrom(filter.generateException(context, value));
+                        throw access.wrapException(filter.generateException(context, value));
                     }
                 }
 

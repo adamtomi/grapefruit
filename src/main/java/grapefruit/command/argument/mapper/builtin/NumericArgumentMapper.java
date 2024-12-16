@@ -76,7 +76,7 @@ public final class NumericArgumentMapper<S, N extends Number> extends AbstractAr
         try {
             return this.internalMapper.apply(access.input().readWord());
         } catch (final NumberFormatException ex) {
-            throw access.generateFrom(this.exceptionSupplier.get());
+            throw access.wrapException(this.exceptionSupplier.get());
         }
     }
 

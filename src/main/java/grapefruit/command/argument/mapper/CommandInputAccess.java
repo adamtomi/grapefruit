@@ -7,7 +7,7 @@ public interface CommandInputAccess {
 
     CommandInputTokenizer input();
 
-    ArgumentMappingException generateFrom(final CommandException cause);
+    ArgumentMappingException wrapException(final CommandException cause);
 
     static CommandInputAccess wrap(final CommandInputTokenizer input) {
         return new CommandInputAccessImpl(input);

@@ -20,7 +20,7 @@ final class CommandInputAccessImpl implements CommandInputAccess {
     }
 
     @Override
-    public ArgumentMappingException generateFrom(final CommandException cause) {
+    public ArgumentMappingException wrapException(final CommandException cause) {
         requireNonNull(cause, "cause cannot be null");
         final int end = Math.min(this.input.cursor(), this.input.unwrap().length());
         return new ArgumentMappingException(
