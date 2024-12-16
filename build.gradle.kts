@@ -1,8 +1,28 @@
 plugins {
     id("java")
-    // id("jacoco")
-    // id("grapefruit.java-conventions")
+    id("jacoco")
 }
 
 group = "grapefruit"
-version = "2.0.0-ALPHA"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly(libs.annotations)
+    implementation(libs.geantyref)
+
+    testImplementation(libs.jupiter.api)
+    testRuntimeOnly(libs.jupiter.engine)
+    testImplementation(libs.jupiter.params)
+}
+
+tasks.withType<Test>() {
+    useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+}
