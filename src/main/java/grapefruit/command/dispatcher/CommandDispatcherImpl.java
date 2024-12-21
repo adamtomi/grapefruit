@@ -100,7 +100,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
     @Override
     public List<String> complete(final S source, final String command) {
-        System.out.println("=====================");
         requireNonNull(source, "source cannot be null");
         requireNonNull(command, "command cannot be null");
 
@@ -109,13 +108,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         try {
             cmd = this.commandGraph.search(input);
         } catch (final NoSuchCommandException ex) {
-            System.out.println("no such command");
-            /* if (input.unwrap().endsWith(" ")) {
-                System.out.println("returning empty list");
-                return List.of();
-            } */
-
-            System.out.println("alternatives");
             return ex.alternatives().stream()
                     .flatMap(x -> Stream.concat(Stream.of(x.name()), x.aliases().stream()))
                     .filter(x -> startsWithIgnoreCase(x, ex.argument()))
@@ -133,7 +125,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         final Optional<CommandException> capturedOpt = parseResult.capturedException();
 
         if (parseResult.isComplete()) {
-            System.out.println("result is complete, returning empty list");
             return List.of();
         }
 
@@ -143,23 +134,14 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 return List.of();
             } else if (ex instanceof UnrecognizedFlagException ufe) {
                 final String arg = ufe.argument();
-                System.out.println("UFE: '%s'".formatted(arg));
                 if (ufe.argument().startsWith(SHORT_FLAG_PREFIX)) {
-                    System.out.println(parseResult);
-                    System.out.println("withInput");
                     parseResult = parseResult.withInput(arg);
-                    System.out.println(parseResult);
                 } else {
                     return List.of();
                 }
             } else if (ex instanceof CommandArgumentException) { // This means we couldn't map user input into some type.
-                System.out.println("CAE");
-                System.out.println(parseResult);
-                System.out.println("moving cursor");
                 // Move the cursor back for completions.
                 input.moveTo(parseResult.cursor());
-                System.out.println(parseResult);
-                // parseResult = parseResult.withInput(input.remainingOrEmpty());
             }
         }
 
@@ -382,20 +364,13 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     private static <S> List<String> collectCompletions(final CommandContext<S> context, final CommandInputTokenizer input, final CommandParseResult<S> parseResult) {
-        System.out.println("collectCompletions");
         final String remaining = input.remainingOrEmpty();
         final boolean completeNext = input.unwrap().endsWith(" ");
-
-        System.out.println(remaining);
-        System.out.println(completeNext);
 
         final CommandArgument.Dynamic<S, ?> argument = resolveArgumentToComplete(parseResult);
         final String argToComplete = !remaining.isEmpty()
                 ? remaining
                 : completeNext ? remaining : parseResult.lastInput().orElse(remaining);
-
-        System.out.println(argument);
-        System.out.println(argToComplete);
 
         final List<String> base = argument.isFlag()
                 ? collectFlagCompletions(context, parseResult, argument.asFlag(), argToComplete)
@@ -412,34 +387,26 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final CommandArgument.Flag<S, ?> argument,
             final String argToComplete
     ) {
-        System.out.println("collectFlagCompletions");
-        System.out.println(parseResult);
-        System.out.println(parseResult.lastInput());
         if (argument.asFlag().isPresence()) {
             return Stream.of(completeFlags(parseResult.remainingFlags()), completeFlagGroup(argToComplete, parseResult.remainingFlags()))
                     .flatMap(Collection::stream)
                     .toList();
         } else {
-            System.out.println("value flag");
             /*
              * Decide whether to complete flag names or a flag value. Last input will hold the flag name (or
              * flag group) that was passed by the user. So if the remaining string is the same, we can't complete
              * values yet.
              */
             final boolean completeFlagValue = parseResult.lastInput().map(x -> !x.equals(argToComplete)).orElse(false);
-            System.out.println("should complete value: " + completeFlagValue);
             final List<String> base = new ArrayList<>();
 
             if (completeFlagValue) {
-                System.out.println("adding suggestions from mapper");
                 base.addAll(argument.mapper().complete(context, argToComplete));
             } else {
                 if (parseResult.lastInput().map(String::isEmpty).orElse(true)) {
-                    System.out.println("adding flag compleions");
                     base.addAll(completeFlags(parseResult.remainingFlags()));
                 }
 
-                System.out.println("adding flag group completions");
                 base.addAll(completeFlagGroup(argToComplete, parseResult.remainingFlags()));
             }
 
