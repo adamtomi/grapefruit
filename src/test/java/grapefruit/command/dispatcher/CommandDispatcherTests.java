@@ -6,6 +6,7 @@ import grapefruit.command.argument.DuplicateFlagException;
 import grapefruit.command.argument.UnrecognizedFlagException;
 import grapefruit.command.argument.condition.UnfulfilledConditionException;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
+import grapefruit.command.mock.ColorArgumentMapper;
 import grapefruit.command.mock.TestArgumentMapper;
 import grapefruit.command.mock.TestCommandModule;
 import grapefruit.command.tree.NoSuchCommandException;
@@ -274,11 +275,26 @@ public class CommandDispatcherTests {
         assertThrows(UnrecognizedFlagException.class, () -> dispatcher.dispatch(new Object(), "test -h"));
     }
 
+    @Test
     public void dispatch_flagGroup() {
+        final DispatcherConfig<Object> config = DispatcherConfig.builder()
+                .build();
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
+        final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
+                .then(factory.literal("test").build())
+                .flags()
+                .then(factory.presenceFlag("hello").assumeShorthand().build())
+                .then(factory.valueFlag("color", String.class).assumeShorthand().mapWith(new ColorArgumentMapper()).build())
+                .build());
 
+        dispatcher.register(command);
+        assertDoesNotThrow(() -> dispatcher.dispatch(new Object(), "test"));
+        assertDoesNotThrow(() -> dispatcher.dispatch(new Object(), "test --hello --color #ffffff"));
+        assertDoesNotThrow(() -> dispatcher.dispatch(new Object(), "test -hc #ffffff"));
     }
 
-    public void dispatch_complexExamples() {
+    @Test
+    public void complete() {
 
     }
 }
