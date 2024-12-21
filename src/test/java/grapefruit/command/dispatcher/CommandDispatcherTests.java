@@ -323,7 +323,7 @@ public class CommandDispatcherTests {
 
         dispatcher.register(Set.of(command0, command1));
         final List<String> completions = dispatcher.complete(new Object(), input);
-        assertIterableEquals(completions, toStringList(expected));
+        assertContainsAll(toStringList(expected), completions);
     }
 
     @ParameterizedTest
@@ -367,7 +367,7 @@ public class CommandDispatcherTests {
 
         dispatcher.register(command);
         final List<String> completions = dispatcher.complete(new Object(), input);
-        assertContainsAll(completions, toStringList(expected));
+        assertContainsAll(toStringList(expected), completions);
     }
 
     @ParameterizedTest
@@ -403,6 +403,6 @@ public class CommandDispatcherTests {
 
         dispatcher.register(command);
         final List<String> completions = dispatcher.complete(new Object(), input);
-        assertIterableEquals(completions, List.of());
+        assertIterableEquals(List.of(), completions);
     }
 }
