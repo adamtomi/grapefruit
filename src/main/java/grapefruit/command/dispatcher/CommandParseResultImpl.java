@@ -52,7 +52,7 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
 
     @Override
     public CommandParseResult<S> withInput(final String input) {
-        return new CommandParseResultImpl<>(this.input, this.argument, this.ex, this.arguments, this.flags, this.cursor);
+        return new CommandParseResultImpl<>(input, this.argument, this.ex, this.arguments, this.flags, this.cursor);
     }
 
     @Override
@@ -113,6 +113,11 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
             this.argument = argument;
             this.input = value;
             this.cursor = this.inputTokenizer.cursor();
+        }
+
+        @Override
+        public void push(final String value) {
+            this.input = requireNonNull(value, "input cannot be null");
         }
 
         @Override

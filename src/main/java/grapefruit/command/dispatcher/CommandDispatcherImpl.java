@@ -100,7 +100,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
     @Override
     public List<String> complete(final S source, final String command) {
-        System.out.println("=============================");
+        System.out.println("=====================");
         requireNonNull(source, "source cannot be null");
         requireNonNull(command, "command cannot be null");
 
@@ -109,14 +109,16 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         try {
             cmd = this.commandGraph.search(input);
         } catch (final NoSuchCommandException ex) {
-            if (input.unwrap().endsWith(" ")) {
+            System.out.println("no such command");
+            /* if (input.unwrap().endsWith(" ")) {
+                System.out.println("returning empty list");
                 return List.of();
-            }
+            } */
 
+            System.out.println("alternatives");
             return ex.alternatives().stream()
                     .flatMap(x -> Stream.concat(Stream.of(x.name()), x.aliases().stream()))
-                    // TODO fix this.
-                    // .filter(x -> startsWithIgnoreCase(ex.argument(), x))
+                    .filter(x -> startsWithIgnoreCase(x, ex.argument()))
                     .toList();
         } catch (final CommandException ex) {
             return List.of();
@@ -140,11 +142,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             if (ex instanceof DuplicateFlagException) {
                 return List.of();
             } else if (ex instanceof UnrecognizedFlagException ufe) {
-                System.out.println("UFE");
+                final String arg = ufe.argument();
+                System.out.println("UFE: '%s'".formatted(arg));
                 if (ufe.argument().startsWith(SHORT_FLAG_PREFIX)) {
                     System.out.println(parseResult);
                     System.out.println("withInput");
-                    parseResult = parseResult.withInput(ufe.argument());
+                    parseResult = parseResult.withInput(arg);
                     System.out.println(parseResult);
                 } else {
                     return List.of();
@@ -299,15 +302,18 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final String value
     ) throws CommandException {
         try {
+            final CommandInputAccess access = CommandInputAccess.wrap(input);
             // 1) Mark beginning
             builder.begin(argument, value);
             // 2) Map argument into the correct type. This will throw an exception if
             //    the conversion fails.
-            final T result = argument.mapper().tryMap(context, CommandInputAccess.wrap(input));
+            final T result = argument.mapper().tryMap(context, access);
+            builder.push(access.consumedInput());
             // 3) Store the result in the current context
             context.store(argument.key(), result);
             // 4) Mark end
-            if (input.unwrap().endsWith(" ")) builder.end();
+            // if (input.unwrap().endsWith(" ")) builder.end();
+            if (input.peek() == ' ') builder.end();
         } catch (final MissingInputException ex) {
             throw new CommandSyntaxException(context.chain(), CommandSyntaxException.Reason.TOO_FEW_ARGUMENTS);
         }
@@ -376,13 +382,20 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     private static <S> List<String> collectCompletions(final CommandContext<S> context, final CommandInputTokenizer input, final CommandParseResult<S> parseResult) {
+        System.out.println("collectCompletions");
         final String remaining = input.remainingOrEmpty();
         final boolean completeNext = input.unwrap().endsWith(" ");
+
+        System.out.println(remaining);
+        System.out.println(completeNext);
 
         final CommandArgument.Dynamic<S, ?> argument = resolveArgumentToComplete(parseResult);
         final String argToComplete = !remaining.isEmpty()
                 ? remaining
                 : completeNext ? remaining : parseResult.lastInput().orElse(remaining);
+
+        System.out.println(argument);
+        System.out.println(argToComplete);
 
         final List<String> base = argument.isFlag()
                 ? collectFlagCompletions(context, parseResult, argument.asFlag(), argToComplete)
@@ -399,22 +412,34 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final CommandArgument.Flag<S, ?> argument,
             final String argToComplete
     ) {
+        System.out.println("collectFlagCompletions");
+        System.out.println(parseResult);
+        System.out.println(parseResult.lastInput());
         if (argument.asFlag().isPresence()) {
             return Stream.of(completeFlags(parseResult.remainingFlags()), completeFlagGroup(argToComplete, parseResult.remainingFlags()))
                     .flatMap(Collection::stream)
                     .toList();
         } else {
+            System.out.println("value flag");
             /*
              * Decide whether to complete flag names or a flag value. Last input will hold the flag name (or
              * flag group) that was passed by the user. So if the remaining string is the same, we can't complete
              * values yet.
              */
             final boolean completeFlagValue = parseResult.lastInput().map(x -> !x.equals(argToComplete)).orElse(false);
-
+            System.out.println("should complete value: " + completeFlagValue);
             final List<String> base = new ArrayList<>();
+
             if (completeFlagValue) {
+                System.out.println("adding suggestions from mapper");
                 base.addAll(argument.mapper().complete(context, argToComplete));
             } else {
+                if (parseResult.lastInput().map(String::isEmpty).orElse(true)) {
+                    System.out.println("adding flag compleions");
+                    base.addAll(completeFlags(parseResult.remainingFlags()));
+                }
+
+                System.out.println("adding flag group completions");
                 base.addAll(completeFlagGroup(argToComplete, parseResult.remainingFlags()));
             }
 

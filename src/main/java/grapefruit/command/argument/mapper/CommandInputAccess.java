@@ -9,6 +9,8 @@ public interface CommandInputAccess {
 
     ArgumentMappingException wrapException(final CommandException cause);
 
+    String consumedInput();
+
     static CommandInputAccess wrap(final CommandInputTokenizer input) {
         return new CommandInputAccessImpl(input);
     }

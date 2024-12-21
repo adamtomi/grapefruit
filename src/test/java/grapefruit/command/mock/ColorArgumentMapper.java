@@ -1,6 +1,8 @@
 package grapefruit.command.mock;
 
+import grapefruit.command.CommandException;
 import grapefruit.command.argument.mapper.AbstractArgumentMapper;
+import grapefruit.command.argument.mapper.ArgumentMappingException;
 import grapefruit.command.argument.mapper.CommandInputAccess;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.MissingInputException;
@@ -18,9 +20,14 @@ public class ColorArgumentMapper extends AbstractArgumentMapper<Object, String> 
     }
 
     @Override
-    public String tryMap(final CommandContext<Object> context, final CommandInputAccess access) throws  MissingInputException {
+    public String tryMap(final CommandContext<Object> context, final CommandInputAccess access) throws ArgumentMappingException, MissingInputException {
         // We don't really care, whether the provided value is valid
-        return access.input().readWord();
+        final String value = access.input().readWord();
+        if (value.length() == 7 && value.charAt(0) == HASH && !containsInvalidCharacter(value)) {
+            return value;
+        }
+
+        throw access.wrapException(new CommandException());
     }
 
     private static boolean containsInvalidCharacter(final String input) {

@@ -12,12 +12,19 @@ import grapefruit.command.mock.TestCommandModule;
 import grapefruit.command.tree.NoSuchCommandException;
 import grapefruit.command.util.key.Key;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static grapefruit.command.argument.mapper.builtin.StringArgumentMapper.word;
 import static grapefruit.command.mock.AlwaysCondition.fail;
+import static grapefruit.command.testutil.ExtraAssertions.assertContainsAll;
+import static grapefruit.command.testutil.Helper.toStringList;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -293,8 +300,76 @@ public class CommandDispatcherTests {
         assertDoesNotThrow(() -> dispatcher.dispatch(new Object(), "test -hc #ffffff"));
     }
 
-    @Test
-    public void complete() {
+    @ParameterizedTest
+    @CsvSource({
+            "'',command|cmd|test",
+            "t,test",
+            "c,command|cmd"
+    })
+    public void complete_commandNames(final String input, final String expected) {
+        final DispatcherConfig<Object> config = DispatcherConfig.builder()
+                .build();
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
+        final CommandModule<Object> command0 = TestCommandModule.of(factory -> factory.newChain()
+                .then(factory.literal("test").build())
+                .then(factory.literal("hello").aliases("hl").build())
+                .build());
+
+        final CommandModule<Object> command1 = TestCommandModule.of(factory -> factory.newChain()
+                .then(factory.literal("command").aliases("cmd").build())
+                .then(factory.literal("sub").aliases("sb", "subcmd", "sc").build())
+                .build());
+
+        dispatcher.register(Set.of(command0, command1));
+        final List<String> completions = dispatcher.complete(new Object(), input);
+        assertIterableEquals(completions, toStringList(expected));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "'',testcommand|testcmd|test|ts",
+            "te,testcommand|testcmd|test",
+            // "test,testcommand|testcmd,test", // TODO fix this test
+            "'test ',hello|hl",
+            "test hello,''",
+            "'test hello ',--color|-c|--stringflag|-s|--boolflag|-b",
+            "test hello a,''",
+            "test hello argname,''",
+            "test hello --,--color|--stringflag|--boolflag",
+            "test hello --c,--color",
+            "test hello -,--color|-c|--stringflag|-s|--boolflag|-b",
+            "test hello argname --color,''",
+            "test hello argname -c,-cb|-cs",
+            "'test hello argname --color ',#",
+            "test hello argname --color #,#0|#1|#2|#3|#4|#5|#6|#7|#8|#9|#a|#b|#c|#d|#e|#f",
+            "test hello argname -c #,#0|#1|#2|#3|#4|#5|#6|#7|#8|#9|#a|#b|#c|#d|#e|#f",
+            "test hello argname -c #ffffff,''",
+            "'test hello argname -bc #ae43ff ',--stringflag|-s",
+            "'test hello --color #ffffff -b argname -s asd ',''",
+            "test hello --color #ffffff -s,'-sb'",
+            "'test hello --color #ffffff -s ',''"
+    })
+    public void complete_arguments(final String input, final String expected) {
+        final DispatcherConfig<Object> config = DispatcherConfig.builder()
+                .build();
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
+        final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
+                .then(factory.literal("testcommand").aliases("testcmd", "test", "ts").build())
+                .then(factory.literal("hello").aliases("hl").build())
+                .arguments()
+                .then(factory.required("stringarg", String.class).mapWith(word()).build())
+                .flags()
+                .then(factory.valueFlag("color", String.class).assumeShorthand().mapWith(new ColorArgumentMapper()).build())
+                .then(factory.valueFlag("stringflag", String.class).assumeShorthand().mapWith(word()).build())
+                .then(factory.presenceFlag("boolflag").assumeShorthand().build())
+                .build());
+
+        dispatcher.register(command);
+        final List<String> completions = dispatcher.complete(new Object(), input);
+        assertContainsAll(completions, toStringList(expected));
+    }
+
+    public void complete_invalidArgument() {
 
     }
 }
