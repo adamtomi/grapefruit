@@ -14,6 +14,7 @@ import grapefruit.command.util.key.Key;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 import java.util.Set;
@@ -369,7 +370,39 @@ public class CommandDispatcherTests {
         assertContainsAll(completions, toStringList(expected));
     }
 
-    public void complete_invalidArgument() {
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "a",
+            "asd",
+            "test b",
+            "test hello abc",
+            "test hello -x",
+            "test hello --invalid-flag",
+            "test hello -xyz",
+            "test hello --z",
+            "test hello abc abc",
+            "test hello abc --color #xyzxyz",
+            "'test hello abc --color #xyzxyz '",
+            "'test hello abc -sb '",
+            "test hello abc -sb --color #"
+    })
+    public void complete_invalidArgument(final String input) {
+        final DispatcherConfig<Object> config = DispatcherConfig.builder()
+                .build();
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
+        final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
+                .then(factory.literal("testcommand").aliases("testcmd", "test", "ts").build())
+                .then(factory.literal("hello").aliases("hl").build())
+                .arguments()
+                .then(factory.required("stringarg", String.class).mapWith(word()).build())
+                .flags()
+                .then(factory.valueFlag("color", String.class).assumeShorthand().mapWith(new ColorArgumentMapper()).build())
+                .then(factory.valueFlag("stringflag", String.class).assumeShorthand().mapWith(word()).build())
+                .then(factory.presenceFlag("boolflag").assumeShorthand().build())
+                .build());
 
+        dispatcher.register(command);
+        final List<String> completions = dispatcher.complete(new Object(), input);
+        assertIterableEquals(completions, List.of());
     }
 }
