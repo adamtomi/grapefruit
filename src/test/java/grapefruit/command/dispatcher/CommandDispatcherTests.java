@@ -301,6 +301,36 @@ public class CommandDispatcherTests {
         assertDoesNotThrow(() -> dispatcher.dispatch(new Object(), "test -hc #ffffff"));
     }
 
+    @Test
+    public void dispatch_tooMany_unrecognizedFlag() {
+        final DispatcherConfig<Object> config = DispatcherConfig.builder()
+                .build();
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
+        final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
+                .then(factory.literal("test").build())
+                .flags()
+                .then(factory.presenceFlag("hello").assumeShorthand().build())
+                .build());
+
+        dispatcher.register(command);
+        assertThrows(UnrecognizedFlagException.class, () -> dispatcher.dispatch(new Object(), "test abc"));
+    }
+
+    @Test
+    public void dispatch_tooMany_syntaxError() {
+        final DispatcherConfig<Object> config = DispatcherConfig.builder()
+                .build();
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
+        final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
+                .then(factory.literal("test").build())
+                .flags()
+                .then(factory.presenceFlag("hello").assumeShorthand().build())
+                .build());
+
+        dispatcher.register(command);
+        assertThrows(CommandSyntaxException.class, () -> dispatcher.dispatch(new Object(), "test --hello abc"));
+    }
+
     @ParameterizedTest
     @CsvSource({
             "'',command|cmd|test",
