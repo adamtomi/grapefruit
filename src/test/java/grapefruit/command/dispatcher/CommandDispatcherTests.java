@@ -335,7 +335,8 @@ public class CommandDispatcherTests {
     @CsvSource({
             "'',command|cmd|test",
             "t,test",
-            "c,command|cmd"
+            "c,command|cmd",
+            // "'test he ',''" // TODO fix this
     })
     public void complete_commandNames(final String input, final String expected) {
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
