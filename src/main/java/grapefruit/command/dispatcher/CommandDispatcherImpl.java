@@ -213,6 +213,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                          *    a syntax exception with the "TOO_MANY_ARGUMENTS" reason,
                          *    because we can't handle more arguments.
                          */
+                        input.readWord(); // Consume the current argument to be inline with the rest of the code
                         throw firstUnseen(chain.flags(), context).isPresent()
                                 ? UnrecognizedFlagException.fromInput(input, arg, arg)
                                 : new CommandSyntaxException(chain, CommandSyntaxException.Reason.TOO_MANY_ARGUMENTS);
