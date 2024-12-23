@@ -100,7 +100,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
     @Override
     public List<String> complete(final S source, final String command) {
-        System.out.println("=============================");
         requireNonNull(source, "source cannot be null");
         requireNonNull(command, "command cannot be null");
 
@@ -109,14 +108,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         try {
             cmd = this.commandGraph.search(input);
         } catch (final NoSuchCommandException ex) {
-            if (input.unwrap().endsWith(" ")) {
-                return List.of();
-            }
-
             return ex.alternatives().stream()
                     .flatMap(x -> Stream.concat(Stream.of(x.name()), x.aliases().stream()))
-                    // TODO fix this.
-                    // .filter(x -> startsWithIgnoreCase(ex.argument(), x))
+                    .filter(x -> startsWithIgnoreCase(x, ex.argument()))
                     .toList();
         } catch (final CommandException ex) {
             return List.of();
@@ -131,7 +125,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         final Optional<CommandException> capturedOpt = parseResult.capturedException();
 
         if (parseResult.isComplete()) {
-            System.out.println("result is complete, returning empty list");
             return List.of();
         }
 
@@ -140,23 +133,15 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             if (ex instanceof DuplicateFlagException) {
                 return List.of();
             } else if (ex instanceof UnrecognizedFlagException ufe) {
-                System.out.println("UFE");
+                final String arg = ufe.argument();
                 if (ufe.argument().startsWith(SHORT_FLAG_PREFIX)) {
-                    System.out.println(parseResult);
-                    System.out.println("withInput");
-                    parseResult = parseResult.withInput(ufe.argument());
-                    System.out.println(parseResult);
+                    parseResult = parseResult.withInput(arg);
                 } else {
                     return List.of();
                 }
             } else if (ex instanceof CommandArgumentException) { // This means we couldn't map user input into some type.
-                System.out.println("CAE");
-                System.out.println(parseResult);
-                System.out.println("moving cursor");
                 // Move the cursor back for completions.
                 input.moveTo(parseResult.cursor());
-                System.out.println(parseResult);
-                // parseResult = parseResult.withInput(input.remainingOrEmpty());
             }
         }
 
@@ -228,6 +213,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                          *    a syntax exception with the "TOO_MANY_ARGUMENTS" reason,
                          *    because we can't handle more arguments.
                          */
+                        input.readWord(); // Consume the current argument to be inline with the rest of the code
                         throw firstUnseen(chain.flags(), context).isPresent()
                                 ? UnrecognizedFlagException.fromInput(input, arg, arg)
                                 : new CommandSyntaxException(chain, CommandSyntaxException.Reason.TOO_MANY_ARGUMENTS);
@@ -299,15 +285,18 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final String value
     ) throws CommandException {
         try {
+            final CommandInputAccess access = CommandInputAccess.wrap(input);
             // 1) Mark beginning
             builder.begin(argument, value);
             // 2) Map argument into the correct type. This will throw an exception if
             //    the conversion fails.
-            final T result = argument.mapper().tryMap(context, CommandInputAccess.wrap(input));
+            final T result = argument.mapper().tryMap(context, access);
+            builder.push(access.consumedInput());
             // 3) Store the result in the current context
             context.store(argument.key(), result);
             // 4) Mark end
-            if (input.unwrap().endsWith(" ")) builder.end();
+            // if (input.unwrap().endsWith(" ")) builder.end();
+            if (input.peek() == ' ') builder.end();
         } catch (final MissingInputException ex) {
             throw new CommandSyntaxException(context.chain(), CommandSyntaxException.Reason.TOO_FEW_ARGUMENTS);
         }
@@ -410,11 +399,15 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
              * values yet.
              */
             final boolean completeFlagValue = parseResult.lastInput().map(x -> !x.equals(argToComplete)).orElse(false);
-
             final List<String> base = new ArrayList<>();
+
             if (completeFlagValue) {
                 base.addAll(argument.mapper().complete(context, argToComplete));
             } else {
+                if (parseResult.lastInput().map(String::isEmpty).orElse(true)) {
+                    base.addAll(completeFlags(parseResult.remainingFlags()));
+                }
+
                 base.addAll(completeFlagGroup(argToComplete, parseResult.remainingFlags()));
             }
 

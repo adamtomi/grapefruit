@@ -55,6 +55,8 @@ public interface CommandParseResult<S> {
 
         void begin(final CommandArgument.Dynamic<S, ?> argument, final String value);
 
+        void push(final String value);
+
         void end();
 
         void capture(final CommandException ex);
