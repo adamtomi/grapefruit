@@ -5,6 +5,7 @@ import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 
 import static java.util.Objects.requireNonNull;
 
+@Deprecated
 final class CommandInputAccessImpl implements CommandInputAccess {
     private final CommandInputTokenizer input;
     private final int cursor;

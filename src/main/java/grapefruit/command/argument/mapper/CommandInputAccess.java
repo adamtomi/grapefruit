@@ -3,6 +3,7 @@ package grapefruit.command.argument.mapper;
 import grapefruit.command.CommandException;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 
+@Deprecated
 public interface CommandInputAccess {
 
     CommandInputTokenizer input();
