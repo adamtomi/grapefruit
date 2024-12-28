@@ -142,4 +142,18 @@ public class CommandInputTokenizerTests {
         final CommandInputTokenizer input = CommandInputTokenizer.wrap("");
         assertThrows(MissingInputException.class, input::readRemaining);
     }
+
+    @Test
+    public void lastConsumed_test() {
+        final String first = "hello";
+        final String second = "world";
+        final String last = "value";
+        final CommandInputTokenizer.Internal input = (CommandInputTokenizer.Internal) CommandInputTokenizer.wrap(join(" ", Arrays.asList(first, second, last)));
+        assertDoesNotThrow(input::readWord);
+        assertEquals(first, input.unsafe().lastConsumed());
+        assertDoesNotThrow(input::readWord);
+        assertEquals(second, input.unsafe().lastConsumed());
+        assertDoesNotThrow(input::readWord);
+        assertEquals(last, input.unsafe().lastConsumed());
+    }
 }
