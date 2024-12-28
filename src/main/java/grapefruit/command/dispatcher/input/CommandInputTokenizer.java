@@ -15,19 +15,14 @@ public interface CommandInputTokenizer {
 
     int cursor();
 
+    @Deprecated // TODO figure out if we need this
     void moveTo(final int position);
 
-    boolean hasNext();
-
-    @Deprecated // TODO remove from public API
-    char next() throws MissingInputException;
+    boolean hasNext(); // TODO rename to canRead to be inline with other method names?
 
     char read() throws MissingInputException;
 
     char peek();
-
-    @Deprecated // TODO remove from public API
-    void advance() throws MissingInputException;
 
     @Nullable String peekWord();
 
@@ -44,7 +39,7 @@ public interface CommandInputTokenizer {
     String remainingOrEmpty();
 
     // TODO figure out if we really need this
-    String peekRemaining();
+    @Nullable String peekRemaining();
 
     static CommandInputTokenizer wrap(final String input) {
         return new CommandInputTokenizerImpl(input);
@@ -52,6 +47,7 @@ public interface CommandInputTokenizer {
 
     interface Internal extends CommandInputTokenizer {
 
+        // TODO rename
         Range peekConsumed();
 
         <X extends CommandArgumentException> X exception(final String argument, final Function3<String, String, String, X> provider);
