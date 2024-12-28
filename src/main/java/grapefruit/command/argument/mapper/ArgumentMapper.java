@@ -20,6 +20,7 @@ public interface ArgumentMapper<S, T> {
 
     List<String> complete(final CommandContext<S> context, final String input);
 
+    @Deprecated
     default ArgumentMapper<S, T> with(final Collection<Filter<S, T>> filters) {
         return new ArgumentMapper<>() {
             @Override
@@ -52,21 +53,28 @@ public interface ArgumentMapper<S, T> {
         };
     }
 
+    @Deprecated
     default ArgumentMapper<S, T> with(final Filter<S, T> filter) {
         return with(List.of(filter));
     }
 
+    @Deprecated
     interface Filter<S, T> {
 
+        @Deprecated
         boolean test(final CommandContext<S> context, final T value);
 
+        @Deprecated
         CommandException generateException(final CommandContext<S> context, final T value);
 
+        @Deprecated
         @FunctionalInterface
         interface ExceptionFactory<S, T> {
 
+            @Deprecated
             CommandException create(final CommandContext<S> context, final T value);
 
+            @Deprecated
             static <S, T> ExceptionFactory<S, T> contextFree(final Supplier<CommandException> supplier) {
                 return (context, value) -> supplier.get();
             }
