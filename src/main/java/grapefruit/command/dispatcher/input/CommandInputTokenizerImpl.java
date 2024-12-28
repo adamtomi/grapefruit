@@ -61,13 +61,18 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
         return this.cursor >= this.input.length() ? 0 : this.input.charAt(this.cursor);
     }
 
+    @Deprecated
     private void advance() throws MissingInputException {
-        if (!hasNext()) throw new MissingInputException();
+        /*if (!hasNext()) throw new MissingInputException();
         if (this.cursor < this.input.length()) {
             this.cursor++;
         } else {
             throw new MissingInputException();
-        }
+        }*˛
+         */
+        // if (this.cursor >= this.input.length()) throw new MissingInputException();
+        if (!hasNext()) throw new MissingInputException();
+        this.cursor++;
     }
 
     @Override // TODO remove new entries from this.consumedArgs
@@ -97,11 +102,11 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
         // This means we're dealing with a quoted string
         if (start == SINGLE_QUOTE || start == DOUBLE_QUOTE) {
             return performRead(() -> {
-                advance(); // Get rid of leading ("|')
+                this.cursor++; // Get rid of leading ("|')
                 // Require the argument to be surrounded by the same kind of
                 // quotation marks.
                 final String result = readWhileThrowOnEmpty(x -> x != start);
-                advance(); // Get rid of trailing ("|')
+                this.cursor++; // Get rid of trailing ("|')
 
                 return result;
             });
@@ -166,20 +171,14 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
     }
 
     private String readWhile(final CharPredicate condition) throws MissingInputException {
-        ensureCanRead();
+        if (this.cursor >= this.input.length()) throw new MissingInputException();
         return performRead(() -> {
             final StringBuilder builder = new StringBuilder();
             char c;
             while (condition.test((c = peek()))) {
                 builder.append(c);
-                if (this.cursor < this.input.length()) {
-                    advance();
-                    if (!hasNext()) {
-                        break;
-                    }
-                } else {
-                    break;
-                }
+                this.cursor++;
+                if (this.cursor >= this.input.length()) break;
             }
 
             return builder.toString();
