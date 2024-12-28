@@ -83,7 +83,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         requireNonNull(source, "source cannot be null");
         requireNonNull(command, "command cannot be null");
 
-        final CommandInputTokenizer input = CommandInputTokenizer.wrap(command);
+        final CommandInputTokenizer.Internal input = (CommandInputTokenizer.Internal) CommandInputTokenizer.wrap(command);
         final CommandModule<S> cmd = this.commandGraph.search(input);
         final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.DISPATCH);
         testRequiredConditions(context);
@@ -103,7 +103,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         requireNonNull(source, "source cannot be null");
         requireNonNull(command, "command cannot be null");
 
-        final CommandInputTokenizer input = CommandInputTokenizer.wrap(command);
+        final CommandInputTokenizer.Internal input = (CommandInputTokenizer.Internal) CommandInputTokenizer.wrap(command);
         final CommandModule<S> cmd;
         try {
             cmd = this.commandGraph.search(input);
@@ -141,7 +141,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 }
             } else if (ex instanceof CommandArgumentException) { // This means we couldn't map user input into some type.
                 // Move the cursor back for completions.
-                input.moveTo(parseResult.cursor());
+                input.unsafe().moveTo(parseResult.cursor());
             }
         }
 
@@ -175,7 +175,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         for (final CommandCondition<S> condition : conditions) condition.test(context);
     }
 
-    private static <S> CommandParseResult<S> processCommand(final CommandContext<S> context, final CommandInputTokenizer input) {
+    private static <S> CommandParseResult<S> processCommand(final CommandContext<S> context, final CommandInputTokenizer.Internal input) {
         String arg;
         final CommandChain<S> chain = context.chain();
         final CommandParseResult.Builder<S> builder = CommandParseResult.createBuilder(chain, input);

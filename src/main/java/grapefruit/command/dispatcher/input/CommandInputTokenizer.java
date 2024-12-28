@@ -1,7 +1,6 @@
 package grapefruit.command.dispatcher.input;
 
 import grapefruit.command.argument.CommandArgumentException;
-import grapefruit.command.util.Range;
 import grapefruit.command.util.function.Function3;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,9 +13,6 @@ public interface CommandInputTokenizer {
     String unwrap();
 
     int cursor();
-
-    @Deprecated // TODO figure out if we need this
-    void moveTo(final int position);
 
     boolean canRead();
 
@@ -47,8 +43,14 @@ public interface CommandInputTokenizer {
 
     interface Internal extends CommandInputTokenizer {
 
-        // TODO rename
-        Range peekConsumed();
+        Unsafe unsafe();
+    }
+
+    interface Unsafe {
+
+        void moveTo(final int position);
+
+        String lastConsumed();
 
         <X extends CommandArgumentException> X exception(final String argument, final Function3<String, String, String, X> provider);
     }

@@ -13,11 +13,13 @@ import static java.util.Objects.requireNonNull;
 
 final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal {
     private final Deque<Range> consumed = new ArrayDeque<>();
+    private final Unsafe unsafe;
     private final String input;
     private int cursor;
 
     public CommandInputTokenizerImpl(final String input) {
         this.input = requireNonNull(input, "input cannot be null");
+        this.unsafe = new Unsafe(this);
     }
 
     @Override
@@ -28,15 +30,6 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
     @Override
     public int cursor() {
         return this.cursor;
-    }
-
-    @Override
-    public void moveTo(final int position) {
-        if (position < 0) {
-            throw new IllegalArgumentException("Position cannot be negative");
-        }
-
-        this.cursor = position;
     }
 
     @Override
@@ -119,11 +112,6 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
     }
 
     @Override
-    public String consumed() {
-        return this.input.substring(0, this.cursor);
-    }
-
-    @Override
     public String remainingOrEmpty() {
         try {
             return readRemaining();
@@ -133,19 +121,13 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
     }
 
     @Override
-    public Range peekConsumed() {
-        // TODO
-        throw new UnsupportedOperationException("TODO");
+    public String consumed() {
+        return this.input.substring(0, this.cursor);
     }
 
     @Override
-    public <X extends CommandArgumentException> X exception(final String argument, final Function3<String, String, String, X> provider) {
-        // TODO
-        return provider.apply(
-                consumed(), // Consumed input
-                argument, // The argument that caused this exception
-                remainingOrEmpty() // The remaining input TODO: don't use this method
-        );
+    public CommandInputTokenizer.Unsafe unsafe() {
+        return this.unsafe;
     }
 
     // An input is consumed if all arguments have been seen (and processed).
@@ -191,5 +173,38 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
     interface Read {
 
         String perform() throws MissingInputException;
+    }
+
+    private static final class Unsafe implements CommandInputTokenizer.Unsafe {
+        private final CommandInputTokenizerImpl impl;
+
+        private Unsafe(final CommandInputTokenizerImpl impl) {
+            this.impl = requireNonNull(impl, "impl cannot be null");
+        }
+
+        @Override
+        public void moveTo(final int position) {
+            if (position < 0) {
+                throw new IllegalArgumentException("Position cannot be negative");
+            }
+
+            this.impl.cursor = position;
+        }
+
+        @Override
+        public String lastConsumed() {
+            final Range range = this.impl.consumed.getLast();
+            return this.impl.input.substring(range.from(), range.to());
+        }
+
+        @Override
+        public <X extends CommandArgumentException> X exception(final String argument, final Function3<String, String, String, X> provider) {
+            // TODO
+            return provider.apply(
+                    this.impl.consumed(), // Consumed input
+                    argument, // The argument that caused this exception
+                    this.impl.remainingOrEmpty() // The remaining input TODO: don't use this method
+            );
+        }
     }
 }
