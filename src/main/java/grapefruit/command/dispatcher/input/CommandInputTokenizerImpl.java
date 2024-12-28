@@ -37,7 +37,6 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
         }
 
         this.cursor = position;
-        // this.consumed = this.cursor >= this.input.length();
     }
 
     @Override
@@ -47,7 +46,6 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
 
     @Override
     public char read() throws MissingInputException {
-        ensureCanRead();
         if (!hasNext()) throw new MissingInputException();
 
         int from = this.cursor;
@@ -58,34 +56,18 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
 
     @Override
     public char peek() {
-        return this.cursor >= this.input.length() ? 0 : this.input.charAt(this.cursor);
-    }
-
-    @Deprecated
-    private void advance() throws MissingInputException {
-        /*if (!hasNext()) throw new MissingInputException();
-        if (this.cursor < this.input.length()) {
-            this.cursor++;
-        } else {
-            throw new MissingInputException();
-        }*˛
-         */
-        // if (this.cursor >= this.input.length()) throw new MissingInputException();
-        if (!hasNext()) throw new MissingInputException();
-        this.cursor++;
+        return isConsumed() ? 0 : this.input.charAt(this.cursor);
     }
 
     @Override // TODO remove new entries from this.consumedArgs
     public @Nullable String peekWord() {
         final int start = this.cursor;
-        // final boolean consumed = this.consumed;
         try {
             return readWord();
         } catch (final MissingInputException ex) {
             return null;
         } finally {
             this.cursor = start;
-            // this.consumed = consumed;
         }
     }
 
@@ -166,19 +148,20 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
         );
     }
 
-    private void ensureCanRead() throws MissingInputException {
-        if (!hasNext()) throw new MissingInputException();
+    // An input is consumed if all arguments have been seen (and processed).
+    private boolean isConsumed() {
+        return this.cursor >= this.input.length();
     }
 
     private String readWhile(final CharPredicate condition) throws MissingInputException {
-        if (this.cursor >= this.input.length()) throw new MissingInputException();
+        if (isConsumed()) throw new MissingInputException();
         return performRead(() -> {
             final StringBuilder builder = new StringBuilder();
             char c;
             while (condition.test((c = peek()))) {
                 builder.append(c);
                 this.cursor++;
-                if (this.cursor >= this.input.length()) break;
+                if (isConsumed()) break;
             }
 
             return builder.toString();
