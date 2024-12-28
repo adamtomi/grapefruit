@@ -86,7 +86,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         requireNonNull(command, "command cannot be null");
 
         final CommandInputTokenizer.Internal input = (CommandInputTokenizer.Internal) CommandInputTokenizer.wrap(command);
-        final CommandModule<S> cmd = this.commandGraph.search(input);
+        final CommandModule<S> cmd = this.commandGraph.query(input);
         final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.DISPATCH);
         testRequiredConditions(context);
 
@@ -108,7 +108,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         final CommandInputTokenizer.Internal input = (CommandInputTokenizer.Internal) CommandInputTokenizer.wrap(command);
         final CommandModule<S> cmd;
         try {
-            cmd = this.commandGraph.search(input);
+            cmd = this.commandGraph.query(input);
         } catch (final NoSuchCommandException ex) {
             if (!command.isEmpty() && input.unsafe().lastConsumed().isBlank() && !ex.argument().isBlank()) {
                 return List.of();

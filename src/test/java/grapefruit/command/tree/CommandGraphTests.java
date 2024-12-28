@@ -4,7 +4,6 @@ import grapefruit.command.CommandModule;
 import grapefruit.command.argument.CommandChain;
 import grapefruit.command.argument.CommandChainFactory;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
-import grapefruit.command.dispatcher.CommandSyntaxException;
 import grapefruit.command.mock.EmptyCommandChain;
 import grapefruit.command.mock.TestCommandModule;
 import org.junit.jupiter.api.Test;
@@ -46,7 +45,7 @@ public class CommandGraphTests {
         final CommandChain<Object> chain = module.chain(factory);
 
         graph.insert(chain, module);
-        assertDoesNotThrow(() -> assertEquals(module, graph.search(CommandInputTokenizer.wrap("test"))));
+        assertDoesNotThrow(() -> assertEquals(module, graph.query(CommandInputTokenizer.wrap("test"))));
     }
 
     @Test
@@ -73,9 +72,9 @@ public class CommandGraphTests {
         graph.insert(chain2, command2);
         graph.insert(chain3, command3);
 
-        assertDoesNotThrow(() -> assertEquals(command1, graph.search(CommandInputTokenizer.wrap("test other"))));
-        assertDoesNotThrow(() -> assertEquals(command2, graph.search(CommandInputTokenizer.wrap("test next"))));
-        assertDoesNotThrow(() -> assertEquals(command3, graph.search(CommandInputTokenizer.wrap("command"))));
+        assertDoesNotThrow(() -> assertEquals(command1, graph.query(CommandInputTokenizer.wrap("test other"))));
+        assertDoesNotThrow(() -> assertEquals(command2, graph.query(CommandInputTokenizer.wrap("test next"))));
+        assertDoesNotThrow(() -> assertEquals(command3, graph.query(CommandInputTokenizer.wrap("command"))));
     }
 
     @Test
@@ -130,7 +129,7 @@ public class CommandGraphTests {
         graph.insert(chain, command);
         graph.delete(chain);
 
-        assertThrows(NoSuchCommandException.class, () -> graph.search(CommandInputTokenizer.wrap("test")));
+        assertThrows(NoSuchCommandException.class, () -> graph.query(CommandInputTokenizer.wrap("test")));
     }
 
     @Test
@@ -158,36 +157,36 @@ public class CommandGraphTests {
         graph.insert(chain3, command3);
 
         graph.delete(chain1);
-        assertThrows(NoSuchCommandException.class, () -> graph.search(CommandInputTokenizer.wrap("test other")));
-        assertDoesNotThrow(() -> assertEquals(command2, graph.search(CommandInputTokenizer.wrap("test next"))));
-        assertDoesNotThrow(() -> assertEquals(command3, graph.search(CommandInputTokenizer.wrap("command"))));
+        assertThrows(NoSuchCommandException.class, () -> graph.query(CommandInputTokenizer.wrap("test other")));
+        assertDoesNotThrow(() -> assertEquals(command2, graph.query(CommandInputTokenizer.wrap("test next"))));
+        assertDoesNotThrow(() -> assertEquals(command3, graph.query(CommandInputTokenizer.wrap("command"))));
     }
 
     @Test
-    public void search_emptyTree() {
+    public void query_emptyTree() {
         final CommandGraph<Object> graph = new CommandGraph<>();
-        assertThrows(NoSuchCommandException.class, () -> graph.search(CommandInputTokenizer.wrap("test")));
+        assertThrows(NoSuchCommandException.class, () -> graph.query(CommandInputTokenizer.wrap("test")));
     }
 
     @Test
-    public void search_emptyTree_emptyInput() {
+    public void query_emptyTree_emptyInput() {
         final CommandGraph<Object> graph = new CommandGraph<>();
-        assertThrows(NoSuchCommandException.class, () -> graph.search(CommandInputTokenizer.wrap("")));
+        assertThrows(NoSuchCommandException.class, () -> graph.query(CommandInputTokenizer.wrap("")));
     }
 
     @Test
-    public void search_noSuchCommand() {
+    public void query_noSuchCommand() {
         final CommandGraph<Object> graph = new CommandGraph<>();
         final CommandChainFactory<Object> factory = CommandChain.factory();
         final CommandChain<Object> chain = factory.newChain()
                 .then(factory.literal("test").build()).build();
 
         graph.insert(chain, TestCommandModule.dummy());
-        assertThrows(NoSuchCommandException.class, () -> graph.search(CommandInputTokenizer.wrap("hello")));
+        assertThrows(NoSuchCommandException.class, () -> graph.query(CommandInputTokenizer.wrap("hello")));
     }
 
     @Test
-    public void search_success() {
+    public void query_success() {
         final CommandGraph<Object> graph = new CommandGraph<>();
         final CommandChainFactory<Object> factory = CommandChain.factory();
         final CommandChain<Object> chain = factory.newChain()
@@ -195,6 +194,6 @@ public class CommandGraphTests {
         final CommandModule<Object> command = TestCommandModule.computed(chain);
 
         graph.insert(chain, command);
-        assertDoesNotThrow(() -> assertEquals(command, graph.search(CommandInputTokenizer.wrap("test"))));
+        assertDoesNotThrow(() -> assertEquals(command, graph.query(CommandInputTokenizer.wrap("test"))));
     }
 }

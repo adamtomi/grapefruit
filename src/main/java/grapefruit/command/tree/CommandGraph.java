@@ -87,7 +87,7 @@ public class CommandGraph<S> {
         }
     }
 
-    public CommandModule<S> search(final CommandInputTokenizer input) throws CommandException {
+    public CommandModule<S> query(final CommandInputTokenizer input) throws CommandException {
         InternalCommandNode<S> node = this.rootNode;
         try {
             while (true) {
