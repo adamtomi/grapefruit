@@ -3,7 +3,6 @@ package grapefruit.command.argument.mapper.builtin;
 import grapefruit.command.CommandException;
 import grapefruit.command.argument.mapper.AbstractArgumentMapper;
 import grapefruit.command.argument.mapper.ArgumentMapper;
-import grapefruit.command.argument.mapper.CommandInputAccess;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
@@ -52,8 +51,8 @@ public final class StringArgumentMapper<S> extends AbstractArgumentMapper<S, Str
     }
 
     @Override
-    public String tryMap(final CommandContext<S> context, final CommandInputAccess access) throws MissingInputException {
-        return this.internalMapper.apply(access.input());
+    public String tryMap(final CommandContext<S> context, final CommandInputTokenizer input) throws MissingInputException {
+        return this.internalMapper.apply(input);
     }
 
     private static final class Regex<S> implements ArgumentMapper.Filter<S, String> {

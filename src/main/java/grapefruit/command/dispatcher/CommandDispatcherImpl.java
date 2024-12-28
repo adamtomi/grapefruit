@@ -10,7 +10,7 @@ import grapefruit.command.argument.DuplicateFlagException;
 import grapefruit.command.argument.UnrecognizedFlagException;
 import grapefruit.command.argument.condition.CommandCondition;
 import grapefruit.command.argument.condition.UnfulfilledConditionException;
-import grapefruit.command.argument.mapper.CommandInputAccess;
+import grapefruit.command.argument.mapper.ArgumentMappingException;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
@@ -257,7 +257,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final CommandArgument.Flag<S, T> flag,
             final String expression,
             final CommandContext<S> context,
-            final CommandInputTokenizer input,
+            final CommandInputTokenizer.Internal input,
             final CommandParseResult.Builder<S> builder
     ) throws CommandException {
         if (context.has(flag.key())) {
@@ -280,23 +280,26 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private static <S, T> void consumeArgument(
             final CommandArgument.Dynamic<S, T> argument,
             final CommandContext<S> context,
-            final CommandInputTokenizer input,
+            final CommandInputTokenizer.Internal input,
             final CommandParseResult.Builder<S> builder,
             final String value
     ) throws CommandException {
         try {
-            final CommandInputAccess access = CommandInputAccess.wrap(input);
             // 1) Mark beginning
             builder.begin(argument, value);
             // 2) Map argument into the correct type. This will throw an exception if
             //    the conversion fails.
-            final T result = argument.mapper().tryMap(context, access);
-            builder.push(access.consumedInput());
+            final T result = argument.mapper().tryMap(context, input);
+            builder.push(input.unsafe().lastConsumed());
             // 3) Store the result in the current context
             context.store(argument.key(), result);
             // 4) Mark end
-            // if (input.unwrap().endsWith(" ")) builder.end();
             if (input.peek() == ' ') builder.end();
+        } catch (final ArgumentMappingException ex) {
+          throw input.unsafe().exception(
+                  input.unsafe().lastConsumed(),
+                  (consumed, arg, remaining) -> new CommandArgumentException(ex, consumed, arg, remaining)
+          );
         } catch (final MissingInputException ex) {
             throw new CommandSyntaxException(context.chain(), CommandSyntaxException.Reason.TOO_FEW_ARGUMENTS);
         }

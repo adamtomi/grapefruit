@@ -1,6 +1,5 @@
 package grapefruit.command.testutil;
 
-import grapefruit.command.argument.mapper.CommandInputAccess;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 
 import java.util.Arrays;
@@ -14,7 +13,7 @@ public final class Helper {
         return Arrays.asList(input.split("\\|"));
     }
 
-    public static CommandInputAccess access(final String input) {
-        return CommandInputAccess.wrap(CommandInputTokenizer.wrap(input));
+    public static CommandInputTokenizer inputOf(final String input) {
+        return CommandInputTokenizer.wrap(input);
     }
 }
