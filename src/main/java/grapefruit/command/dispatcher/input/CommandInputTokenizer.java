@@ -18,7 +18,7 @@ public interface CommandInputTokenizer {
     @Deprecated // TODO figure out if we need this
     void moveTo(final int position);
 
-    boolean hasNext(); // TODO rename to canRead to be inline with other method names?
+    boolean canRead(); // TODO rename to canRead to be inline with other method names?
 
     char read() throws MissingInputException;
 

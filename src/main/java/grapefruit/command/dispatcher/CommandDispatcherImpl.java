@@ -116,7 +116,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             return List.of();
         }
 
-        if (!input.hasNext() && !input.unwrap().endsWith(" ")) {
+        if (!input.canRead() && !input.unwrap().endsWith(" ")) {
             return List.of();
         }
 

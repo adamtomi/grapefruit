@@ -40,13 +40,13 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
     }
 
     @Override
-    public boolean hasNext() {
+    public boolean canRead() {
         return this.cursor < this.input.length() - 1;
     }
 
     @Override
     public char read() throws MissingInputException {
-        if (!hasNext()) throw new MissingInputException();
+        if (!canRead()) throw new MissingInputException();
 
         int from = this.cursor;
         this.cursor = from + 1;
