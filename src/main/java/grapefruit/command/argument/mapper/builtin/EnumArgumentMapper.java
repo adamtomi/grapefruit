@@ -2,17 +2,19 @@ package grapefruit.command.argument.mapper.builtin;
 
 import grapefruit.command.argument.mapper.AbstractArgumentMapper;
 import grapefruit.command.argument.mapper.ArgumentMappingException;
+import grapefruit.command.completion.Completion;
+import grapefruit.command.completion.CompletionSupport;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
 
 import java.io.Serial;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static grapefruit.command.completion.Completion.completion;
 import static java.util.Objects.requireNonNull;
 
 public final class EnumArgumentMapper<S, E extends Enum<E>> extends AbstractArgumentMapper<S, E> {
@@ -54,17 +56,15 @@ public final class EnumArgumentMapper<S, E extends Enum<E>> extends AbstractArgu
     }
 
     @Override
-    public List<String> complete(final CommandContext<S> context, final String input) {
-        return Arrays.stream(this.type.getEnumConstants())
-                .map(this.resolver::complete)
-                .toList();
+    public List<Completion> complete(final CommandContext<S> context, final String input) {
+        return CompletionSupport.mapping(this.resolver::complete, this.type.getEnumConstants());
     }
 
     private interface EnumResolver<E extends Enum<E>> {
 
         boolean matches(final E candidate, final String input);
 
-        String complete(final E value);
+        Completion complete(final E value);
 
         static <E extends Enum<E>> EnumResolver<E> strict() {
             return new EnumResolverImpl<>((candidate, value) -> candidate.name().equals(value), Enum::name);
@@ -90,8 +90,8 @@ public final class EnumArgumentMapper<S, E extends Enum<E>> extends AbstractArgu
         }
 
         @Override
-        public String complete(final E value) {
-            return this.completer.apply(value);
+        public Completion complete(final E value) {
+            return completion(this.completer.apply(value));
         }
     }
 

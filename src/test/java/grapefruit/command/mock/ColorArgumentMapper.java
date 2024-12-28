@@ -2,6 +2,8 @@ package grapefruit.command.mock;
 
 import grapefruit.command.argument.mapper.AbstractArgumentMapper;
 import grapefruit.command.argument.mapper.ArgumentMappingException;
+import grapefruit.command.completion.Completion;
+import grapefruit.command.completion.CompletionSupport;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
@@ -41,9 +43,9 @@ public class ColorArgumentMapper extends AbstractArgumentMapper<Object, String> 
     }
 
     @Override
-    public List<String> complete(final CommandContext<Object> context, final String input) {
+    public List<Completion> complete(final CommandContext<Object> context, final String input) {
         if (input.isEmpty()) {
-            return List.of(String.valueOf(HASH));
+            return CompletionSupport.strings(String.valueOf(HASH));
         }
 
         if (input.length() > 7 || input.charAt(0) != HASH || containsInvalidCharacter(input)) {
@@ -52,6 +54,7 @@ public class ColorArgumentMapper extends AbstractArgumentMapper<Object, String> 
 
         return Arrays.stream(HEX_CHARSET)
                 .map(x -> input + x)
+                .map(Completion::completion)
                 .toList();
     }
 }

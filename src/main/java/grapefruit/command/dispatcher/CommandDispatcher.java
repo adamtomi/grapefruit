@@ -2,6 +2,7 @@ package grapefruit.command.dispatcher;
 
 import grapefruit.command.CommandException;
 import grapefruit.command.CommandModule;
+import grapefruit.command.completion.Completion;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
 
 import java.util.Collection;
@@ -23,7 +24,7 @@ public interface CommandDispatcher<S> {
 
     void dispatch(final S source, final String command) throws CommandException;
 
-    List<String> complete(final S source, final String command);
+    List<Completion> complete(final S source, final String command);
 
     static <S> CommandDispatcher<S> using(final DispatcherConfig<S> config) {
         return new CommandDispatcherImpl<>(config);

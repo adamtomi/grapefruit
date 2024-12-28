@@ -1,6 +1,8 @@
 package grapefruit.command.argument.mapper;
 
 import grapefruit.command.CommandException;
+import grapefruit.command.completion.Completion;
+import grapefruit.command.completion.CompletionSource;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
@@ -10,7 +12,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Supplier;
 
-public interface ArgumentMapper<S, T> {
+public interface ArgumentMapper<S, T> extends CompletionSource<S> {
 
     TypeToken<T> type();
 
@@ -18,7 +20,7 @@ public interface ArgumentMapper<S, T> {
 
     T tryMap(final CommandContext<S> context, final CommandInputTokenizer input) throws ArgumentMappingException, MissingInputException;
 
-    List<String> complete(final CommandContext<S> context, final String input);
+    // List<String> complete(final CommandContext<S> context, final String input);
 
     @Deprecated
     default ArgumentMapper<S, T> with(final Collection<Filter<S, T>> filters) {
@@ -47,7 +49,7 @@ public interface ArgumentMapper<S, T> {
             }
 
             @Override
-            public List<String> complete(final CommandContext<S> context, final String input) {
+            public List<Completion> complete(final CommandContext<S> context, final String input) {
                 return ArgumentMapper.this.complete(context, input);
             }
         };

@@ -1,5 +1,6 @@
 package grapefruit.command.argument.mapper;
 
+import grapefruit.command.completion.Completion;
 import grapefruit.command.dispatcher.CommandContext;
 import io.leangen.geantyref.TypeToken;
 
@@ -31,7 +32,7 @@ public abstract class AbstractArgumentMapper<S, T> implements ArgumentMapper<S, 
     }
 
     @Override
-    public List<String> complete(final CommandContext<S> context, final String input) {
+    public List<Completion> complete(final CommandContext<S> context, final String input) {
         return List.of();
     }
 }

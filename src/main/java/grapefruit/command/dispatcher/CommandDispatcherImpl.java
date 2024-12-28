@@ -11,6 +11,8 @@ import grapefruit.command.argument.UnrecognizedFlagException;
 import grapefruit.command.argument.condition.CommandCondition;
 import grapefruit.command.argument.condition.UnfulfilledConditionException;
 import grapefruit.command.argument.mapper.ArgumentMappingException;
+import grapefruit.command.completion.Completion;
+import grapefruit.command.completion.CompletionSupport;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
@@ -99,7 +101,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     @Override
-    public List<String> complete(final S source, final String command) {
+    public List<Completion> complete(final S source, final String command) {
         requireNonNull(source, "source cannot be null");
         requireNonNull(command, "command cannot be null");
 
@@ -108,9 +110,14 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         try {
             cmd = this.commandGraph.search(input);
         } catch (final NoSuchCommandException ex) {
+            if (!command.isEmpty() && input.unsafe().lastConsumed().isBlank() && !ex.argument().isBlank()) {
+                return List.of();
+            }
+
             return ex.alternatives().stream()
                     .flatMap(x -> Stream.concat(Stream.of(x.name()), x.aliases().stream()))
                     .filter(x -> startsWithIgnoreCase(x, ex.argument()))
+                    .map(Completion::completion)
                     .toList();
         } catch (final CommandException ex) {
             return List.of();
@@ -367,7 +374,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
-    private static <S> List<String> collectCompletions(final CommandContext<S> context, final CommandInputTokenizer input, final CommandParseResult<S> parseResult) {
+    private static <S> List<Completion> collectCompletions(final CommandContext<S> context, final CommandInputTokenizer input, final CommandParseResult<S> parseResult) {
         final String remaining = input.remainingOrEmpty();
         final boolean completeNext = input.unwrap().endsWith(" ");
 
@@ -376,16 +383,16 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 ? remaining
                 : completeNext ? remaining : parseResult.lastInput().orElse(remaining);
 
-        final List<String> base = argument.isFlag()
+        final List<Completion> base = argument.isFlag()
                 ? collectFlagCompletions(context, parseResult, argument.asFlag(), argToComplete)
                 : collectArgumentCompletions(context, parseResult, argument, argToComplete);
 
         return base.stream()
-                .filter(x -> startsWithIgnoreCase(x, argToComplete.trim()))
+                .filter(x -> startsWithIgnoreCase(x.content(), argToComplete.trim()))
                 .toList();
     }
 
-    private static <S> List<String> collectFlagCompletions(
+    private static <S> List<Completion> collectFlagCompletions(
             final CommandContext<S> context,
             final CommandParseResult<S> parseResult,
             final CommandArgument.Flag<S, ?> argument,
@@ -402,7 +409,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
              * values yet.
              */
             final boolean completeFlagValue = parseResult.lastInput().map(x -> !x.equals(argToComplete)).orElse(false);
-            final List<String> base = new ArrayList<>();
+            final List<Completion> base = new ArrayList<>();
 
             if (completeFlagValue) {
                 base.addAll(argument.mapper().complete(context, argToComplete));
@@ -418,7 +425,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
-    private static <S> List<String> collectArgumentCompletions(
+    private static <S> List<Completion> collectArgumentCompletions(
             final CommandContext<S> context,
             final CommandParseResult<S> parseResult,
             final CommandArgument.Dynamic<S, ?> argument,
@@ -445,23 +452,23 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         return (remainingArgs.isEmpty() ? remainingFlags : remainingArgs).getFirst();
     }
 
-    private static <S> List<String> completeFlag(final CommandArgument.Flag<S, ?> flag) {
+    private static <S> List<Completion> completeFlag(final CommandArgument.Flag<S, ?> flag) {
         final List<String> result = new ArrayList<>();
         result.add(LONG_FLAG_PREFIX + flag.name());
 
         if (flag.shorthand() != 0) result.add(SHORT_FLAG_PREFIX + flag.shorthand());
 
-        return result;
+        return CompletionSupport.strings(result);
     }
 
-    private static <S> List<String> completeFlags(final Collection<CommandArgument.Flag<S, ?>> flags) {
+    private static <S> List<Completion> completeFlags(final Collection<CommandArgument.Flag<S, ?>> flags) {
         return flags.stream()
                 .map(CommandDispatcherImpl::completeFlag)
                 .flatMap(Collection::stream)
                 .toList();
     }
 
-    private static <S> List<String> completeFlagGroup(final String argument, final List<CommandArgument.Flag<S, ?>> flags) {
+    private static <S> List<Completion> completeFlagGroup(final String argument, final List<CommandArgument.Flag<S, ?>> flags) {
         final List<String> result = new ArrayList<>();
         // If charAt(1) is not alphabetic, this is not a flag group. This is to prevent
         // interpreting flag names (--flag-name) as flag groups.
@@ -474,6 +481,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             }
         }
 
-        return result;
+        return CompletionSupport.strings(result);
     }
 }

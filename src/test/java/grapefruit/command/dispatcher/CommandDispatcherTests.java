@@ -5,6 +5,7 @@ import grapefruit.command.argument.CommandArgumentException;
 import grapefruit.command.argument.DuplicateFlagException;
 import grapefruit.command.argument.UnrecognizedFlagException;
 import grapefruit.command.argument.condition.UnfulfilledConditionException;
+import grapefruit.command.completion.Completion;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
 import grapefruit.command.mock.ColorArgumentMapper;
 import grapefruit.command.mock.TestArgumentMapper;
@@ -23,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static grapefruit.command.argument.mapper.builtin.StringArgumentMapper.word;
 import static grapefruit.command.mock.AlwaysCondition.fail;
 import static grapefruit.command.testutil.ExtraAssertions.assertContainsAll;
-import static grapefruit.command.testutil.Helper.toStringList;
+import static grapefruit.command.testutil.Helper.completions;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -336,7 +337,7 @@ public class CommandDispatcherTests {
             "'',command|cmd|test",
             "t,test",
             "c,command|cmd",
-            // "'test he ',''" // TODO fix this
+            "'test he ',''"
     })
     public void complete_commandNames(final String input, final String expected) {
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
@@ -353,15 +354,15 @@ public class CommandDispatcherTests {
                 .build());
 
         dispatcher.register(Set.of(command0, command1));
-        final List<String> completions = dispatcher.complete(new Object(), input);
-        assertContainsAll(toStringList(expected), completions);
+        final List<Completion> completions = dispatcher.complete(new Object(), input);
+        assertContainsAll(completions(expected), completions);
     }
 
     @ParameterizedTest
     @CsvSource({
             "'',testcommand|testcmd|test|ts",
             "te,testcommand|testcmd|test",
-            // "test,testcommand|testcmd,test", // TODO fix this test
+            "test,testcommand|testcmd,test", // TODO fix this test
             "'test ',hello|hl",
             "test hello,''",
             "'test hello ',--color|-c|--stringflag|-s|--boolflag|-b",
@@ -382,6 +383,8 @@ public class CommandDispatcherTests {
             "'test hello --color #ffffff -s ',''"
     })
     public void complete_arguments(final String input, final String expected) {
+        System.out.println("input: '%s'".formatted(input));
+        System.out.println("expected: '%s'".formatted(expected));
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
                 .build();
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
@@ -397,8 +400,8 @@ public class CommandDispatcherTests {
                 .build());
 
         dispatcher.register(command);
-        final List<String> completions = dispatcher.complete(new Object(), input);
-        assertContainsAll(toStringList(expected), completions);
+        final List<Completion> completions = dispatcher.complete(new Object(), input);
+        assertContainsAll(completions(expected), completions);
     }
 
     @ParameterizedTest
@@ -433,7 +436,7 @@ public class CommandDispatcherTests {
                 .build());
 
         dispatcher.register(command);
-        final List<String> completions = dispatcher.complete(new Object(), input);
+        final List<Completion> completions = dispatcher.complete(new Object(), input);
         assertIterableEquals(List.of(), completions);
     }
 }
