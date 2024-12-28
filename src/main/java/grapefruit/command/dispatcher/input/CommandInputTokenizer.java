@@ -4,6 +4,8 @@ import grapefruit.command.argument.CommandArgumentException;
 import grapefruit.command.util.function.Function3;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
+
 public interface CommandInputTokenizer {
     /* Both of these fields are used by StringReader#readQuotable */
     char SINGLE_QUOTE = '\'';
@@ -50,7 +52,7 @@ public interface CommandInputTokenizer {
 
         void moveTo(final int position);
 
-        String lastConsumed();
+        Optional<String> lastConsumed();
 
         <X extends CommandArgumentException> X exception(final String argument, final Function3<String, String, String, X> provider);
     }

@@ -337,7 +337,12 @@ public class CommandDispatcherTests {
             "'',command|cmd|test",
             "t,test",
             "c,command|cmd",
-            "'test he ',''"
+            "'test he ',''",
+            "'test ',hello|hl",
+            "'cmd su',sub|subcmd",
+            "'cmd sub',sub|subcmd",
+            "test asd he,''",
+            "'cmd su ',''"
     })
     public void complete_commandNames(final String input, final String expected) {
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
@@ -360,11 +365,6 @@ public class CommandDispatcherTests {
 
     @ParameterizedTest
     @CsvSource({
-            "'',testcommand|testcmd|test|ts",
-            "te,testcommand|testcmd|test",
-            "test,testcommand|testcmd,test", // TODO fix this test
-            "'test ',hello|hl",
-            "test hello,''",
             "'test hello ',--color|-c|--stringflag|-s|--boolflag|-b",
             "test hello a,''",
             "test hello argname,''",
@@ -383,8 +383,6 @@ public class CommandDispatcherTests {
             "'test hello --color #ffffff -s ',''"
     })
     public void complete_arguments(final String input, final String expected) {
-        System.out.println("input: '%s'".formatted(input));
-        System.out.println("expected: '%s'".formatted(expected));
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
                 .build();
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);

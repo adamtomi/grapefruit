@@ -106,7 +106,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         requireNonNull(command, "command cannot be null");
 
         final CommandInputTokenizer.Internal input = (CommandInputTokenizer.Internal) CommandInputTokenizer.wrap(command);
-        final CommandModule<S> cmd;
+        /*final CommandModule<S> cmd;
         try {
             cmd = this.commandGraph.query(input);
         } catch (final NoSuchCommandException ex) {
@@ -121,7 +121,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     .toList();
         } catch (final CommandException ex) {
             return List.of();
-        }
+        } */
+        final Tuple2<List<Completion>, CommandModule<S>> result = this.commandGraph.complete(input);
+        final Optional<List<Completion>> completions = result.left();
+        if (completions.isPresent()) return completions.orElseThrow();
+
+        final CommandModule<S> cmd = result.right().orElseThrow();
 
         if (!input.canRead() && !input.unwrap().endsWith(" ")) {
             return List.of();
@@ -297,14 +302,14 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             // 2) Map argument into the correct type. This will throw an exception if
             //    the conversion fails.
             final T result = argument.mapper().tryMap(context, input);
-            builder.push(input.unsafe().lastConsumed());
+            builder.push(input.unsafe().lastConsumed().orElseThrow());
             // 3) Store the result in the current context
             context.store(argument.key(), result);
             // 4) Mark end
             if (input.peek() == ' ') builder.end();
         } catch (final ArgumentMappingException ex) {
           throw input.unsafe().exception(
-                  input.unsafe().lastConsumed(),
+                  input.unsafe().lastConsumed().orElseThrow(),
                   (consumed, arg, remaining) -> new CommandArgumentException(ex, consumed, arg, remaining)
           );
         } catch (final MissingInputException ex) {

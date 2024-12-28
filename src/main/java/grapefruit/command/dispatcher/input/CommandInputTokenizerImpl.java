@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
@@ -192,9 +193,11 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
         }
 
         @Override
-        public String lastConsumed() {
-            final Range range = this.impl.consumed.getLast();
-            return this.impl.input.substring(range.from(), range.to());
+        public Optional<String> lastConsumed() {
+            final @Nullable Range range = this.impl.consumed.peekLast();
+            return range == null
+                    ? Optional.empty()
+                    : Optional.of(this.impl.input.substring(range.from(), range.to()));
         }
 
         @Override
