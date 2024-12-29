@@ -416,7 +416,8 @@ public class CommandDispatcherTests {
             "test hello abc --color #xyzxyz",
             "'test hello abc --color #xyzxyz '",
             "'test hello abc -sb '",
-            "test hello abc -sb --color #"
+            "test hello abc -sb --color #",
+            "test hello abc --color #ffffff --color #,''"
     })
     public void complete_invalidArgument(final String input) {
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
