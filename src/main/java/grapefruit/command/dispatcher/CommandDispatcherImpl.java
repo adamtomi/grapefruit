@@ -226,7 +226,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                          */
                         input.readWord(); // Consume the current argument to be inline with the rest of the code
                         throw firstUnseen(chain.flags(), context).isPresent()
-                                ? UnrecognizedFlagException.fromInput(input, arg, arg)
+                                ? input.unsafe().exception(arg, UnrecognizedFlagException::new)
                                 : new CommandSyntaxException(chain, CommandSyntaxException.Reason.TOO_MANY_ARGUMENTS);
                     }
 
@@ -272,7 +272,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final CommandParseResult.Builder<S> builder
     ) throws CommandException {
         if (context.has(flag.key())) {
-            throw DuplicateFlagException.fromInput(input, expression);
+            throw input.unsafe().exception(expression, DuplicateFlagException::new);
         }
 
         /*
@@ -318,7 +318,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
     private static <S> Tuple2<List<CommandArgument.Flag<S, ?>>, Supplier<UnrecognizedFlagException>> parseFlagGroup(
             final String expression,
-            final CommandInputTokenizer input,
+            final CommandInputTokenizer.Internal input,
             final List<CommandArgument.Flag<S, ?>> candidates
     ) {
         /*
@@ -345,7 +345,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
             return candidate.isPresent()
                     ? new Tuple2<>(List.of(candidate.orElseThrow()), null)
-                    : new Tuple2<>(null, () -> UnrecognizedFlagException.fromInput(input, expression, flagName));
+                    : new Tuple2<>(null, () -> input.unsafe().exception(expression,
+                            (consumed, arg, remaining) -> new UnrecognizedFlagException(consumed, arg, remaining, flagName)
+                    )
+            );
         } else {
             // We either have a single shorthand or a group of shorthands.
             final char[] shorthands = expression.substring(1).toCharArray();
@@ -370,7 +373,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     flags.add(candidate.orElseThrow());
                 } else {
                     // Return an error if an incorrect shorthand was provided
-                    return new Tuple2<>(null, () -> UnrecognizedFlagException.fromInput(input, expression, String.valueOf(c)));
+                    final Supplier<UnrecognizedFlagException> ex = () -> input.unsafe().exception(
+                            expression,
+                            (consumed, arg, remaining) -> new UnrecognizedFlagException(consumed, arg, remaining, String.valueOf(c))
+                    );
+                    return new Tuple2<>(null, ex);
                 }
             }
 
@@ -379,7 +386,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     private static <S> List<Completion> collectCompletions(final CommandContext<S> context, final CommandInputTokenizer input, final CommandParseResult<S> parseResult) {
-        final String remaining = input.remainingOrEmpty();
+        final String remaining = input.remaining();
         final boolean completeNext = input.input().endsWith(" ");
 
         final CommandArgument.Dynamic<S, ?> argument = resolveArgumentToComplete(parseResult);

@@ -2,7 +2,6 @@ package grapefruit.command.dispatcher.input;
 
 import grapefruit.command.argument.CommandArgumentException;
 import grapefruit.command.util.function.Function3;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -32,10 +31,6 @@ public interface CommandInputTokenizer {
     String readRemaining() throws MissingInputException;
 
     String consumed();
-
-    // TODO figure out if we really don't want this
-    @Deprecated
-    String remainingOrEmpty();
 
     String remaining();
 

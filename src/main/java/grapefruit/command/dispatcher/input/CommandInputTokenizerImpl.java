@@ -123,16 +123,6 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
     }
 
     @Override
-    @Deprecated
-    public String remainingOrEmpty() {
-        try {
-            return readRemaining();
-        } catch (final MissingInputException ex) {
-            return "";
-        }
-    }
-
-    @Override
     public String remaining() {
         return this.input.substring(this.cursor);
     }
@@ -207,12 +197,10 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
 
         @Override
         public <X extends CommandArgumentException> X exception(final String argument, final Function3<String, String, String, X> provider) {
-            final String remaining = this.impl.input.substring(this.impl.cursor);
-            // TODO
             return provider.apply(
                     this.impl.consumed(), // Consumed input
                     argument, // The argument that caused this exception
-                    remaining // The remaining input
+                    this.impl.remaining() // The remaining input
             );
         }
     }
