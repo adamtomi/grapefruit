@@ -112,27 +112,14 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
     public String readRemaining() throws MissingInputException {
         skipWhitespace();
         return performRead(() -> {
-            // TODO switch to this cleaner implementation?
-            /*
-             *  final String result = this.input.substring(this.cursor);
-             *  this.cursor = this.input.length();
-              * return result;
-             */
-            final int start = this.cursor;
+            final String result = remaining();
             this.cursor = this.input.length();
-            final String result = this.input.substring(start);
             if (result.isEmpty()) {
                 throw new MissingInputException();
             }
 
             return result;
         });
-    }
-
-    @Override
-    public @Nullable String peekRemaining() {
-        // TODO
-        throw new UnsupportedOperationException("TODO");
     }
 
     @Override
@@ -143,6 +130,11 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
         } catch (final MissingInputException ex) {
             return "";
         }
+    }
+
+    @Override
+    public String remaining() {
+        return this.input.substring(this.cursor);
     }
 
     @Override

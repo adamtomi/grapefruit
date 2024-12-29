@@ -37,8 +37,7 @@ public interface CommandInputTokenizer {
     @Deprecated
     String remainingOrEmpty();
 
-    // TODO figure out if we really need this
-    @Nullable String peekRemaining();
+    String remaining();
 
     static CommandInputTokenizer.Internal wrap(final String input) {
         return new CommandInputTokenizerImpl(input);
