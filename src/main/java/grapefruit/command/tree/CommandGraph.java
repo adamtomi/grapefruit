@@ -11,6 +11,7 @@ import grapefruit.command.tree.node.CommandNode;
 import grapefruit.command.tree.node.InternalCommandNode;
 import grapefruit.command.util.Tuple2;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -92,7 +93,7 @@ public class CommandGraph<S> {
         }
     }
 
-    public CommandModule<S> query(final CommandInputTokenizer input) throws CommandException {
+    public CommandModule<S> query(final CommandInputTokenizer.Internal input) throws CommandException {
         requireNonNull(input, "input cannot be null");
         InternalCommandNode<S> node = this.rootNode;
         try {
@@ -123,32 +124,19 @@ public class CommandGraph<S> {
         }
     }
 
-    public Tuple2<List<Completion>, CommandModule<S>> complete(final CommandInputTokenizer.Internal input) {
-        requireNonNull(input, "input cannot be null");
+    public InternalCommandNode<S> query0(final CommandInputTokenizer.Internal input) throws NoSuchCommandException {
         InternalCommandNode<S> node = this.rootNode;
-        String name = "";
         try {
-            while (true) {
-                name = input.readWord();
+            while (input.canReadNonWhitespace()) {
+                final String name = input.readWord();
                 final Optional<InternalCommandNode<S>> childCandidate = node.queryChild(name);
-                if (childCandidate.isEmpty()) {
-                    final List<Completion> completions = input.peek() == ' '
-                            ? List.of()
-                            : complete(node, name);
-
-                    return new Tuple2<>(completions, null);
-                }
+                if (childCandidate.isEmpty()) throw generateNoSuchCommand(node, input, name);
 
                 node = childCandidate.orElseThrow();
-
                 if (node.isLeaf()) {
                     final Optional<CommandModule<S>> commandCandidate = node.command();
                     if (commandCandidate.isPresent()) {
-                        if (input.peek() == 0) {
-                            return new Tuple2<>(complete0(node, name), null);
-                        }
-
-                        return new Tuple2<>(null, commandCandidate.orElseThrow());
+                        return node;
                     }
 
                     /*
@@ -162,30 +150,77 @@ public class CommandGraph<S> {
                 }
             }
         } catch (final MissingInputException ex) {
-            final InternalCommandNode<S> nodeToComplete = input.unsafe().lastConsumed().map(String::isBlank).orElse(false)
-                    ? node
-                    : node.parent().orElse(node);
-            final String nameToComplete = input.unsafe().lastConsumed().map(String::isBlank).orElse(false)
-                    ? ""
-                    : name;
-            return new Tuple2<>(complete(nodeToComplete, nameToComplete), null);
+            throw generateNoSuchCommand(node, input, "");
+        }
+
+        return node;
+    }
+
+    public Tuple2<List<Completion>, CommandModule<S>> complete(final CommandInputTokenizer.Internal input) {
+        try {
+            if (!input.canReadNonWhitespace()) {
+                // The input is empty, complete the direct children of the root node
+                return new Tuple2<>(completeChildren(this.rootNode, ""), null);
+
+            }
+            final InternalCommandNode<S> node = query0(input);
+            final Optional<CommandModule<S>> command = node.command();
+
+            if (command.isPresent() && input.canRead()) {
+                /*
+                 * We have found a command. If we there are more arguments in the queue, we
+                 * want to return this command (thus passing all subsequent arguments for
+                 * completion to it rather than handling them here).
+                 */
+                return new Tuple2<>(null, command.orElseThrow());
+            }
+
+            // Default to an empty string as last input
+            final String lastConsumed = input.unsafe().lastConsumed().orElse("");
+            /*
+             * If `canRead()` returns true at this stage, it means that all
+             * command names have been valid so far and the input ends with
+             * a whitespace. In this case, we want to complete child nodes
+             * with an empty input string. Otherwise, complete the current
+             * node with the current input.
+             */
+            final List<Completion> completions = input.canRead()
+                    ? completeChildren(node, "")
+                    : completeNode(node, lastConsumed);
+
+            return new Tuple2<>(completions, null);
+        } catch (final NoSuchCommandException ex) {
+            final List<Completion> completions;
+            if (input.canRead()) {
+                /*
+                 * If we have more input to read, that means that the invalid
+                 * node name is not the last argument. Return an empty list in
+                 * such cases.
+                 */
+                completions = List.of();
+            } else {
+                // Otherwise, we collect completions for the current node
+                completions = ex.alternatives().stream()
+                        .map(x -> completeNode(x, ex.argument()))
+                        .flatMap(Collection::stream)
+                        .toList();
+            }
+
+            return new Tuple2<>(completions, null);
         }
     }
 
-    // TODO rename to complete
-    private static <S> List<Completion> complete0(final InternalCommandNode<S> node, final String arg) {
+    private static List<Completion> completeNode(final CommandNode node, final String arg) {
         return Stream.concat(Stream.of(node.name()), node.aliases().stream())
                 .filter(x -> startsWithIgnoreCase(x, arg))
                 .map(Completion::completion)
                 .toList();
     }
 
-    // TODO rename to completeChildren
-    private static <S> List<Completion> complete(final InternalCommandNode<S> node, final String arg) {
+    private static <S> List<Completion> completeChildren(final InternalCommandNode<S> node, final String arg) {
         return node.children().stream()
-                .flatMap(x -> Stream.concat(Stream.of(x.name()), x.aliases().stream()))
-                .filter(x -> startsWithIgnoreCase(x, arg))
-                .map(Completion::completion)
+                .map(x -> completeNode(x, arg))
+                .flatMap(Collection::stream)
                 .toList();
     }
 
@@ -201,11 +236,16 @@ public class CommandGraph<S> {
         return Optional.empty();
     }
 
-    private static <S> NoSuchCommandException generateNoSuchCommand(final InternalCommandNode<S> node, final CommandInputTokenizer input, final String argument) {
+    private static <S> NoSuchCommandException generateNoSuchCommand(final InternalCommandNode<S> node, final CommandInputTokenizer.Internal input, final String argument) {
         final Set<CommandNode> alternatives = node.children().stream()
                 .map(InternalCommandNode::asImmutable)
                 .collect(Collectors.toSet());
 
-        return NoSuchCommandException.fromInput(input, argument, alternatives);
+        // return NoSuchCommandException.fromInput(input, argument, alternatives);
+        // return new NoSuchCommandException()
+        return input.unsafe().exception(
+                argument,
+                (consumed, arg, remaining) -> new NoSuchCommandException(consumed, arg, remaining, alternatives)
+        );
     }
 }

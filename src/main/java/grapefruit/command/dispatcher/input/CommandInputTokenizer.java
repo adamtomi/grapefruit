@@ -40,7 +40,7 @@ public interface CommandInputTokenizer {
     // TODO figure out if we really need this
     @Nullable String peekRemaining();
 
-    static CommandInputTokenizer wrap(final String input) {
+    static CommandInputTokenizer.Internal wrap(final String input) {
         return new CommandInputTokenizerImpl(input);
     }
 
