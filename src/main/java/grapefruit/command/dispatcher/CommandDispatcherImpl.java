@@ -92,9 +92,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         final CommandParseResult<S> parseResult = processCommand(context, input);
         parseResult.rethrowCaptured();
 
-        final CommandResult<S> executionResult = execute(context, cmd);
+        final ExecutionResult<S> executionResult = execute(context, cmd);
         if (!executionResult.successful()) {
-            throw new CommandInvocationException(executionResult.asFailed().exception());
+            throw new CommandExecutionException(executionResult.asFailed().exception());
         }
     }
 
@@ -146,12 +146,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         return chain;
     }
 
-    private static <S> CommandResult<S> execute(final CommandContext<S> context, final CommandModule<S> command) {
+    private static <S> ExecutionResult<S> execute(final CommandContext<S> context, final CommandModule<S> command) {
         try {
             command.execute(context);
-            return CommandResult.successful(context);
+            return ExecutionResult.successful(context);
         } catch (final Throwable ex) {
-            return CommandResult.failed(context, ex);
+            return ExecutionResult.failed(context, ex);
         }
     }
 

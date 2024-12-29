@@ -4,11 +4,11 @@ import grapefruit.command.CommandException;
 
 import java.io.Serial;
 
-public class CommandInvocationException extends CommandException {
+public class CommandExecutionException extends CommandException {
     @Serial
     private static final long serialVersionUID = 3033014139998396572L;
 
-    public CommandInvocationException(final Throwable cause) {
+    public CommandExecutionException(final Throwable cause) {
         super(cause);
     }
 }

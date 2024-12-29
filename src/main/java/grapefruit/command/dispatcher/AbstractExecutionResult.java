@@ -4,11 +4,11 @@ import grapefruit.command.util.ToStringer;
 
 import static java.util.Objects.requireNonNull;
 
-abstract class AbstractCommandResult<S> implements CommandResult<S> {
+abstract class AbstractExecutionResult<S> implements ExecutionResult<S> {
     private final CommandContext<S> context;
     private final boolean successful;
 
-    AbstractCommandResult(final CommandContext<S> context, final boolean successful) {
+    AbstractExecutionResult(final CommandContext<S> context, final boolean successful) {
         this.context = requireNonNull(context, "context cannot be null");
         this.successful = successful;
     }
@@ -23,7 +23,7 @@ abstract class AbstractCommandResult<S> implements CommandResult<S> {
         return this.successful;
     }
 
-    static final class Failed<S> extends AbstractCommandResult<S> implements CommandResult.Failed<S> {
+    static final class Failed<S> extends AbstractExecutionResult<S> implements ExecutionResult.Failed<S> {
         private final Throwable exception;
 
         Failed(final CommandContext<S> context, final Throwable exception) {
@@ -37,12 +37,12 @@ abstract class AbstractCommandResult<S> implements CommandResult<S> {
         }
 
         @Override
-        public CommandResult.Failed<S> asFailed() {
+        public ExecutionResult.Failed<S> asFailed() {
             return this;
         }
 
         @Override
-        public CommandResult.Successful<S> asSuccessful() {
+        public ExecutionResult.Successful<S> asSuccessful() {
             throw new UnsupportedOperationException("Attempting to cast a failed result to a successful result");
         }
 
@@ -55,18 +55,18 @@ abstract class AbstractCommandResult<S> implements CommandResult<S> {
         }
     }
 
-    static final class Successful<S> extends AbstractCommandResult<S> implements CommandResult.Successful<S> {
+    static final class Successful<S> extends AbstractExecutionResult<S> implements ExecutionResult.Successful<S> {
         Successful(final CommandContext<S> context) {
             super(context, true);
         }
 
         @Override
-        public CommandResult.Failed<S> asFailed() {
+        public ExecutionResult.Failed<S> asFailed() {
             throw new UnsupportedOperationException("Attempting to cast a successful result to a failed result");
         }
 
         @Override
-        public CommandResult.Successful<S> asSuccessful() {
+        public ExecutionResult.Successful<S> asSuccessful() {
             return this;
         }
 
