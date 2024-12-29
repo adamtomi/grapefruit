@@ -383,7 +383,6 @@ public class CommandDispatcherTests {
             "'test hello --color #ffffff -s ',''"
     })
     public void complete_arguments(final String input, final String expected) {
-        System.out.println("input '%s'".formatted(input));
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
                 .build();
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
@@ -400,7 +399,6 @@ public class CommandDispatcherTests {
 
         dispatcher.register(command);
         final List<Completion> completions = dispatcher.complete(new Object(), input);
-        System.out.println(completions);
         assertContainsAll(completions(expected), completions);
     }
 

@@ -179,15 +179,6 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
         }
 
         @Override
-        public void moveTo(final int position) {
-            if (position < 0) {
-                throw new IllegalArgumentException("Position cannot be negative");
-            }
-
-            this.impl.cursor = position;
-        }
-
-        @Override
         public Optional<String> lastConsumed() {
             final @Nullable Range range = this.impl.consumed.peekLast();
             return range == null

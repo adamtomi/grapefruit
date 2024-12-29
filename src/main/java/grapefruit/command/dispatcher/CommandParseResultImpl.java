@@ -76,11 +76,6 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
     }
 
     @Override
-    public int cursor() {
-        return this.cursor;
-    }
-
-    @Override
     public String toString() {
         return ToStringer.create(this)
                 .append("input", this.input)

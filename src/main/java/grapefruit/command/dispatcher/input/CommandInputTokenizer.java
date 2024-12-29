@@ -45,8 +45,6 @@ public interface CommandInputTokenizer {
 
     interface Unsafe {
 
-        void moveTo(final int position);
-
         Optional<String> lastConsumed();
 
         <X extends CommandArgumentException> X exception(final String argument, final Function3<String, String, String, X> provider);

@@ -44,8 +44,6 @@ public interface CommandParseResult<S> {
 
     boolean isComplete();
 
-    int cursor();
-
     static <S> Builder<S> createBuilder(final CommandChain<S> chain, final CommandInputTokenizer input) {
         // Make mutable copies
         return new CommandParseResultImpl.Builder<>(new ArrayList<>(chain.arguments()), new ArrayList<>(chain.flags()), input);
@@ -55,7 +53,6 @@ public interface CommandParseResult<S> {
 
         void begin(final CommandArgument.Dynamic<S, ?> argument);
 
-        @Deprecated
         void push(final String value);
 
         void end();
