@@ -110,11 +110,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         if (completions.isPresent()) return completions.orElseThrow();
 
         final CommandModule<S> cmd = result.right().orElseThrow();
-
-        if (!input.canRead() && !input.input().endsWith(" ")) {
-            return List.of();
-        }
-
         final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.COMPLETE);
         CommandParseResult<S> parseResult = processCommand(context, input);
         final Optional<CommandException> capturedOpt = parseResult.capturedException();
