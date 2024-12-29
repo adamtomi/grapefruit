@@ -7,7 +7,6 @@ import java.util.Optional;
 
 public interface CommandInputTokenizer {
 
-    // Return the original user input
     String input();
 
     int cursor();
@@ -32,21 +31,18 @@ public interface CommandInputTokenizer {
 
     String consumed();
 
+    Optional<String> lastConsumed();
+
     String remaining();
 
-    static CommandInputTokenizer.Internal wrap(final String input) {
+    Internal internal();
+
+    static CommandInputTokenizer wrap(final String input) {
         return new CommandInputTokenizerImpl(input);
     }
 
-    interface Internal extends CommandInputTokenizer {
+    interface Internal {
 
-        Unsafe unsafe();
-    }
-
-    interface Unsafe {
-
-        Optional<String> lastConsumed();
-
-        <X extends CommandArgumentException> X exception(final String argument, final Function3<String, String, String, X> provider);
+        <X extends CommandArgumentException> X gen(final String argument, final Function3<String, String, String, X> provider);
     }
 }

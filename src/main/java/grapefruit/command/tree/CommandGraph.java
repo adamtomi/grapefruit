@@ -93,7 +93,7 @@ public class CommandGraph<S> {
         }
     }
 
-    public CommandModule<S> query(final CommandInputTokenizer.Internal input) throws CommandException {
+    public CommandModule<S> query(final CommandInputTokenizer input) throws CommandException {
         requireNonNull(input, "input cannot be null");
         final InternalCommandNode<S> node = query0(input);
         final Optional<CommandModule<S>> command = node.command();
@@ -102,7 +102,7 @@ public class CommandGraph<S> {
         throw generateNoSuchCommand(node, input, "");
     }
 
-    public InternalCommandNode<S> query0(final CommandInputTokenizer.Internal input) throws NoSuchCommandException {
+    public InternalCommandNode<S> query0(final CommandInputTokenizer input) throws NoSuchCommandException {
         InternalCommandNode<S> node = this.rootNode;
         try {
             while (input.canReadNonWhitespace()) {
@@ -134,7 +134,7 @@ public class CommandGraph<S> {
         return node;
     }
 
-    public Tuple2<List<Completion>, CommandModule<S>> complete(final CommandInputTokenizer.Internal input) {
+    public Tuple2<List<Completion>, CommandModule<S>> complete(final CommandInputTokenizer input) {
         requireNonNull(input, "input cannot be null");
         try {
             if (!input.canReadNonWhitespace()) {
@@ -155,7 +155,7 @@ public class CommandGraph<S> {
             }
 
             // Default to an empty string as last input
-            final String lastConsumed = input.unsafe().lastConsumed().orElse("");
+            final String lastConsumed = input.lastConsumed().orElse("");
             /*
              * If `canRead()` returns true at this stage, it means that all
              * command names have been valid so far and the input ends with
@@ -215,12 +215,12 @@ public class CommandGraph<S> {
         return Optional.empty();
     }
 
-    private static <S> NoSuchCommandException generateNoSuchCommand(final InternalCommandNode<S> node, final CommandInputTokenizer.Internal input, final String argument) {
+    private static <S> NoSuchCommandException generateNoSuchCommand(final InternalCommandNode<S> node, final CommandInputTokenizer input, final String argument) {
         final Set<CommandNode> alternatives = node.children().stream()
                 .map(InternalCommandNode::asImmutable)
                 .collect(Collectors.toSet());
 
-        return input.unsafe().exception(
+        return input.internal().gen(
                 argument,
                 (consumed, arg, remaining) -> new NoSuchCommandException(consumed, arg, remaining, alternatives)
         );

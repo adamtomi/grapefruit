@@ -12,17 +12,17 @@ import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
-final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal {
+final class CommandInputTokenizerImpl implements CommandInputTokenizer {
     private static final char SINGLE_QUOTE = '\'';
     private static final char DOUBLE_QUOTE = '"';
     private final Deque<Range> consumed = new ArrayDeque<>();
-    private final Unsafe unsafe;
+    private final Internal internal;
     private final String input;
     private int cursor;
 
     public CommandInputTokenizerImpl(final String input) {
         this.input = requireNonNull(input, "input cannot be null");
-        this.unsafe = new Unsafe(this);
+        this.internal = new Internal(this);
     }
 
     @Override
@@ -133,8 +133,16 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
     }
 
     @Override
-    public CommandInputTokenizer.Unsafe unsafe() {
-        return this.unsafe;
+    public Optional<String> lastConsumed() {
+        final @Nullable Range range = this.consumed.peekLast();
+        return range == null
+                ? Optional.empty()
+                : Optional.of(this.input.substring(range.from(), range.to()));
+    }
+
+    @Override
+    public CommandInputTokenizer.Internal internal() {
+        return this.internal;
     }
 
     private void requireCanRead() throws MissingInputException {
@@ -171,23 +179,15 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
         String perform() throws MissingInputException;
     }
 
-    private static final class Unsafe implements CommandInputTokenizer.Unsafe {
+    private static final class Internal implements CommandInputTokenizer.Internal {
         private final CommandInputTokenizerImpl impl;
 
-        private Unsafe(final CommandInputTokenizerImpl impl) {
+        private Internal(final CommandInputTokenizerImpl impl) {
             this.impl = requireNonNull(impl, "impl cannot be null");
         }
 
         @Override
-        public Optional<String> lastConsumed() {
-            final @Nullable Range range = this.impl.consumed.peekLast();
-            return range == null
-                    ? Optional.empty()
-                    : Optional.of(this.impl.input.substring(range.from(), range.to()));
-        }
-
-        @Override
-        public <X extends CommandArgumentException> X exception(final String argument, final Function3<String, String, String, X> provider) {
+        public <X extends CommandArgumentException> X gen(final String argument, final Function3<String, String, String, X> provider) {
             return provider.apply(
                     this.impl.consumed(), // Consumed input
                     argument, // The argument that caused this exception

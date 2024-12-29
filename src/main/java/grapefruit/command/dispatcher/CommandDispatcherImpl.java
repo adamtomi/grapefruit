@@ -84,7 +84,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         requireNonNull(source, "source cannot be null");
         requireNonNull(command, "command cannot be null");
 
-        final CommandInputTokenizer.Internal input = CommandInputTokenizer.wrap(command);
+        final CommandInputTokenizer input = CommandInputTokenizer.wrap(command);
         final CommandModule<S> cmd = this.commandGraph.query(input);
         final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.DISPATCH);
         testRequiredConditions(context);
@@ -104,7 +104,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         requireNonNull(source, "source cannot be null");
         requireNonNull(command, "command cannot be null");
 
-        final CommandInputTokenizer.Internal input = CommandInputTokenizer.wrap(command);
+        final CommandInputTokenizer input = CommandInputTokenizer.wrap(command);
         final Tuple2<List<Completion>, CommandModule<S>> result = this.commandGraph.complete(input);
         final Optional<List<Completion>> completions = result.left();
         if (completions.isPresent()) return completions.orElseThrow();
@@ -159,7 +159,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         for (final CommandCondition<S> condition : conditions) condition.test(context);
     }
 
-    private static <S> CommandParseResult<S> processCommand(final CommandContext<S> context, final CommandInputTokenizer.Internal input) {
+    private static <S> CommandParseResult<S> processCommand(final CommandContext<S> context, final CommandInputTokenizer input) {
         final CommandChain<S> chain = context.chain();
         final CommandParseResult.Builder<S> builder = CommandParseResult.createBuilder(chain, input);
         try {
@@ -199,7 +199,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                          */
                         input.readWord(); // Consume the current argument to be inline with the rest of the code
                         throw firstUnseen(chain.flags(), context).isPresent()
-                                ? input.unsafe().exception(arg, UnrecognizedFlagException::new)
+                                ? input.internal().gen(arg, UnrecognizedFlagException::new)
                                 : new CommandSyntaxException(chain, CommandSyntaxException.Reason.TOO_MANY_ARGUMENTS);
                     }
 
@@ -241,11 +241,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final CommandArgument.Flag<S, T> flag,
             final String expression,
             final CommandContext<S> context,
-            final CommandInputTokenizer.Internal input,
+            final CommandInputTokenizer input,
             final CommandParseResult.Builder<S> builder
     ) throws CommandException {
         if (context.has(flag.key())) {
-            throw input.unsafe().exception(expression, DuplicateFlagException::new);
+            throw input.internal().gen(expression, DuplicateFlagException::new);
         }
 
         /*
@@ -264,7 +264,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private static <S, T> void consumeArgument(
             final CommandArgument.Dynamic<S, T> argument,
             final CommandContext<S> context,
-            final CommandInputTokenizer.Internal input,
+            final CommandInputTokenizer input,
             final CommandParseResult.Builder<S> builder
     ) throws CommandException {
         try {
@@ -273,14 +273,15 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             // 2) Map argument into the correct type. This will throw an exception if
             //    the conversion fails.
             final T result = argument.mapper().tryMap(context, input);
-            builder.push(input.unsafe().lastConsumed().orElseThrow());
-            // 3) Store the result in the current context
+            // 3) Store the consumed argument in the result builder
+            builder.push(input.lastConsumed().orElseThrow());
+            // 4) Store the result in the current context
             context.store(argument.key(), result);
-            // 4) Mark end
+            // 5) Mark end
             if (input.canRead()) builder.end();
         } catch (final ArgumentMappingException ex) {
-          throw input.unsafe().exception(
-                  input.unsafe().lastConsumed().orElseThrow(),
+          throw input.internal().gen(
+                  input.lastConsumed().orElseThrow(),
                   (consumed, arg, remaining) -> new CommandArgumentException(ex, consumed, arg, remaining)
           );
         } catch (final MissingInputException ex) {
@@ -290,7 +291,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
     private static <S> Tuple2<List<CommandArgument.Flag<S, ?>>, Supplier<UnrecognizedFlagException>> parseFlagGroup(
             final String expression,
-            final CommandInputTokenizer.Internal input,
+            final CommandInputTokenizer input,
             final List<CommandArgument.Flag<S, ?>> candidates
     ) {
         /*
@@ -317,7 +318,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
             return candidate.isPresent()
                     ? new Tuple2<>(List.of(candidate.orElseThrow()), null)
-                    : new Tuple2<>(null, () -> input.unsafe().exception(expression,
+                    : new Tuple2<>(null, () -> input.internal().gen(expression,
                             (consumed, arg, remaining) -> new UnrecognizedFlagException(consumed, arg, remaining, flagName)
                     )
             );
@@ -345,7 +346,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     flags.add(candidate.orElseThrow());
                 } else {
                     // Return an error if an incorrect shorthand was provided
-                    final Supplier<UnrecognizedFlagException> ex = () -> input.unsafe().exception(
+                    final Supplier<UnrecognizedFlagException> ex = () -> input.internal().gen(
                             expression,
                             (consumed, arg, remaining) -> new UnrecognizedFlagException(consumed, arg, remaining, String.valueOf(c))
                     );
@@ -359,15 +360,15 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
     private static <S> List<Completion> collectCompletions(
             final CommandContext<S> context,
-            final CommandInputTokenizer.Internal input,
+            final CommandInputTokenizer input,
             final CommandParseResult<S> parseResult
     ) {
         final CommandArgument.Dynamic<S, ?> argument = resolveArgumentToComplete(parseResult);
-        final String lastConsumed = input.unsafe().lastConsumed().orElseThrow();
+        final String lastConsumed = input.lastConsumed().orElseThrow();
         final boolean completeNext = input.canRead() || lastConsumed.isBlank();
         final String argToComplete = completeNext
                 ? ""
-                : input.unsafe().lastConsumed().orElseThrow();
+                : lastConsumed;
 
         final List<Completion> base = argument.isFlag()
                 ? collectFlagCompletions(context, parseResult, argument.asFlag(), completeNext, argToComplete)

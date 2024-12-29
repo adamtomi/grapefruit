@@ -150,13 +150,13 @@ public class CommandInputTokenizerTests {
         final String first = "hello";
         final String second = "world";
         final String last = "value";
-        final CommandInputTokenizer.Internal input = (CommandInputTokenizer.Internal) CommandInputTokenizer.wrap(join(" ", Arrays.asList(first, second, last)));
+        final CommandInputTokenizer input = CommandInputTokenizer.wrap(join(" ", Arrays.asList(first, second, last)));
         assertDoesNotThrow(input::readWord);
-        assertDoesNotThrow(() -> assertEquals(first, input.unsafe().lastConsumed().orElseThrow()));
+        assertDoesNotThrow(() -> assertEquals(first, input.lastConsumed().orElseThrow()));
         assertDoesNotThrow(input::readWord);
-        assertDoesNotThrow(() -> assertEquals(second, input.unsafe().lastConsumed().orElseThrow()));
+        assertDoesNotThrow(() -> assertEquals(second, input.lastConsumed().orElseThrow()));
         assertDoesNotThrow(input::readWord);
-        assertDoesNotThrow(() -> assertEquals(last, input.unsafe().lastConsumed().orElseThrow()));
+        assertDoesNotThrow(() -> assertEquals(last, input.lastConsumed().orElseThrow()));
     }
 
     @Test
