@@ -95,33 +95,11 @@ public class CommandGraph<S> {
 
     public CommandModule<S> query(final CommandInputTokenizer.Internal input) throws CommandException {
         requireNonNull(input, "input cannot be null");
-        InternalCommandNode<S> node = this.rootNode;
-        try {
-            while (true) {
-                final String name = input.readWord();
-                final Optional<InternalCommandNode<S>> childCandidate = node.queryChild(name);
-                if (childCandidate.isEmpty()) {
-                    throw generateNoSuchCommand(node, input, name);
-                }
+        final InternalCommandNode<S> node = query0(input);
+        final Optional<CommandModule<S>> command = node.command();
+        if (command.isPresent()) return command.orElseThrow();
 
-                node = childCandidate.orElseThrow();
-                if (node.isLeaf()) {
-                    final Optional<CommandModule<S>> commandCandidate = node.command();
-                    if (commandCandidate.isPresent()) return commandCandidate.orElseThrow();
-
-                    /*
-                     * If the node is a leaf node, we assume this is the command handler
-                     * we're looking for. Technically it should always exist, because
-                     * leaf nodes must have a command attached to them, and this#insert
-                     * makes sure of that. Just to be safe though, if the command handler
-                     * still happens to be missing.
-                     */
-                    throw new IllegalStateException("CommandNode '%s' is a leaf node, but has no command attached to it.".formatted(node));
-                }
-            }
-        } catch (final MissingInputException ex) {
-            throw generateNoSuchCommand(node, input, "");
-        }
+        throw generateNoSuchCommand(node, input, "");
     }
 
     public InternalCommandNode<S> query0(final CommandInputTokenizer.Internal input) throws NoSuchCommandException {
@@ -157,10 +135,11 @@ public class CommandGraph<S> {
     }
 
     public Tuple2<List<Completion>, CommandModule<S>> complete(final CommandInputTokenizer.Internal input) {
+        requireNonNull(input, "input cannot be null");
         try {
             if (!input.canReadNonWhitespace()) {
                 // The input is empty, complete the direct children of the root node
-                return new Tuple2<>(completeChildren(this.rootNode, ""), null);
+                return new Tuple2<>(completeChildren(this.rootNode), null);
 
             }
             final InternalCommandNode<S> node = query0(input);
@@ -185,7 +164,7 @@ public class CommandGraph<S> {
              * node with the current input.
              */
             final List<Completion> completions = input.canRead()
-                    ? completeChildren(node, "")
+                    ? completeChildren(node)
                     : completeNode(node, lastConsumed);
 
             return new Tuple2<>(completions, null);
@@ -217,9 +196,9 @@ public class CommandGraph<S> {
                 .toList();
     }
 
-    private static <S> List<Completion> completeChildren(final InternalCommandNode<S> node, final String arg) {
+    private static <S> List<Completion> completeChildren(final InternalCommandNode<S> node) {
         return node.children().stream()
-                .map(x -> completeNode(x, arg))
+                .map(x -> completeNode(x, ""))
                 .flatMap(Collection::stream)
                 .toList();
     }
@@ -241,8 +220,6 @@ public class CommandGraph<S> {
                 .map(InternalCommandNode::asImmutable)
                 .collect(Collectors.toSet());
 
-        // return NoSuchCommandException.fromInput(input, argument, alternatives);
-        // return new NoSuchCommandException()
         return input.unsafe().exception(
                 argument,
                 (consumed, arg, remaining) -> new NoSuchCommandException(consumed, arg, remaining, alternatives)
