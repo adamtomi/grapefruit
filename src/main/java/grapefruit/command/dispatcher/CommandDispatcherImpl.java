@@ -391,21 +391,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     .flatMap(Collection::stream)
                     .toList();
         } else {
-            /*
-             * Decide whether to complete flag names or a flag value. Last input will hold the flag name (or
-             * flag group) that was passed by the user. So if the remaining string is the same, we can't complete
-             * values yet.
-             */
-            final boolean completeFlagValue = parseResult.lastInput().map(x -> !x.equals(argToComplete)).orElse(false);
             final List<Completion> base = new ArrayList<>(argument.mapper().complete(context, argToComplete));
 
-            if (completeFlagValue) {
-                base.addAll(argument.mapper().complete(context, argToComplete));
-            } else {
-                if (!completeNext || parseResult.lastArgument().isEmpty()) {
-                    base.addAll(completeFlagGroup(context, argToComplete, parseResult.remainingFlags()));
-                    base.addAll(completeFlags(parseResult.remainingFlags()));
-                }
+            if (!completeNext || parseResult.lastArgument().isEmpty()) {
+                base.addAll(completeFlagGroup(context, argToComplete, parseResult.remainingFlags()));
+                base.addAll(completeFlags(parseResult.remainingFlags()));
             }
 
             return base;
