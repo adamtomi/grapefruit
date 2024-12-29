@@ -17,7 +17,6 @@ import grapefruit.command.dispatcher.config.DispatcherConfig;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
 import grapefruit.command.tree.CommandGraph;
-import grapefruit.command.tree.NoSuchCommandException;
 import grapefruit.command.util.Tuple2;
 
 import java.util.ArrayList;
@@ -128,7 +127,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
         final CommandModule<S> cmd = result.right().orElseThrow();
 
-        if (!input.canRead() && !input.unwrap().endsWith(" ")) {
+        if (!input.canRead() && !input.input().endsWith(" ")) {
             return List.of();
         }
 
@@ -188,11 +187,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     private static <S> CommandParseResult<S> processCommand(final CommandContext<S> context, final CommandInputTokenizer.Internal input) {
-        String arg;
         final CommandChain<S> chain = context.chain();
         final CommandParseResult.Builder<S> builder = CommandParseResult.createBuilder(chain, input);
         try {
-            while ((arg = input.peekWord()) != null) {
+            while (input.canReadNonWhitespace()) {
+                final String arg = input.peekWord();
                 // Attempt to parse arg into a single flag or a group of flags
                 final Tuple2<List<CommandArgument.Flag<S, ?>>, Supplier<UnrecognizedFlagException>> flagResult = parseFlagGroup(arg, input, chain.flags());
                 if (flagResult.right().isPresent()) {
@@ -381,7 +380,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
     private static <S> List<Completion> collectCompletions(final CommandContext<S> context, final CommandInputTokenizer input, final CommandParseResult<S> parseResult) {
         final String remaining = input.remainingOrEmpty();
-        final boolean completeNext = input.unwrap().endsWith(" ");
+        final boolean completeNext = input.input().endsWith(" ");
 
         final CommandArgument.Dynamic<S, ?> argument = resolveArgumentToComplete(parseResult);
         final String argToComplete = !remaining.isEmpty()

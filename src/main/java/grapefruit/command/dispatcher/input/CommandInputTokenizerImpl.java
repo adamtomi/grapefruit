@@ -13,6 +13,8 @@ import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 
 final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal {
+    private static final char SINGLE_QUOTE = '\'';
+    private static final char DOUBLE_QUOTE = '"';
     private final Deque<Range> consumed = new ArrayDeque<>();
     private final Unsafe unsafe;
     private final String input;
@@ -24,7 +26,7 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
     }
 
     @Override
-    public String unwrap() {
+    public String input() {
         return this.input;
     }
 
@@ -34,32 +36,47 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
     }
 
     @Override
+    public int length() {
+        return this.input.length();
+    }
+
+    @Override
     public boolean canRead() {
-        return this.cursor < this.input.length() - 1;
+        return this.cursor < this.input.length();
+    }
+
+    @Override
+    public boolean canReadNonWhitespace() {
+        if (!canRead()) return false;
+        return this.input.substring(this.cursor).chars().anyMatch(x -> !Character.isWhitespace(x));
     }
 
     @Override
     public char read() throws MissingInputException {
-        if (!canRead()) throw new MissingInputException();
+        requireCanRead();
 
         int from = this.cursor;
         this.cursor = from + 1;
         this.consumed.addLast(Range.range(from, this.cursor));
-        return this.input.charAt(this.cursor);
+        return this.input.charAt(from);
     }
 
     @Override
     public char peek() {
-        return isConsumed() ? 0 : this.input.charAt(this.cursor);
+        // Do we want this?
+        return canRead()
+                ? this.input.charAt(this.cursor)
+                : 0;
     }
 
-    @Override // TODO remove new entries from this.consumedArgs
-    public @Nullable String peekWord() {
+    // TODO restore this.consumed
+    @Override
+    public String peekWord() {
         final int start = this.cursor;
         try {
             return readWord();
         } catch (final MissingInputException ex) {
-            return null;
+            return "";
         } finally {
             this.cursor = start;
         }
@@ -68,7 +85,7 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
     @Override
     public String readWord() throws MissingInputException {
         skipWhitespace();
-        return readWhileThrowOnEmpty(x -> !Character.isWhitespace(x));
+        return readWhile(x -> !Character.isWhitespace(x));
     }
 
     @Override
@@ -78,11 +95,11 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
         // This means we're dealing with a quoted string
         if (start == SINGLE_QUOTE || start == DOUBLE_QUOTE) {
             return performRead(() -> {
-                this.cursor++; // Get rid of leading ("|')
+                read(); // Get rid of leading quotation
                 // Require the argument to be surrounded by the same kind of
                 // quotation marks.
-                final String result = readWhileThrowOnEmpty(x -> x != start);
-                this.cursor++; // Get rid of trailing ("|')
+                final String result = readWhile(x -> x != start);
+                read(); // Get rid of trailing quotation
 
                 return result;
             });
@@ -95,6 +112,12 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
     public String readRemaining() throws MissingInputException {
         skipWhitespace();
         return performRead(() -> {
+            // TODO switch to this cleaner implementation?
+            /*
+             *  final String result = this.input.substring(this.cursor);
+             *  this.cursor = this.input.length();
+              * return result;
+             */
             final int start = this.cursor;
             this.cursor = this.input.length();
             final String result = this.input.substring(start);
@@ -131,31 +154,20 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer.Internal 
         return this.unsafe;
     }
 
-    // An input is consumed if all arguments have been seen (and processed).
-    private boolean isConsumed() {
-        return this.cursor >= this.input.length();
+    private void requireCanRead() throws MissingInputException {
+        if (!canRead()) throw new MissingInputException();
     }
 
     private String readWhile(final CharPredicate condition) throws MissingInputException {
-        if (isConsumed()) throw new MissingInputException();
+        requireCanRead();
         return performRead(() -> {
             final StringBuilder builder = new StringBuilder();
-            char c;
-            while (condition.test((c = peek()))) {
-                builder.append(c);
-                this.cursor++;
-                if (isConsumed()) break;
+            while (canRead() && condition.test(peek())) {
+                builder.append(read());
             }
 
             return builder.toString();
         });
-    }
-
-    private String readWhileThrowOnEmpty(final CharPredicate condition) throws MissingInputException {
-        final String result = readWhile(condition);
-        if (result.isEmpty()) throw new MissingInputException();
-
-        return result;
     }
 
     private void skipWhitespace() throws MissingInputException {

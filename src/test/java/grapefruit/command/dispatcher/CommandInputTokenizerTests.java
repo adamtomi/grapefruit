@@ -12,15 +12,17 @@ import java.util.Arrays;
 import static java.lang.String.join;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CommandInputTokenizerTests {
 
     @Test
     public void read() {
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(" ab ");
-        assertEquals(' ', input.peek());  // ' '
+        assertDoesNotThrow(() -> assertEquals(' ', input.read())); // -> ' '
         assertDoesNotThrow(() -> assertEquals('a', input.read())); // -> a
         assertDoesNotThrow(() -> assertEquals('b', input.read())); // -> b
         assertDoesNotThrow(() -> assertEquals(' ', input.read())); // -> ' '
@@ -28,10 +30,10 @@ public class CommandInputTokenizerTests {
     }
 
     @Test
-    public void unwrap() {
+    public void input() {
         final String arg = " this is a command input";
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(arg);
-        assertEquals(arg, input.unwrap());
+        assertEquals(arg, input.input());
     }
 
     @ParameterizedTest
@@ -47,9 +49,9 @@ public class CommandInputTokenizerTests {
             " ",
             "      "
     })
-    public void peekWord_null(final String arg) {
+    public void peekWord_empty(final String arg) {
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(arg);
-        assertNull(input.peekWord());
+        assertEquals("", input.peekWord());
     }
 
     @ParameterizedTest
@@ -155,5 +157,19 @@ public class CommandInputTokenizerTests {
         assertDoesNotThrow(() -> assertEquals(second, input.unsafe().lastConsumed().orElseThrow()));
         assertDoesNotThrow(input::readWord);
         assertDoesNotThrow(() -> assertEquals(last, input.unsafe().lastConsumed().orElseThrow()));
+    }
+
+    @Test
+    public void canReadNonWhitespace_canRead() {
+        final String arg = " hello ";
+        final CommandInputTokenizer input = CommandInputTokenizer.wrap(arg);
+        assertTrue(input.canReadNonWhitespace());
+    }
+
+    @Test
+    public void canReadNonWhitespace_cannotRead() {
+        final String arg = "     ";
+        final CommandInputTokenizer input = CommandInputTokenizer.wrap(arg);
+        assertFalse(input.canReadNonWhitespace());
     }
 }

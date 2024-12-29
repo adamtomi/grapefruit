@@ -7,22 +7,23 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 public interface CommandInputTokenizer {
-    /* Both of these fields are used by StringReader#readQuotable */
-    char SINGLE_QUOTE = '\'';
-    char DOUBLE_QUOTE = '"';
 
     // Return the original user input
-    String unwrap();
+    String input();
 
     int cursor();
 
+    int length();
+
     boolean canRead();
+
+    boolean canReadNonWhitespace();
 
     char read() throws MissingInputException;
 
     char peek();
 
-    @Nullable String peekWord();
+    String peekWord();
 
     String readWord() throws MissingInputException;
 
