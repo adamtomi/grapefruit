@@ -3,7 +3,6 @@ package grapefruit.command.dispatcher;
 import grapefruit.command.CommandException;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.argument.CommandChain;
-import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,9 +37,9 @@ public interface CommandParseResult<S> {
 
     boolean isComplete();
 
-    static <S> Builder<S> createBuilder(final CommandChain<S> chain, final CommandInputTokenizer input) {
+    static <S> Builder<S> createBuilder(final CommandChain<S> chain) {
         // Make mutable copies
-        return new CommandParseResultImpl.Builder<>(new ArrayList<>(chain.arguments()), new ArrayList<>(chain.flags()), input);
+        return new CommandParseResultImpl.Builder<>(new ArrayList<>(chain.arguments()), new ArrayList<>(chain.flags()));
     }
 
     interface Builder<S> {

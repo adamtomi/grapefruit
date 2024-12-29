@@ -161,7 +161,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
     private static <S> CommandParseResult<S> processCommand(final CommandContext<S> context, final CommandInputTokenizer input) {
         final CommandChain<S> chain = context.chain();
-        final CommandParseResult.Builder<S> builder = CommandParseResult.createBuilder(chain, input);
+        final CommandParseResult.Builder<S> builder = CommandParseResult.createBuilder(chain);
         try {
             while (input.canReadNonWhitespace()) {
                 final String arg = input.peekWord();

@@ -2,7 +2,6 @@ package grapefruit.command.dispatcher;
 
 import grapefruit.command.CommandException;
 import grapefruit.command.argument.CommandArgument;
-import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.util.ToStringer;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,22 +16,19 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
     private final @Nullable CommandException ex;
     private final List<CommandArgument.Required<S, ?>> arguments;
     private final List<CommandArgument.Flag<S, ?>> flags;
-    private final int cursor;
 
     private CommandParseResultImpl(
             final @Nullable String input,
             final @Nullable CommandArgument.Dynamic<S, ?> argument,
             final @Nullable CommandException ex,
             final List<CommandArgument.Required<S, ?>> arguments,
-            final List<CommandArgument.Flag<S, ?>> flags,
-            final int cursor
+            final List<CommandArgument.Flag<S, ?>> flags
     ) {
         this.input = input;
         this.argument = argument;
         this.ex = ex;
         this.arguments = requireNonNull(arguments, "arguments cannot be null");
         this.flags = requireNonNull(flags, "flags cannot be null");
-        this.cursor = cursor;
     }
 
     @Override
@@ -83,24 +79,19 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
     static final class Builder<S> implements CommandParseResult.Builder<S> {
         private final List<CommandArgument.Required<S, ?>> arguments;
         private final List<CommandArgument.Flag<S, ?>> flags;
-        private final CommandInputTokenizer inputTokenizer;
         private CommandArgument.Dynamic<S, ?> argument;
         private String input;
         private CommandException capturedException;
-        private int cursor;
 
-        Builder(final List<CommandArgument.Required<S, ?>> arguments, final List<CommandArgument.Flag<S, ?>> flags, final CommandInputTokenizer inputTokenizer) {
+        Builder(final List<CommandArgument.Required<S, ?>> arguments, final List<CommandArgument.Flag<S, ?>> flags) {
             this.arguments = requireNonNull(arguments, "arguments cannot be null");
             this.flags = requireNonNull(flags, "flags cannot be null");
-            this.inputTokenizer = requireNonNull(inputTokenizer, "inputTokenizer cannot be null");
-            this.cursor = inputTokenizer.cursor();
         }
 
         @Override
         public void begin(final CommandArgument.Dynamic<S, ?> argument) {
             requireNonNull(argument, "argument cannot be null");
             this.argument = argument;
-            this.cursor = this.inputTokenizer.cursor();
         }
 
         @Override
@@ -122,7 +113,7 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
 
         @Override
         public CommandParseResult<S> build() {
-            return new CommandParseResultImpl<>(this.input, this.argument, this.capturedException, this.arguments, this.flags, this.cursor);
+            return new CommandParseResultImpl<>(this.input, this.argument, this.capturedException, this.arguments, this.flags);
         }
     }
 }
