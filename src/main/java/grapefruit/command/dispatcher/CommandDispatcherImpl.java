@@ -84,7 +84,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         requireNonNull(source, "source cannot be null");
         requireNonNull(command, "command cannot be null");
 
-        final CommandInputTokenizer.Internal input = (CommandInputTokenizer.Internal) CommandInputTokenizer.wrap(command);
+        final CommandInputTokenizer.Internal input = CommandInputTokenizer.wrap(command);
         final CommandModule<S> cmd = this.commandGraph.query(input);
         final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.DISPATCH);
         testRequiredConditions(context);
@@ -104,23 +104,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         requireNonNull(source, "source cannot be null");
         requireNonNull(command, "command cannot be null");
 
-        final CommandInputTokenizer.Internal input = (CommandInputTokenizer.Internal) CommandInputTokenizer.wrap(command);
-        /*final CommandModule<S> cmd;
-        try {
-            cmd = this.commandGraph.query(input);
-        } catch (final NoSuchCommandException ex) {
-            if (!command.isEmpty() && input.unsafe().lastConsumed().isBlank() && !ex.argument().isBlank()) {
-                return List.of();
-            }
-
-            return ex.alternatives().stream()
-                    .flatMap(x -> Stream.concat(Stream.of(x.name()), x.aliases().stream()))
-                    .filter(x -> startsWithIgnoreCase(x, ex.argument()))
-                    .map(Completion::completion)
-                    .toList();
-        } catch (final CommandException ex) {
-            return List.of();
-        } */
+        final CommandInputTokenizer.Internal input = CommandInputTokenizer.wrap(command);
         final Tuple2<List<Completion>, CommandModule<S>> result = this.commandGraph.complete(input);
         final Optional<List<Completion>> completions = result.left();
         if (completions.isPresent()) return completions.orElseThrow();
