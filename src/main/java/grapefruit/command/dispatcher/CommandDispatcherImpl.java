@@ -90,7 +90,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         testRequiredConditions(context);
 
         final CommandParseResult<S> parseResult = processCommand(context, input);
-        parseResult.rethrowCaptured();
+        parseResult.throwException();
 
         final ExecutionResult<S> executionResult = execute(context, cmd);
         if (!executionResult.successful()) {
@@ -281,11 +281,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             // 2) Map argument into the correct type. This will throw an exception if
             //    the conversion fails.
             final T result = argument.mapper().tryMap(context, input);
-            // 3) Store the consumed argument in the result builder
-            builder.push(input.lastConsumed().orElseThrow());
-            // 4) Store the result in the current context
+            // 3) Store the result in the current context
             context.store(argument.key(), result);
-            // 5) Mark end
+            // 4) Mark end
             if (input.canRead()) builder.end();
         } catch (final ArgumentMappingException ex) {
           throw input.internal().gen(

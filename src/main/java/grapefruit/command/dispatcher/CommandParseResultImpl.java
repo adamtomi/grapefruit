@@ -11,20 +11,17 @@ import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 
 final class CommandParseResultImpl<S> implements CommandParseResult<S> {
-    private final @Nullable String input;
     private final @Nullable CommandArgument.Dynamic<S, ?> argument;
     private final @Nullable CommandException ex;
     private final List<CommandArgument.Required<S, ?>> arguments;
     private final List<CommandArgument.Flag<S, ?>> flags;
 
     private CommandParseResultImpl(
-            final @Nullable String input,
             final @Nullable CommandArgument.Dynamic<S, ?> argument,
             final @Nullable CommandException ex,
             final List<CommandArgument.Required<S, ?>> arguments,
             final List<CommandArgument.Flag<S, ?>> flags
     ) {
-        this.input = input;
         this.argument = argument;
         this.ex = ex;
         this.arguments = requireNonNull(arguments, "arguments cannot be null");
@@ -37,13 +34,8 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
     }
 
     @Override
-    public void rethrowCaptured() throws CommandException {
+    public void throwException() throws CommandException {
         if (this.ex != null) throw this.ex;
-    }
-
-    @Override
-    public Optional<String> lastInput() {
-        return Optional.ofNullable(this.input);
     }
 
     @Override
@@ -69,10 +61,9 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
     @Override
     public String toString() {
         return ToStringer.create(this)
-                .append("input", this.input)
-                .append("argument", this.argument)
-                .append("arguments", this.arguments)
-                .append("flags", this.flags)
+                .append("lastArgument", this.argument)
+                .append("remainingArguments", this.arguments)
+                .append("remainingFlags", this.flags)
                 .toString();
     }
 
@@ -80,7 +71,6 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
         private final List<CommandArgument.Required<S, ?>> arguments;
         private final List<CommandArgument.Flag<S, ?>> flags;
         private CommandArgument.Dynamic<S, ?> argument;
-        private String input;
         private CommandException capturedException;
 
         Builder(final List<CommandArgument.Required<S, ?>> arguments, final List<CommandArgument.Flag<S, ?>> flags) {
@@ -95,15 +85,9 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
         }
 
         @Override
-        public void push(final String value) {
-            this.input = requireNonNull(value, "input cannot be null");
-        }
-
-        @Override
         public void end() {
             if (this.argument != null) (this.argument.isFlag() ? this.flags : this.arguments).remove(this.argument);
             this.argument = null;
-            this.input = null;
         }
 
         @Override
@@ -113,7 +97,7 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
 
         @Override
         public CommandParseResult<S> build() {
-            return new CommandParseResultImpl<>(this.input, this.argument, this.capturedException, this.arguments, this.flags);
+            return new CommandParseResultImpl<>(this.argument, this.capturedException, this.arguments, this.flags);
         }
     }
 }

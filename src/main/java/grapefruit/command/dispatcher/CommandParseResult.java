@@ -12,13 +12,7 @@ public interface CommandParseResult<S> {
 
     Optional<CommandException> capturedException();
 
-    void rethrowCaptured() throws CommandException;
-
-    /*
-     * The last input that was being parsed (whether the
-     * parsing was successful does not matter here).
-     */
-    Optional<String> lastInput();
+    void throwException() throws CommandException;
 
     /*
      * The last argument that was being parsed.
@@ -45,8 +39,6 @@ public interface CommandParseResult<S> {
     interface Builder<S> {
 
         void begin(final CommandArgument.Dynamic<S, ?> argument);
-
-        void push(final String value);
 
         void end();
 
