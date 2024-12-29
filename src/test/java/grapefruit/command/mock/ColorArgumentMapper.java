@@ -50,6 +50,8 @@ public class ColorArgumentMapper extends AbstractArgumentMapper<Object, String> 
 
         if (input.length() > 7 || input.charAt(0) != HASH || containsInvalidCharacter(input)) {
             return List.of();
+        } else if (input.length() == 7) {
+            return CompletionSupport.strings(input);
         }
 
         return Arrays.stream(HEX_CHARSET)

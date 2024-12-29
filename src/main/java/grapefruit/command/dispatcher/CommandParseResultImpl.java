@@ -107,11 +107,9 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
         }
 
         @Override
-        public void begin(final CommandArgument.Dynamic<S, ?> argument, final String value) {
+        public void begin(final CommandArgument.Dynamic<S, ?> argument) {
             requireNonNull(argument, "argument cannot be null");
-            requireNonNull(value, "input cannot be null");
             this.argument = argument;
-            this.input = value;
             this.cursor = this.inputTokenizer.cursor();
         }
 

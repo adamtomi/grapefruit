@@ -53,8 +53,9 @@ public interface CommandParseResult<S> {
 
     interface Builder<S> {
 
-        void begin(final CommandArgument.Dynamic<S, ?> argument, final String value);
+        void begin(final CommandArgument.Dynamic<S, ?> argument);
 
+        @Deprecated
         void push(final String value);
 
         void end();

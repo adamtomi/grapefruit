@@ -371,18 +371,19 @@ public class CommandDispatcherTests {
             "test hello --,--color|--stringflag|--boolflag",
             "test hello --c,--color",
             "test hello -,--color|-c|--stringflag|-s|--boolflag|-b",
-            "test hello argname --color,''",
-            "test hello argname -c,-cb|-cs",
+            "test hello argname --color,--color",
+            "test hello argname -c,-cb|-cs|-c",
             "'test hello argname --color ',#",
             "test hello argname --color #,#0|#1|#2|#3|#4|#5|#6|#7|#8|#9|#a|#b|#c|#d|#e|#f",
             "test hello argname -c #,#0|#1|#2|#3|#4|#5|#6|#7|#8|#9|#a|#b|#c|#d|#e|#f",
-            "test hello argname -c #ffffff,''",
+            "test hello argname -c #ffffff,'#ffffff'",
             "'test hello argname -bc #ae43ff ',--stringflag|-s",
             "'test hello --color #ffffff -b argname -s asd ',''",
-            "test hello --color #ffffff -s,'-sb'",
+            "test hello --color #ffffff -s,'-sb|-s'",
             "'test hello --color #ffffff -s ',''"
     })
     public void complete_arguments(final String input, final String expected) {
+        System.out.println("input '%s'".formatted(input));
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
                 .build();
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
@@ -399,6 +400,7 @@ public class CommandDispatcherTests {
 
         dispatcher.register(command);
         final List<Completion> completions = dispatcher.complete(new Object(), input);
+        System.out.println(completions);
         assertContainsAll(completions(expected), completions);
     }
 
