@@ -51,11 +51,6 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
     }
 
     @Override
-    public CommandParseResult<S> withInput(final String input) {
-        return new CommandParseResultImpl<>(input, this.argument, this.ex, this.arguments, this.flags, this.cursor);
-    }
-
-    @Override
     public Optional<CommandArgument.Dynamic<S, ?>> lastArgument() {
         return Optional.ofNullable(this.argument);
     }

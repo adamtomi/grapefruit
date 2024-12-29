@@ -24,7 +24,8 @@ public class ColorArgumentMapper extends AbstractArgumentMapper<Object, String> 
     public String tryMap(final CommandContext<Object> context, final CommandInputTokenizer input) throws ArgumentMappingException, MissingInputException {
         // We don't really care, whether the provided value is valid
         final String value = input.readWord();
-        if (value.length() == 7 && value.charAt(0) == HASH && !containsInvalidCharacter(value)) {
+        // Support for CSS-style color shorthands (#xxx)
+        if ((value.length() == 7 || value.length() == 4) && value.charAt(0) == HASH && !containsInvalidCharacter(value)) {
             return value;
         }
 
