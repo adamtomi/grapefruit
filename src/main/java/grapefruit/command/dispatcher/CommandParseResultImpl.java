@@ -29,13 +29,16 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
     }
 
     @Override
-    public Optional<CommandException> capturedException() {
-        return Optional.ofNullable(this.ex);
+    public void throwCaptured() throws CommandException {
+        if (this.ex != null) throw this.ex;
     }
 
     @Override
-    public void throwException() throws CommandException {
-        if (this.ex != null) throw this.ex;
+    public <X extends CommandException> Optional<X> captured(final Class<X> clazz) {
+        requireNonNull(clazz, "clazz cannot be null");
+        return clazz.isInstance(this.ex)
+                ? Optional.of(clazz.cast(this.ex))
+                : Optional.empty();
     }
 
     @Override

@@ -10,9 +10,9 @@ import java.util.Optional;
 
 public interface CommandParseResult<S> {
 
-    Optional<CommandException> capturedException();
+    void throwCaptured() throws CommandException;
 
-    void throwException() throws CommandException;
+    <X extends CommandException> Optional<X> captured(final Class<X> clazz);
 
     /*
      * The last argument that was being parsed.

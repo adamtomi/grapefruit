@@ -90,7 +90,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         testRequiredConditions(context);
 
         final CommandParseResult<S> parseResult = processCommand(context, input);
-        parseResult.throwException();
+        parseResult.throwCaptured();
 
         final ExecutionResult<S> executionResult = execute(context, cmd);
         if (!executionResult.successful()) {
@@ -110,22 +110,14 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
         final CommandModule<S> cmd = result.right().orElseThrow();
         final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.COMPLETE);
-        CommandParseResult<S> parseResult = processCommand(context, input);
-        final Optional<CommandException> capturedOpt = parseResult.capturedException();
+        final CommandParseResult<S> parseResult = processCommand(context, input);
 
-        if (parseResult.isComplete()) {
+        if (
+                parseResult.isComplete()
+                || parseResult.captured(DuplicateFlagException.class).isPresent()
+                || parseResult.captured(UnrecognizedFlagException.class).filter(x -> !x.argument().startsWith(SHORT_FLAG_PREFIX)).isPresent()
+        ) {
             return List.of();
-        }
-
-        if (capturedOpt.isPresent()) {
-            final CommandException ex = capturedOpt.orElseThrow();
-            if (ex instanceof DuplicateFlagException) {
-                return List.of();
-            } else if (ex instanceof UnrecognizedFlagException ufe) {
-                if (!ufe.argument().startsWith(SHORT_FLAG_PREFIX)) {
-                    return List.of();
-                }
-            }
         }
 
         return collectCompletions(context, input, parseResult);
