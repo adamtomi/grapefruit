@@ -26,6 +26,14 @@ public interface CommandDispatcher<S> {
 
     List<Completion> complete(final S source, final String command);
 
+    void subscribe(final ExecutionListener.Pre<S> pre);
+
+    void unsubscribe(final ExecutionListener.Pre<S> pre);
+
+    void subscribe(final ExecutionListener.Post<S> post);
+
+    void unsubscribe(final ExecutionListener.Post<S> post);
+
     static <S> CommandDispatcher<S> using(final DispatcherConfig<S> config) {
         return new CommandDispatcherImpl<>(config);
     }

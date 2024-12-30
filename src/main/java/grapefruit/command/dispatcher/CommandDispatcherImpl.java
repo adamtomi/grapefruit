@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -39,6 +41,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final CommandChainFactory<S> chainFactory = CommandChain.factory();
     // Store computed CommandChain instances mapped to their respective CommandModule.
     private final Map<CommandModule<S>, CommandChain<S>> computedChains = new HashMap<>();
+    private final Queue<ExecutionListener.Pre<S>> preExecutionListeners = new ConcurrentLinkedQueue<>();
+    private final Queue<ExecutionListener.Post<S>> postExecutionListeners = new ConcurrentLinkedQueue<>();
     /* Configurable properties */
     private final CommandRegistrationHandler<S> registrationHandler;
     private final ContextDecorator<S> contextDecorator;
@@ -92,10 +96,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         final CommandParseResult<S> parseResult = processCommand(context, input);
         parseResult.throwCaptured();
 
-        final ExecutionResult<S> executionResult = execute(context, cmd);
-        if (!executionResult.successful()) {
-            throw new CommandExecutionException(executionResult.asFailed().exception());
-        }
+        executeAndInvokeListeners(context, cmd);
     }
 
     @Override
@@ -123,6 +124,26 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         return collectCompletions(context, input, parseResult);
     }
 
+    @Override
+    public void subscribe(final ExecutionListener.Pre<S> pre) {
+        this.preExecutionListeners.offer(pre);
+    }
+
+    @Override
+    public void unsubscribe(final ExecutionListener.Pre<S> pre) {
+        this.preExecutionListeners.remove(pre);
+    }
+
+    @Override
+    public void subscribe(final ExecutionListener.Post<S> post) {
+        this.postExecutionListeners.offer(post);
+    }
+
+    @Override
+    public void unsubscribe(final ExecutionListener.Post<S> post) {
+        this.postExecutionListeners.remove(post);
+    }
+
     private CommandContext<S> createContext(final S source, final CommandChain<S> chain, final ContextDecorator.Mode mode) {
         final CommandContext<S> context = new CommandContextImpl<>(source, chain);
         this.contextDecorator.apply(context, mode);
@@ -136,6 +157,29 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
 
         return chain;
+    }
+
+    private void executeAndInvokeListeners(final CommandContext<S> context, final CommandModule<S> command) throws CommandExecutionException {
+        // If a pre execution listener cancels this execution, return
+        if (!invokePreExecutionListeners(context)) return;
+
+        final ExecutionResult<S> result = execute(context, command);
+        // Invoke post execution listeners
+        this.postExecutionListeners.forEach(x -> x.invoke(result));
+
+        if (!result.successful()) {
+            throw new CommandExecutionException(result.asFailed().exception());
+        }
+    }
+
+    private boolean invokePreExecutionListeners(final CommandContext<S> context) {
+        for (final ExecutionListener.Pre<S> listener : this.preExecutionListeners) {
+            if (!listener.invoke(context)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static <S> ExecutionResult<S> execute(final CommandContext<S> context, final CommandModule<S> command) {
