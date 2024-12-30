@@ -91,11 +91,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(command);
         final CommandModule<S> cmd = this.commandGraph.query(input);
         final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.DISPATCH);
-        testRequiredConditions(context);
-
         final CommandParseResult<S> parseResult = processCommand(context, input);
         parseResult.throwCaptured();
 
+        testRequiredConditions(context);
         executeAndInvokeListeners(context, cmd);
     }
 
