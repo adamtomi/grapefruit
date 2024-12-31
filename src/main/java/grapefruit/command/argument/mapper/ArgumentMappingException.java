@@ -1,6 +1,7 @@
 package grapefruit.command.argument.mapper;
 
 import grapefruit.command.CommandException;
+import grapefruit.command.dispatcher.CommandContext;
 
 import java.io.Serial;
 
@@ -10,5 +11,10 @@ public class ArgumentMappingException extends CommandException {
 
     public ArgumentMappingException() {
         super();
+    }
+
+    public interface Factory<T> {
+
+        ArgumentMappingException create(final CommandContext<?> context, final T value);
     }
 }

@@ -35,4 +35,14 @@ public abstract class AbstractArgumentMapper<S, T> implements ArgumentMapper<S, 
     public List<Completion> complete(final CommandContext<S> context, final String input) {
         return List.of();
     }
+
+    @Override
+    public <O> ArgumentMapper<S, O> mapping(final Modifier<S, T, O> modifier) {
+        return new ModifiedArgumentMapper<>(this, modifier);
+    }
+
+    @Override
+    public ArgumentMapper<S, T> filtering(final Filter<S, T> filter) {
+        return new ModifiedArgumentMapper<>(this, filter);
+    }
 }

@@ -42,18 +42,18 @@ public class ArgumentMapperTests {
         assertDoesNotThrow(() -> assertEquals(command, greedy().tryMap(new NilCommandContext(), inputOf(command))));
     }
 
-    // @Test // TODO fix
+    @Test
     public void stringArgumentMapper_regex_doesNotMatch() {
         assertThrows(
                 ArgumentMappingException.class,
-                () -> word().with(regex(Pattern.compile("[a-z]+"))).tryMap(new NilCommandContext(), inputOf("$hello$"))
+                () -> word().filtering(regex(Pattern.compile("[a-z]+"))).tryMap(new NilCommandContext(), inputOf("$hello$"))
         );
     }
 
     @Test
     public void stringArgumentMapper_regex_doesMatch() {
         assertDoesNotThrow(
-                () -> word().with(regex(Pattern.compile("[a-z]+"))).tryMap(new NilCommandContext(), inputOf("hello"))
+                () -> word().filtering(regex(Pattern.compile("[a-z]+"))).tryMap(new NilCommandContext(), inputOf("hello"))
         );
     }
 
