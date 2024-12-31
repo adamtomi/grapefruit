@@ -20,8 +20,6 @@ public interface ArgumentMapper<S, T> extends CompletionSource<S> {
 
     T tryMap(final CommandContext<S> context, final CommandInputTokenizer input) throws ArgumentMappingException, MissingInputException;
 
-    // List<String> complete(final CommandContext<S> context, final String input);
-
     @Deprecated
     default ArgumentMapper<S, T> with(final Collection<Filter<S, T>> filters) {
         return new ArgumentMapper<>() {
