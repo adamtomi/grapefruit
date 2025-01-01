@@ -25,14 +25,22 @@ public class CommandGraphTests {
     @Test
     public void insert_ambiguousTree() {
         final CommandGraph<Object> graph = new CommandGraph<>();
-        final CommandModule<Object> module = TestCommandModule.of(factory -> factory.newChain()
+        final CommandModule<Object> module0 = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build()).build());
 
-        final CommandChainFactory<Object> factory = CommandChain.factory();
-        final CommandChain<Object> chain = module.chain(factory);
+        final CommandModule<Object> module1 = TestCommandModule.of(factory -> factory.newChain()
+                .then(factory.literal("test").build())
+                .then(factory.literal("nested").build())
+                .build());
 
-        assertDoesNotThrow(() -> graph.insert(chain, module));
-        assertThrows(IllegalStateException.class, () -> graph.insert(chain, TestCommandModule.dummy()));
+        final CommandChainFactory<Object> factory = CommandChain.factory();
+        final CommandChain<Object> chain0 = module0.chain(factory);
+        final CommandChain<Object> chain1 = module1.chain(factory);
+
+        assertDoesNotThrow(() -> graph.insert(chain0, module0));
+        assertThrows(IllegalStateException.class, () -> graph.insert(chain0, TestCommandModule.dummy()));
+        assertThrows(IllegalStateException.class, () -> graph.insert(chain1, module1));
+
     }
 
     @Test

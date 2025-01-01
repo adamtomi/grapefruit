@@ -48,12 +48,16 @@ public class CommandGraph<S> {
                      * or already has a command handler attached to it (otherwise the
                      * chain would be invalid). In any case, we cannot proceed from here.
                      */
-                    throw new IllegalStateException("Command node '%s' already exists in the command graph".formatted(child));
+                    throw new IllegalStateException("Command node '%s' already exists in the command tree".formatted(child));
                 }
 
                 child.mergeAliases(literal.aliases());
                 node = child;
             } else {
+                if (node.command().isPresent()) {
+                    throw new IllegalStateException("Command node '%s' already has a command attached to it, thus it cannot have children.");
+                }
+
                 final InternalCommandNode<S> child = InternalCommandNode.of(literal.name(), literal.aliases(), node);
                 node.addChild(child);
                 node = child;
