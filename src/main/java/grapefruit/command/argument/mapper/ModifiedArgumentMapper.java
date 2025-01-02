@@ -1,12 +1,11 @@
 package grapefruit.command.argument.mapper;
 
-import grapefruit.command.completion.Completion;
+import grapefruit.command.completion.CommandCompletion;
+import grapefruit.command.completion.CompletionBuilder;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
 import io.leangen.geantyref.TypeToken;
-
-import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
@@ -30,7 +29,7 @@ final class ModifiedArgumentMapper<S, I, O> extends AbstractArgumentMapper<S, O>
     }
 
     @Override
-    public List<Completion> complete(final CommandContext<S> context, final String input) {
-        return this.delegate.complete(context, input);
+    public CommandCompletion complete(final CommandContext<S> context, final CompletionBuilder builder) {
+        return this.delegate.complete(context, builder);
     }
 }
