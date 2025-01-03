@@ -4,14 +4,14 @@ import grapefruit.command.CommandException;
 import grapefruit.command.CommandModule;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.argument.CommandChain;
-import grapefruit.command.completion.Completion;
+import grapefruit.command.completion.CompletionBuilder;
+import grapefruit.command.completion.CompletionFactory;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
 import grapefruit.command.tree.node.CommandNode;
 import grapefruit.command.tree.node.InternalCommandNode;
 import grapefruit.command.util.Tuple2;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -19,11 +19,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static grapefruit.command.util.StringUtil.startsWithIgnoreCase;
 import static java.util.Objects.requireNonNull;
 
 public class CommandGraph<S> {
     private final InternalCommandNode<S> rootNode = InternalCommandNode.of("__ROOT__", Set.of(), null);
+    private final CompletionFactory factory;
+
+    public CommandGraph(final CompletionFactory factory) {
+        this.factory = requireNonNull(factory, "factory cannot be null");
+    }
 
     public void insert(final CommandChain<S> chain, final CommandModule<S> command) {
         requireNonNull(chain, "chain cannot be null");
@@ -138,14 +142,19 @@ public class CommandGraph<S> {
         return node;
     }
 
-    public Tuple2<List<Completion>, CommandModule<S>> complete(final CommandInputTokenizer input) {
+    public Tuple2<CompletionBuilder, CommandModule<S>> complete(final CommandInputTokenizer input) {
         requireNonNull(input, "input cannot be null");
+        // Default to an empty string as last input
+        final String lastConsumed = input.lastConsumed().orElse("");
+        final CompletionBuilder builder = CompletionBuilder.of(this.factory, lastConsumed);
+
         try {
             if (!input.canReadNonWhitespace()) {
                 // The input is empty, complete the direct children of the root node
-                return new Tuple2<>(completeChildren(this.rootNode), null);
+                return new Tuple2<>(builder.includeStrings(completeChildren(this.rootNode)), null);
 
             }
+
             final InternalCommandNode<S> node = query0(input);
             final Optional<CommandModule<S>> command = node.command();
 
@@ -157,9 +166,6 @@ public class CommandGraph<S> {
                  */
                 return new Tuple2<>(null, command.orElseThrow());
             }
-
-            // Default to an empty string as last input
-            final String lastConsumed = input.lastConsumed().orElse("");
             /*
              * If `canRead()` returns true at this stage, it means that all
              * command names have been valid so far and the input ends with
@@ -167,13 +173,13 @@ public class CommandGraph<S> {
              * with an empty input string. Otherwise, complete the current
              * node with the current input.
              */
-            final List<Completion> completions = input.canRead()
+            final List<String> completions = input.canRead()
                     ? completeChildren(node)
-                    : completeNode(node, lastConsumed);
+                    : completeNode(node);
 
-            return new Tuple2<>(completions, null);
+            return new Tuple2<>(builder.includeStrings(completions), null);
         } catch (final NoSuchCommandException ex) {
-            final List<Completion> completions;
+            final List<String> completions;
             if (input.canRead()) {
                 /*
                  * If we have more input to read, that means that the invalid
@@ -184,26 +190,25 @@ public class CommandGraph<S> {
             } else {
                 // Otherwise, we collect completions for the current node
                 completions = ex.alternatives().stream()
-                        .map(x -> completeNode(x, ex.argument()))
-                        .flatMap(Collection::stream)
+                        .flatMap(CommandGraph::collectAliases)
                         .toList();
             }
 
-            return new Tuple2<>(completions, null);
+            return new Tuple2<>(builder.includeStrings(completions), null);
         }
     }
 
-    private static List<Completion> completeNode(final CommandNode node, final String arg) {
-        return Stream.concat(Stream.of(node.name()), node.aliases().stream())
-                .filter(x -> startsWithIgnoreCase(x, arg))
-                .map(Completion::completion)
-                .toList();
+    private static Stream<String> collectAliases(final CommandNode node) {
+        return Stream.concat(Stream.of(node.name()), node.aliases().stream());
     }
 
-    private static <S> List<Completion> completeChildren(final InternalCommandNode<S> node) {
+    private static List<String> completeNode(final CommandNode node) {
+        return collectAliases(node).toList();
+    }
+
+    private static <S> List<String> completeChildren(final InternalCommandNode<S> node) {
         return node.children().stream()
-                .map(x -> completeNode(x, ""))
-                .flatMap(Collection::stream)
+                .flatMap(CommandGraph::collectAliases)
                 .toList();
     }
 

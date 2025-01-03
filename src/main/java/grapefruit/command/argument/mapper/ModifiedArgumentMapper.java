@@ -1,6 +1,6 @@
 package grapefruit.command.argument.mapper;
 
-import grapefruit.command.completion.CommandCompletion;
+import grapefruit.command.completion.CompletionAccumulator;
 import grapefruit.command.completion.CompletionBuilder;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
@@ -29,7 +29,7 @@ final class ModifiedArgumentMapper<S, I, O> extends AbstractArgumentMapper<S, O>
     }
 
     @Override
-    public CommandCompletion complete(final CommandContext<S> context, final CompletionBuilder builder) {
+    public CompletionAccumulator complete(final CommandContext<S> context, final CompletionBuilder builder) {
         return this.delegate.complete(context, builder);
     }
 }

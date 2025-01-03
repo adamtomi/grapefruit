@@ -1,7 +1,5 @@
 package grapefruit.command.testutil;
 
-import grapefruit.command.completion.Completion;
-import grapefruit.command.completion.CompletionSupport;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 
 import java.util.List;

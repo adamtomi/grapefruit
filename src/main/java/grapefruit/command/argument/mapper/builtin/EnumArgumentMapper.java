@@ -2,8 +2,8 @@ package grapefruit.command.argument.mapper.builtin;
 
 import grapefruit.command.argument.mapper.AbstractArgumentMapper;
 import grapefruit.command.argument.mapper.ArgumentMappingException;
+import grapefruit.command.completion.CompletionAccumulator;
 import grapefruit.command.completion.CompletionBuilder;
-import grapefruit.command.completion.CommandCompletion;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
@@ -54,8 +54,8 @@ public final class EnumArgumentMapper<S, E extends Enum<E>> extends AbstractArgu
     }
 
     @Override
-    public CommandCompletion complete(final CommandContext<S> context, final CompletionBuilder builder) {
-        return builder.add(this.resolver::complete, this.type.getEnumConstants()).build();
+    public CompletionAccumulator complete(final CommandContext<S> context, final CompletionBuilder builder) {
+        return builder.includeStrings(this.type.getEnumConstants(), this.resolver::complete).build();
     }
 
     private interface EnumResolver<E extends Enum<E>> {

@@ -11,8 +11,10 @@ import grapefruit.command.argument.UnrecognizedFlagException;
 import grapefruit.command.argument.condition.CommandCondition;
 import grapefruit.command.argument.condition.UnfulfilledConditionException;
 import grapefruit.command.argument.mapper.ArgumentMappingException;
-import grapefruit.command.completion.Completion;
-import grapefruit.command.completion.CompletionSupport;
+import grapefruit.command.completion.CommandCompletion;
+import grapefruit.command.completion.CompletionAccumulator;
+import grapefruit.command.completion.CompletionBuilder;
+import grapefruit.command.completion.CompletionFactory;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
@@ -30,14 +32,14 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static grapefruit.command.util.StringUtil.startsWithIgnoreCase;
 import static java.util.Objects.requireNonNull;
 
 final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private static final char SHORT_FLAG_PREFIX_CH = '-';
     private static final String SHORT_FLAG_PREFIX = String.valueOf(SHORT_FLAG_PREFIX_CH);
     private static final String LONG_FLAG_PREFIX = SHORT_FLAG_PREFIX.repeat(2);
-    private final CommandGraph<S> commandGraph = new CommandGraph<>();
+    private final CommandGraph<S> commandGraph;
+    private final CompletionFactory completionFactory;
     private final CommandChainFactory<S> chainFactory = CommandChain.factory();
     // Store computed CommandChain instances mapped to their respective CommandModule.
     private final Map<CommandModule<S>, CommandChain<S>> computedChains = new HashMap<>();
@@ -51,6 +53,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         requireNonNull(config, "config cannot be null");
         this.registrationHandler = config.registrationHandler();
         this.contextDecorator = config.contextDecorator();
+        this.completionFactory = config.completionFactory();
+        this.commandGraph = new CommandGraph<>(this.completionFactory);
     }
 
     @Override
@@ -99,14 +103,14 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     @Override
-    public List<Completion> complete(final S source, final String command) {
+    public List<CommandCompletion> complete(final S source, final String command) {
         requireNonNull(source, "source cannot be null");
         requireNonNull(command, "command cannot be null");
 
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(command);
-        final Tuple2<List<Completion>, CommandModule<S>> result = this.commandGraph.complete(input);
-        final Optional<List<Completion>> completions = result.left();
-        if (completions.isPresent()) return completions.orElseThrow();
+        final Tuple2<CompletionAccumulator, CommandModule<S>> result = this.commandGraph.complete(input);
+        final Optional<CompletionAccumulator> completions = result.left();
+        if (completions.isPresent()) return completions.orElseThrow().filterCompletions();
 
         final CommandModule<S> cmd = result.right().orElseThrow();
         final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.COMPLETE);
@@ -120,7 +124,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             return List.of();
         }
 
-        return collectCompletions(context, input, parseResult);
+        return collectCompletions(context, input, parseResult).filterCompletions();
     }
 
     @Override
@@ -399,7 +403,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
-    private static <S> List<Completion> collectCompletions(
+    private CompletionAccumulator collectCompletions(
             final CommandContext<S> context,
             final CommandInputTokenizer input,
             final CommandParseResult<S> parseResult
@@ -411,21 +415,19 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 ? ""
                 : lastConsumed;
 
-        final List<Completion> base = argument.isFlag()
-                ? collectFlagCompletions(context, parseResult, argument.asFlag(), completeNext, argToComplete)
-                : collectArgumentCompletions(context, parseResult, argument, argToComplete);
+        final CompletionBuilder builder = CompletionBuilder.of(this.completionFactory, argToComplete);
 
-        return base.stream()
-                .filter(x -> startsWithIgnoreCase(x.content(), argToComplete.trim()))
-                .toList();
+        return argument.isFlag()
+                ? collectFlagCompletions(context, parseResult, argument.asFlag(), completeNext, builder)
+                : collectArgumentCompletions(context, parseResult, argument, argToComplete, builder);
     }
 
-    private static <S> List<Completion> collectFlagCompletions(
+    private static <S> CompletionAccumulator collectFlagCompletions(
             final CommandContext<S> context,
             final CommandParseResult<S> parseResult,
             final CommandArgument.Flag<S, ?> argument,
             final boolean completeNext,
-            final String argToComplete
+            final CompletionBuilder builder
     ) {
         if (argument.asFlag().isPresence()) {
             return Stream.of(completeFlags(parseResult.remainingFlags()), completeFlagGroup(context, argToComplete, parseResult.remainingFlags()))
@@ -443,16 +445,16 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
-    private static <S> List<Completion> collectArgumentCompletions(
+    private static <S> CompletionAccumulator collectArgumentCompletions(
             final CommandContext<S> context,
             final CommandParseResult<S> parseResult,
             final CommandArgument.Dynamic<S, ?> argument,
-            final String argToComplete
+            final CompletionBuilder builder
     ) {
         return Stream.of(
-                        argument.mapper().complete(context, argToComplete),
+                        argument.mapper().complete(context, builder),
                         completeFlags(parseResult.remainingFlags()),
-                        completeFlagGroup(context, argToComplete, parseResult.remainingFlags())
+                        completeFlagGroup(context, builder.input(), parseResult.remainingFlags())
                 )
                 .flatMap(Collection::stream)
                 .toList();
@@ -474,23 +476,23 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         return (remainingArgs.isEmpty() ? remainingFlags : remainingArgs).getFirst();
     }
 
-    private static <S> List<Completion> completeFlag(final CommandArgument.Flag<S, ?> flag) {
+    private static <S> List<String> completeFlag(final CommandArgument.Flag<S, ?> flag) {
         final List<String> result = new ArrayList<>();
         result.add(LONG_FLAG_PREFIX + flag.name());
 
         if (flag.shorthand() != 0) result.add(SHORT_FLAG_PREFIX + flag.shorthand());
 
-        return CompletionSupport.strings(result);
+        return result;
     }
 
-    private static <S> List<Completion> completeFlags(final Collection<CommandArgument.Flag<S, ?>> flags) {
+    private static <S> List<String> completeFlags(final Collection<CommandArgument.Flag<S, ?>> flags) {
         return flags.stream()
                 .map(CommandDispatcherImpl::completeFlag)
                 .flatMap(Collection::stream)
                 .toList();
     }
 
-    private static <S> List<Completion> completeFlagGroup(
+    private static <S> List<String> completeFlagGroup(
             final CommandContext<S> context,
             final String argument,
             final List<CommandArgument.Flag<S, ?>> flags
@@ -514,7 +516,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             }
         }
 
-        return CompletionSupport.strings(result);
+        return result;
     }
 
     private static <S> boolean isInvalidShorthand(final char shorthand, final List<CommandArgument.Flag<S, ?>> flags) {

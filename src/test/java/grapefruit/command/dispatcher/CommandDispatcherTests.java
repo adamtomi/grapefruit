@@ -5,7 +5,6 @@ import grapefruit.command.argument.CommandArgumentException;
 import grapefruit.command.argument.DuplicateFlagException;
 import grapefruit.command.argument.UnrecognizedFlagException;
 import grapefruit.command.argument.condition.UnfulfilledConditionException;
-import grapefruit.command.completion.Completion;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
 import grapefruit.command.mock.ColorArgumentMapper;
 import grapefruit.command.mock.TestArgumentMapper;

@@ -1,6 +1,7 @@
 package grapefruit.command.dispatcher.config;
 
 import grapefruit.command.argument.CommandChain;
+import grapefruit.command.completion.CompletionFactory;
 import grapefruit.command.dispatcher.CommandRegistrationHandler;
 import grapefruit.command.dispatcher.ContextDecorator;
 import grapefruit.command.util.function.ToBooleanFunction;
@@ -10,6 +11,8 @@ public interface DispatcherConfig<S> {
     CommandRegistrationHandler<S> registrationHandler();
 
     ContextDecorator<S> contextDecorator();
+
+    CompletionFactory completionFactory();
 
     static <S> Builder<S> builder() {
         return new DispatcherConfigImpl.Builder<>();

@@ -1,29 +1,31 @@
 package grapefruit.command.completion;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collector;
 
 public interface CompletionBuilder {
 
-    CompletionBuilder add(final String completion);
+    String input();
 
-    CompletionBuilder add(final String... completions);
+    CompletionBuilder include(final CommandCompletion completion);
 
-    CompletionBuilder add(final Iterable<String> completions);
+    CompletionBuilder includeString(final String completion);
 
-    <T, C extends Collection<T>> CompletionBuilder add(final Function<T, String> mapper, final C collection);
+    CompletionBuilder include(final Collection<CommandCompletion> completions);
 
-    <T> CompletionBuilder add(final Function<T, String> mapper, final T[] array);
+    CompletionBuilder includeStrings(final Collection<String> completions);
 
-    // TODO add methods to include Completion objects
+    <T> CompletionBuilder include(final Collection<T> completions, final Function<T, CommandCompletion> mapper);
 
-    CommandCompletion build();
+    <T> CompletionBuilder includeStrings(final Collection<T> completions, final Function<T, String> mapper);
 
-    // TODO Collector support
+    <T> CompletionBuilder include(final T[] completions, final Function<T, CommandCompletion> mapper);
 
-    Collector<String, List<Completion>, CommandCompletion> collectStrings();
+    <T> CompletionBuilder includeStrings(final T[] completions, final Function<T, String> mapper);
 
-    Collector<Completion, List<Completion>, CommandCompletion> collectCompletions();
+    CompletionAccumulator build();
+
+    static CompletionBuilder of(final CompletionFactory factory, final String input) {
+        return new CompletionBuilderImpl(factory, input);
+    }
 }

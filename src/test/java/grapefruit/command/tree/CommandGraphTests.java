@@ -3,6 +3,8 @@ package grapefruit.command.tree;
 import grapefruit.command.CommandModule;
 import grapefruit.command.argument.CommandChain;
 import grapefruit.command.argument.CommandChainFactory;
+import grapefruit.command.completion.CommandCompletion;
+import grapefruit.command.completion.CompletionFactory;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.mock.EmptyCommandChain;
 import grapefruit.command.mock.TestCommandModule;
@@ -13,10 +15,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CommandGraphTests {
+    
+    private static CommandGraph<Object> graph() {
+        return new CommandGraph<>(CommandCompletion.factory());
+    }
 
     @Test
     public void insert_emptyTree() {
-        final CommandGraph<Object> graph = new CommandGraph<>();
+        final CommandGraph<Object> graph = graph();
         final CommandChain<Object> chain = new EmptyCommandChain();
 
         assertThrows(IllegalStateException.class, () -> graph.insert(chain, TestCommandModule.dummy()));
@@ -24,7 +30,7 @@ public class CommandGraphTests {
 
     @Test
     public void insert_ambiguousTree() {
-        final CommandGraph<Object> graph = new CommandGraph<>();
+        final CommandGraph<Object> graph = graph();
         final CommandModule<Object> module0 = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build()).build());
 
@@ -45,7 +51,7 @@ public class CommandGraphTests {
 
     @Test
     public void insert_success() {
-        final CommandGraph<Object> graph = new CommandGraph<>();
+        final CommandGraph<Object> graph = graph();
         final CommandModule<Object> module = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build()).build());
 
@@ -58,7 +64,7 @@ public class CommandGraphTests {
 
     @Test
     public void insert_treeIntegrity() {
-        final CommandGraph<Object> graph = new CommandGraph<>();
+        final CommandGraph<Object> graph = graph();
         final CommandChainFactory<Object> factory = CommandChain.factory();
 
         final CommandChain<Object> chain1 = factory.newChain()
@@ -87,7 +93,7 @@ public class CommandGraphTests {
 
     @Test
     public void delete_noSuchChild_emptyTree() {
-        final CommandGraph<Object> graph = new CommandGraph<>();
+        final CommandGraph<Object> graph = graph();
         final CommandChainFactory<Object> factory = CommandChain.factory();
         final CommandChain<Object> chain = factory.newChain()
                 .then(factory.literal("test").build()).build();
@@ -97,7 +103,7 @@ public class CommandGraphTests {
 
     @Test
     public void delete_noSuchChild() {
-        final CommandGraph<Object> graph = new CommandGraph<>();
+        final CommandGraph<Object> graph = graph();
         final CommandChainFactory<Object> factory = CommandChain.factory();
 
         final CommandChain<Object> chain1 = factory.newChain()
@@ -111,7 +117,7 @@ public class CommandGraphTests {
 
     @Test
     public void delete_nonLeafNode() {
-        final CommandGraph<Object> graph = new CommandGraph<>();
+        final CommandGraph<Object> graph = graph();
         final CommandChainFactory<Object> factory = CommandChain.factory();
 
         final CommandChain<Object> chain1 = factory.newChain()
@@ -128,7 +134,7 @@ public class CommandGraphTests {
 
     @Test
     public void delete_success() {
-        final CommandGraph<Object> graph = new CommandGraph<>();
+        final CommandGraph<Object> graph = graph();
         final CommandChainFactory<Object> factory = CommandChain.factory();
         final CommandChain<Object> chain = factory.newChain()
                 .then(factory.literal("test").build()).build();
@@ -142,7 +148,7 @@ public class CommandGraphTests {
 
     @Test
     public void delete_treeIntegrity() {
-        final CommandGraph<Object> graph = new CommandGraph<>();
+        final CommandGraph<Object> graph = graph();
         final CommandChainFactory<Object> factory = CommandChain.factory();
 
         final CommandChain<Object> chain1 = factory.newChain()
@@ -172,19 +178,19 @@ public class CommandGraphTests {
 
     @Test
     public void query_emptyTree() {
-        final CommandGraph<Object> graph = new CommandGraph<>();
+        final CommandGraph<Object> graph = graph();
         assertThrows(NoSuchCommandException.class, () -> graph.query(CommandInputTokenizer.wrap("test")));
     }
 
     @Test
     public void query_emptyTree_emptyInput() {
-        final CommandGraph<Object> graph = new CommandGraph<>();
+        final CommandGraph<Object> graph = graph();
         assertThrows(NoSuchCommandException.class, () -> graph.query(CommandInputTokenizer.wrap("")));
     }
 
     @Test
     public void query_noSuchCommand() {
-        final CommandGraph<Object> graph = new CommandGraph<>();
+        final CommandGraph<Object> graph = graph();
         final CommandChainFactory<Object> factory = CommandChain.factory();
         final CommandChain<Object> chain = factory.newChain()
                 .then(factory.literal("test").build()).build();
@@ -195,7 +201,7 @@ public class CommandGraphTests {
 
     @Test
     public void query_success() {
-        final CommandGraph<Object> graph = new CommandGraph<>();
+        final CommandGraph<Object> graph = graph();
         final CommandChainFactory<Object> factory = CommandChain.factory();
         final CommandChain<Object> chain = factory.newChain()
                 .then(factory.literal("test").build()).build();
