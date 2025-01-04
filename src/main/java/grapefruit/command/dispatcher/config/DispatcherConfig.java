@@ -28,6 +28,8 @@ public interface DispatcherConfig<S> {
 
         Builder<S> decorateContext(final ContextDecorator<S> handler);
 
+        Builder<S> completionFactory(final CompletionFactory factory);
+
         DispatcherConfig<S> build();
     }
 }

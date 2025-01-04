@@ -15,6 +15,10 @@ public interface CompletionBuilder {
 
     CompletionBuilder includeStrings(final Collection<String> completions);
 
+    CompletionBuilder include(final CommandCompletion[] completions);
+
+    CompletionBuilder includeStrings(final String[] completions);
+
     <T> CompletionBuilder include(final Collection<T> completions, final Function<T, CommandCompletion> mapper);
 
     <T> CompletionBuilder includeStrings(final Collection<T> completions, final Function<T, String> mapper);

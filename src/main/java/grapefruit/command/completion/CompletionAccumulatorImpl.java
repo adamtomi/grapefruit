@@ -5,7 +5,6 @@ import java.util.List;
 import static grapefruit.command.util.StringUtil.startsWithIgnoreCase;
 import static java.util.Objects.requireNonNull;
 
-@Deprecated
 final class CompletionAccumulatorImpl implements CompletionAccumulator {
     private final List<CommandCompletion> completions;
     private final String input;

@@ -2,7 +2,6 @@ package grapefruit.command.completion;
 
 import java.util.List;
 
-@Deprecated
 public interface CompletionAccumulator {
 
     List<CommandCompletion> filterCompletions();

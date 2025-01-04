@@ -56,6 +56,18 @@ final class CompletionBuilderImpl implements CompletionBuilder {
     }
 
     @Override
+    public CompletionBuilder include(final CommandCompletion[] completions) {
+        requireNonNull(completions, "completions cannot be null");
+        return include(Arrays.asList(completions));
+    }
+
+    @Override
+    public CompletionBuilder includeStrings(final String[] completions) {
+        requireNonNull(completions, "completions cannot be null");
+        return includeStrings(Arrays.asList(completions));
+    }
+
+    @Override
     public <T> CompletionBuilder include(final Collection<T> completions, final Function<T, CommandCompletion> mapper) {
         requireNonNull(completions, "completions cannot be null");
         requireNonNull(mapper, "mapper cannot be null");

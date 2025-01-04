@@ -108,9 +108,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         requireNonNull(command, "command cannot be null");
 
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(command);
-        final Tuple2<CompletionAccumulator, CommandModule<S>> result = this.commandGraph.complete(input);
-        final Optional<CompletionAccumulator> completions = result.left();
-        if (completions.isPresent()) return completions.orElseThrow().filterCompletions();
+        final Tuple2<CompletionBuilder, CommandModule<S>> result = this.commandGraph.complete(input);
+        final Optional<CompletionBuilder> completions = result.left();
+        if (completions.isPresent()) return completions.orElseThrow().build().filterCompletions();
 
         final CommandModule<S> cmd = result.right().orElseThrow();
         final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.COMPLETE);
@@ -419,7 +419,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
         return argument.isFlag()
                 ? collectFlagCompletions(context, parseResult, argument.asFlag(), completeNext, builder)
-                : collectArgumentCompletions(context, parseResult, argument, argToComplete, builder);
+                : collectArgumentCompletions(context, parseResult, argument, builder);
     }
 
     private static <S> CompletionAccumulator collectFlagCompletions(
@@ -429,20 +429,30 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final boolean completeNext,
             final CompletionBuilder builder
     ) {
-        if (argument.asFlag().isPresence()) {
-            return Stream.of(completeFlags(parseResult.remainingFlags()), completeFlagGroup(context, argToComplete, parseResult.remainingFlags()))
+        // TODO review this
+        final boolean includeFlagNames = argument.isPresence() || !completeNext || parseResult.lastArgument().isEmpty();
+        if (includeFlagNames) {
+            /* builder.includeStrings(completeFlagGroup(context, builder.input(), parseResult.remainingFlags()))
+                    .includeStrings(completeFlags(parseResult.remainingFlags())); */
+            includeFlags(context, parseResult, builder);
+        }
+
+        return argument.isPresence()
+                ? builder.build()
+                : argument.mapper().complete(context, builder);
+
+        /*if (argument.asFlag().isPresence()) {
+             return Stream.of(completeFlags(parseResult.remainingFlags()), completeFlagGroup(context, builder.input(), parseResult.remainingFlags()))
                     .flatMap(Collection::stream)
                     .toList();
         } else {
-            final List<Completion> base = new ArrayList<>(argument.mapper().complete(context, argToComplete));
-
             if (!completeNext || parseResult.lastArgument().isEmpty()) {
-                base.addAll(completeFlagGroup(context, argToComplete, parseResult.remainingFlags()));
-                base.addAll(completeFlags(parseResult.remainingFlags()));
+                builder.includeStrings(completeFlagGroup(context, builder.input(), parseResult.remainingFlags()))
+                        .includeStrings(completeFlags(parseResult.remainingFlags()));
             }
 
-            return base;
-        }
+            return argument.mapper().complete(context, builder);
+        }*/
     }
 
     private static <S> CompletionAccumulator collectArgumentCompletions(
@@ -451,13 +461,25 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final CommandArgument.Dynamic<S, ?> argument,
             final CompletionBuilder builder
     ) {
-        return Stream.of(
+        /*return Stream.of(
                         argument.mapper().complete(context, builder),
                         completeFlags(parseResult.remainingFlags()),
                         completeFlagGroup(context, builder.input(), parseResult.remainingFlags())
                 )
                 .flatMap(Collection::stream)
-                .toList();
+                .toList();*/
+        // TODO only do this, if eager flag completions is enabled
+        return argument.mapper().complete(context, includeFlags(context, parseResult, builder));
+    }
+
+    private static <S> CompletionBuilder includeFlags(
+            final CommandContext<S> context,
+            final CommandParseResult<S> parseResult,
+            final CompletionBuilder builder
+    ) {
+        final List<CommandArgument.Flag<S, ?>> remainingFlags = parseResult.remainingFlags();
+        return builder.includeStrings(completeFlags(remainingFlags))
+                .includeStrings(completeFlagGroup(context, builder.input(), remainingFlags));
     }
 
     private static <S> CommandArgument.Dynamic<S, ?> resolveArgumentToComplete(final CommandParseResult<S> parseResult) {

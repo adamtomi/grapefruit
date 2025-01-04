@@ -5,6 +5,7 @@ import grapefruit.command.argument.CommandArgumentException;
 import grapefruit.command.argument.DuplicateFlagException;
 import grapefruit.command.argument.UnrecognizedFlagException;
 import grapefruit.command.argument.condition.UnfulfilledConditionException;
+import grapefruit.command.completion.CommandCompletion;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
 import grapefruit.command.mock.ColorArgumentMapper;
 import grapefruit.command.mock.TestArgumentMapper;
@@ -358,7 +359,7 @@ public class CommandDispatcherTests {
                 .build());
 
         dispatcher.register(Set.of(command0, command1));
-        final List<Completion> completions = dispatcher.complete(new Object(), input);
+        final List<CommandCompletion> completions = dispatcher.complete(new Object(), input);
         assertContainsAll(completions(expected), completions);
     }
 
@@ -398,7 +399,7 @@ public class CommandDispatcherTests {
                 .build());
 
         dispatcher.register(command);
-        final List<Completion> completions = dispatcher.complete(new Object(), input);
+        final List<CommandCompletion> completions = dispatcher.complete(new Object(), input);
         assertContainsAll(completions(expected), completions);
     }
 
@@ -435,7 +436,7 @@ public class CommandDispatcherTests {
                 .build());
 
         dispatcher.register(command);
-        final List<Completion> completions = dispatcher.complete(new Object(), input);
+        final List<CommandCompletion> completions = dispatcher.complete(new Object(), input);
         assertIterableEquals(List.of(), completions);
     }
 }

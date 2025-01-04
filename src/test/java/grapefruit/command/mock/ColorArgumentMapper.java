@@ -2,12 +2,13 @@ package grapefruit.command.mock;
 
 import grapefruit.command.argument.mapper.AbstractArgumentMapper;
 import grapefruit.command.argument.mapper.ArgumentMappingException;
+import grapefruit.command.completion.CompletionAccumulator;
+import grapefruit.command.completion.CompletionBuilder;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
 
-import java.util.Arrays;
-import java.util.List;
+import static grapefruit.command.completion.CompletionAccumulator.empty;
 
 public class ColorArgumentMapper extends AbstractArgumentMapper<Object, String> {
     private static final char HASH = '#';
@@ -42,20 +43,18 @@ public class ColorArgumentMapper extends AbstractArgumentMapper<Object, String> 
     }
 
     @Override
-    public List<Completion> complete(final CommandContext<Object> context, final String input) {
+    public CompletionAccumulator complete(final CommandContext<Object> context, final CompletionBuilder builder) {
+        final String input = builder.input();
         if (input.isEmpty()) {
-            return CompletionSupport.strings(String.valueOf(HASH));
+            return builder.includeString(String.valueOf(HASH)).build();
         }
 
         if (input.length() > 7 || input.charAt(0) != HASH || containsInvalidCharacter(input)) {
-            return List.of();
+            return empty();
         } else if (input.length() == 7) {
-            return CompletionSupport.strings(input);
+            return builder.includeString(input).build();
         }
 
-        return Arrays.stream(HEX_CHARSET)
-                .map(x -> input + x)
-                .map(Completion::completion)
-                .toList();
+        return builder.includeStrings(HEX_CHARSET, x -> input + x).build();
     }
 }
