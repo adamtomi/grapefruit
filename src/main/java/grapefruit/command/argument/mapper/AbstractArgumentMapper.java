@@ -5,7 +5,6 @@ import grapefruit.command.completion.CompletionBuilder;
 import grapefruit.command.dispatcher.CommandContext;
 import io.leangen.geantyref.TypeToken;
 
-import static grapefruit.command.completion.CompletionAccumulator.empty;
 import static java.util.Objects.requireNonNull;
 
 public abstract class AbstractArgumentMapper<S, T> implements ArgumentMapper<S, T> {
@@ -33,7 +32,7 @@ public abstract class AbstractArgumentMapper<S, T> implements ArgumentMapper<S, 
 
     @Override
     public CompletionAccumulator complete(final CommandContext<S> context, final CompletionBuilder builder) {
-        return empty();
+        return builder.build();
     }
 
     @Override

@@ -1,5 +1,7 @@
 package grapefruit.command.completion;
 
+import grapefruit.command.util.ToStringer;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -102,5 +104,13 @@ final class CompletionBuilderImpl implements CompletionBuilder {
     private CompletionBuilder include(final Stream<CommandCompletion> completions) {
         this.completions.addAll(completions.toList());
         return this;
+    }
+
+    @Override
+    public String toString() {
+        return ToStringer.create(this)
+                .append("input", this.input)
+                .append("completions", this.completions)
+                .toString();
     }
 }

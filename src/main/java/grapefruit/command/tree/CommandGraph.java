@@ -142,14 +142,15 @@ public class CommandGraph<S> {
         return node;
     }
 
+    // TODO cleanup
     public Tuple2<CompletionBuilder, CommandModule<S>> complete(final CommandInputTokenizer input) {
         requireNonNull(input, "input cannot be null");
-        // Default to an empty string as last input
-        final String lastConsumed = input.lastConsumed().orElse("");
-        final CompletionBuilder builder = CompletionBuilder.of(this.factory, lastConsumed);
 
         try {
             if (!input.canReadNonWhitespace()) {
+                // Default to an empty string as last input
+                final String lastConsumed = input.lastConsumed().orElse("");
+                final CompletionBuilder builder = CompletionBuilder.of(this.factory, lastConsumed);
                 // The input is empty, complete the direct children of the root node
                 return new Tuple2<>(builder.includeStrings(completeChildren(this.rootNode)), null);
 
@@ -177,6 +178,8 @@ public class CommandGraph<S> {
                     ? completeChildren(node)
                     : completeNode(node);
 
+            final String lastConsumed = input.lastConsumed().orElse("");
+            final CompletionBuilder builder = CompletionBuilder.of(this.factory, lastConsumed);
             return new Tuple2<>(builder.includeStrings(completions), null);
         } catch (final NoSuchCommandException ex) {
             final List<String> completions;
@@ -194,6 +197,8 @@ public class CommandGraph<S> {
                         .toList();
             }
 
+            final String lastConsumed = input.lastConsumed().orElse("");
+            final CompletionBuilder builder = CompletionBuilder.of(this.factory, lastConsumed);
             return new Tuple2<>(builder.includeStrings(completions), null);
         }
     }

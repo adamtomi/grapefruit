@@ -334,17 +334,17 @@ public class CommandDispatcherTests {
 
     @ParameterizedTest
     @CsvSource({
-            "'',command|cmd|test",
-            "t,test",
-            "c,command|cmd",
-            "'test he ',''",
-            "'test ',hello|hl",
-            "'cmd su',sub|subcmd",
-            "'cmd sub',sub|subcmd",
-            "test asd he,''",
-            "'cmd su ',''"
+            "'',command|cmd|test,''",
+            "t,test,t",
+            "c,command|cmd,c",
+            "'test he ','',' '",
+            "'test ',hello|hl,' '",
+            "'cmd su',sub|subcmd,su",
+            "'cmd sub',sub|subcmd,sub",
+            "test asd he,'',he",
+            "'cmd su ','',' '"
     })
-    public void complete_commandNames(final String input, final String expected) {
+    public void complete_commandNames(final String input, final String expected, final String lastInput) {
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
                 .build();
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
@@ -360,30 +360,30 @@ public class CommandDispatcherTests {
 
         dispatcher.register(Set.of(command0, command1));
         final List<CommandCompletion> completions = dispatcher.complete(new Object(), input);
-        assertContainsAll(completions(expected), completions);
+        assertContainsAll(completions(expected, lastInput), completions);
     }
 
     @ParameterizedTest
     @CsvSource({
-            "'test hello ',--color|-c|--stringflag|-s|--boolflag|-b",
-            "test hello a,''",
-            "test hello argname,''",
-            "test hello --,--color|--stringflag|--boolflag",
-            "test hello --c,--color",
-            "test hello -,--color|-c|--stringflag|-s|--boolflag|-b",
-            "test hello argname --color,--color",
-            "test hello argname -c,-cb|-cs|-c",
-            "'test hello argname --color ',#",
-            "test hello argname --color #,#0|#1|#2|#3|#4|#5|#6|#7|#8|#9|#a|#b|#c|#d|#e|#f",
-            "test hello argname -c #,#0|#1|#2|#3|#4|#5|#6|#7|#8|#9|#a|#b|#c|#d|#e|#f",
-            "test hello argname -c #ffffff,'#ffffff'",
-            "'test hello argname -bc #ae43ff ',--stringflag|-s",
-            "'test hello --color #ffffff -b argname -s asd ',''",
-            "test hello --color #ffffff -s,'-sb|-s'",
-            "'test hello --color #ffffff -s ',''",
-            "test hello --color #fff,#fff0|#fff1|#fff2|#fff3|#fff4|#fff5|#fff6|#fff7|#fff8|#fff9|#fffa|#fffb|#fffc|#fffd|#fffe|#ffff"
+            "'test hello ',--color|-c|--stringflag|-s|--boolflag|-b,''",
+            "test hello a,'',a",
+            "test hello argname,'',argname",
+            "test hello --,--color|--stringflag|--boolflag,--",
+            "test hello --c,--color,--c",
+            "test hello -,--color|-c|--stringflag|-s|--boolflag|-b,-",
+            "test hello argname --color,--color,--color",
+            "test hello argname -c,-cb|-cs|-c,-c",
+            "'test hello argname --color ',#,''",
+            "test hello argname --color #,#0|#1|#2|#3|#4|#5|#6|#7|#8|#9|#a|#b|#c|#d|#e|#f,#",
+            "test hello argname -c #,#0|#1|#2|#3|#4|#5|#6|#7|#8|#9|#a|#b|#c|#d|#e|#f,#",
+            "test hello argname -c #ffffff,'#ffffff',#ffffff",
+            "'test hello argname -bc #ae43ff ',--stringflag|-s,''",
+            "'test hello --color #ffffff -b argname -s asd ','',''",
+            "test hello --color #ffffff -s,'-sb|-s',-s",
+            "'test hello --color #ffffff -s ','',''",
+            "test hello --color #fff,#fff0|#fff1|#fff2|#fff3|#fff4|#fff5|#fff6|#fff7|#fff8|#fff9|#fffa|#fffb|#fffc|#fffd|#fffe|#ffff,#fff"
     })
-    public void complete_arguments(final String input, final String expected) {
+    public void complete_arguments(final String input, final String expected, final String lastInput) {
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
                 .build();
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
@@ -400,7 +400,7 @@ public class CommandDispatcherTests {
 
         dispatcher.register(command);
         final List<CommandCompletion> completions = dispatcher.complete(new Object(), input);
-        assertContainsAll(completions(expected), completions);
+        assertContainsAll(completions(expected, lastInput), completions);
     }
 
     @ParameterizedTest

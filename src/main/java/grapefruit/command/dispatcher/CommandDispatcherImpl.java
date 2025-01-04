@@ -431,28 +431,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     ) {
         // TODO review this
         final boolean includeFlagNames = argument.isPresence() || !completeNext || parseResult.lastArgument().isEmpty();
-        if (includeFlagNames) {
-            /* builder.includeStrings(completeFlagGroup(context, builder.input(), parseResult.remainingFlags()))
-                    .includeStrings(completeFlags(parseResult.remainingFlags())); */
-            includeFlags(context, parseResult, builder);
-        }
+        if (includeFlagNames) includeFlags(context, parseResult, builder);
 
         return argument.isPresence()
                 ? builder.build()
                 : argument.mapper().complete(context, builder);
-
-        /*if (argument.asFlag().isPresence()) {
-             return Stream.of(completeFlags(parseResult.remainingFlags()), completeFlagGroup(context, builder.input(), parseResult.remainingFlags()))
-                    .flatMap(Collection::stream)
-                    .toList();
-        } else {
-            if (!completeNext || parseResult.lastArgument().isEmpty()) {
-                builder.includeStrings(completeFlagGroup(context, builder.input(), parseResult.remainingFlags()))
-                        .includeStrings(completeFlags(parseResult.remainingFlags()));
-            }
-
-            return argument.mapper().complete(context, builder);
-        }*/
     }
 
     private static <S> CompletionAccumulator collectArgumentCompletions(
@@ -461,14 +444,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final CommandArgument.Dynamic<S, ?> argument,
             final CompletionBuilder builder
     ) {
-        /*return Stream.of(
-                        argument.mapper().complete(context, builder),
-                        completeFlags(parseResult.remainingFlags()),
-                        completeFlagGroup(context, builder.input(), parseResult.remainingFlags())
-                )
-                .flatMap(Collection::stream)
-                .toList();*/
-        // TODO only do this, if eager flag completions is enabled
+        // TODO only include flags is eagerFlagCompletions is turned on.
         return argument.mapper().complete(context, includeFlags(context, parseResult, builder));
     }
 

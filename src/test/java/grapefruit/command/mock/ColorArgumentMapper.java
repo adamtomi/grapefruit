@@ -8,8 +8,6 @@ import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
 
-import static grapefruit.command.completion.CompletionAccumulator.empty;
-
 public class ColorArgumentMapper extends AbstractArgumentMapper<Object, String> {
     private static final char HASH = '#';
     private static final String HEX_ALPHABET = "0123456789abcdef";
@@ -50,7 +48,7 @@ public class ColorArgumentMapper extends AbstractArgumentMapper<Object, String> 
         }
 
         if (input.length() > 7 || input.charAt(0) != HASH || containsInvalidCharacter(input)) {
-            return empty();
+            return builder.build();
         } else if (input.length() == 7) {
             return builder.includeString(input).build();
         }
