@@ -38,7 +38,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private static final char SHORT_FLAG_PREFIX_CH = '-';
     private static final String SHORT_FLAG_PREFIX = String.valueOf(SHORT_FLAG_PREFIX_CH);
     private static final String LONG_FLAG_PREFIX = SHORT_FLAG_PREFIX.repeat(2);
-    private final CommandGraph<S> commandGraph;
+    private final CommandGraph<S> commandGraph = new CommandGraph<>();
     private final CompletionFactory completionFactory;
     private final CommandChainFactory<S> chainFactory = CommandChain.factory();
     // Store computed CommandChain instances mapped to their respective CommandModule.
@@ -54,7 +54,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         this.registrationHandler = config.registrationHandler();
         this.contextDecorator = config.contextDecorator();
         this.completionFactory = config.completionFactory();
-        this.commandGraph = new CommandGraph<>(this.completionFactory);
     }
 
     @Override
@@ -108,9 +107,15 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         requireNonNull(command, "command cannot be null");
 
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(command);
-        final Tuple2<CompletionBuilder, CommandModule<S>> result = this.commandGraph.complete(input);
-        final Optional<CompletionBuilder> completions = result.left();
-        if (completions.isPresent()) return completions.orElseThrow().build().filterCompletions();
+        final Tuple2<List<String>, CommandModule<S>> result = this.commandGraph.complete(input);
+        final Optional<List<String>> completions = result.left();
+
+        if (completions.isPresent()) {
+            final CompletionBuilder builder = CompletionBuilder.of(this.completionFactory, input.lastConsumed().orElse(""));
+            return builder.includeStrings(completions.orElseThrow())
+                    .build()
+                    .filterCompletions();
+        }
 
         final CommandModule<S> cmd = result.right().orElseThrow();
         final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.COMPLETE);

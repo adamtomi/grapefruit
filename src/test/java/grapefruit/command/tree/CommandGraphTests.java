@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class CommandGraphTests {
     
     private static CommandGraph<Object> graph() {
-        return new CommandGraph<>(CommandCompletion.factory());
+        return new CommandGraph<>();
     }
 
     @Test

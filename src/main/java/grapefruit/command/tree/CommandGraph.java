@@ -4,8 +4,6 @@ import grapefruit.command.CommandException;
 import grapefruit.command.CommandModule;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.argument.CommandChain;
-import grapefruit.command.completion.CompletionBuilder;
-import grapefruit.command.completion.CompletionFactory;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
 import grapefruit.command.tree.node.CommandNode;
@@ -23,11 +21,6 @@ import static java.util.Objects.requireNonNull;
 
 public class CommandGraph<S> {
     private final InternalCommandNode<S> rootNode = InternalCommandNode.of("__ROOT__", Set.of(), null);
-    private final CompletionFactory factory;
-
-    public CommandGraph(final CompletionFactory factory) {
-        this.factory = requireNonNull(factory, "factory cannot be null");
-    }
 
     public void insert(final CommandChain<S> chain, final CommandModule<S> command) {
         requireNonNull(chain, "chain cannot be null");
@@ -142,17 +135,13 @@ public class CommandGraph<S> {
         return node;
     }
 
-    // TODO cleanup
-    public Tuple2<CompletionBuilder, CommandModule<S>> complete(final CommandInputTokenizer input) {
+    public Tuple2<List<String>, CommandModule<S>> complete(final CommandInputTokenizer input) {
         requireNonNull(input, "input cannot be null");
 
         try {
             if (!input.canReadNonWhitespace()) {
-                // Default to an empty string as last input
-                final String lastConsumed = input.lastConsumed().orElse("");
-                final CompletionBuilder builder = CompletionBuilder.of(this.factory, lastConsumed);
                 // The input is empty, complete the direct children of the root node
-                return new Tuple2<>(builder.includeStrings(completeChildren(this.rootNode)), null);
+                return new Tuple2<>(completeChildren(this.rootNode), null);
 
             }
 
@@ -178,9 +167,7 @@ public class CommandGraph<S> {
                     ? completeChildren(node)
                     : completeNode(node);
 
-            final String lastConsumed = input.lastConsumed().orElse("");
-            final CompletionBuilder builder = CompletionBuilder.of(this.factory, lastConsumed);
-            return new Tuple2<>(builder.includeStrings(completions), null);
+            return new Tuple2<>(completions, null);
         } catch (final NoSuchCommandException ex) {
             final List<String> completions;
             if (input.canRead()) {
@@ -197,9 +184,7 @@ public class CommandGraph<S> {
                         .toList();
             }
 
-            final String lastConsumed = input.lastConsumed().orElse("");
-            final CompletionBuilder builder = CompletionBuilder.of(this.factory, lastConsumed);
-            return new Tuple2<>(builder.includeStrings(completions), null);
+            return new Tuple2<>(completions, null);
         }
     }
 
