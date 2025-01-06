@@ -111,7 +111,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         final Optional<List<String>> completions = result.left();
 
         if (completions.isPresent()) {
-            final CompletionBuilder builder = CompletionBuilder.of(this.completionFactory, input.lastConsumed().orElse(""));
+            final String lastConsumed = input.lastConsumed().filter(x -> !input.canRead()).orElse("");
+            final CompletionBuilder builder = CompletionBuilder.of(this.completionFactory, lastConsumed);
             return builder.includeStrings(completions.orElseThrow())
                     .build()
                     .filterCompletions();

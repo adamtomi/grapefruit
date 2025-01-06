@@ -338,7 +338,7 @@ public class CommandDispatcherTests {
             "t,test,t",
             "c,command|cmd,c",
             "'test he ','',' '",
-            "'test ',hello|hl,' '",
+            "'test ',hello|hl,''",
             "'cmd su',sub|subcmd,su",
             "'cmd sub',sub|subcmd,sub",
             "test asd he,'',he",
