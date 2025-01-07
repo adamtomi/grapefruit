@@ -69,7 +69,6 @@ final class CommandInputTokenizerImpl implements CommandInputTokenizer {
                 : 0;
     }
 
-    // TODO restore this.consumed
     @Override
     public String peekWord() {
         final int start = this.cursor;
