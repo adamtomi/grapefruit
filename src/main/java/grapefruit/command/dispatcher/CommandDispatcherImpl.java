@@ -39,7 +39,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private static final String SHORT_FLAG_PREFIX = String.valueOf(SHORT_FLAG_PREFIX_CH);
     private static final String LONG_FLAG_PREFIX = SHORT_FLAG_PREFIX.repeat(2);
     private final CommandGraph<S> commandGraph = new CommandGraph<>();
-    private final CompletionFactory completionFactory;
     private final CommandChainFactory<S> chainFactory = CommandChain.factory();
     // Store computed CommandChain instances mapped to their respective CommandModule.
     private final Map<CommandModule<S>, CommandChain<S>> computedChains = new HashMap<>();
@@ -48,12 +47,15 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     /* Configurable properties */
     private final CommandRegistrationHandler<S> registrationHandler;
     private final ContextDecorator<S> contextDecorator;
+    private final CompletionFactory completionFactory;
+    private final boolean eagerFlagCompletions;
 
     CommandDispatcherImpl(final DispatcherConfig<S> config) {
         requireNonNull(config, "config cannot be null");
         this.registrationHandler = config.registrationHandler();
         this.contextDecorator = config.contextDecorator();
         this.completionFactory = config.completionFactory();
+        this.eagerFlagCompletions = config.eagerFlagCompletions();
     }
 
     @Override
@@ -428,7 +430,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 : collectArgumentCompletions(context, parseResult, argument, builder);
     }
 
-    private static <S> CompletionAccumulator collectFlagCompletions(
+    private CompletionAccumulator collectFlagCompletions(
             final CommandContext<S> context,
             final CommandParseResult<S> parseResult,
             final CommandArgument.Flag<S, ?> argument,
@@ -443,17 +445,17 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 : argument.mapper().complete(context, builder);
     }
 
-    private static <S> CompletionAccumulator collectArgumentCompletions(
+    private CompletionAccumulator collectArgumentCompletions(
             final CommandContext<S> context,
             final CommandParseResult<S> parseResult,
             final CommandArgument.Dynamic<S, ?> argument,
             final CompletionBuilder builder
     ) {
-        // TODO only include flags is eagerFlagCompletions is turned on.
-        return argument.mapper().complete(context, includeFlags(context, parseResult, builder));
+
+        return argument.mapper().complete(context, this.eagerFlagCompletions ? includeFlags(context, parseResult, builder) : builder);
     }
 
-    private static <S> CompletionBuilder includeFlags(
+    private CompletionBuilder includeFlags(
             final CommandContext<S> context,
             final CommandParseResult<S> parseResult,
             final CompletionBuilder builder
@@ -463,7 +465,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 .includeStrings(completeFlagGroup(context, builder.input(), remainingFlags));
     }
 
-    private static <S> CommandArgument.Dynamic<S, ?> resolveArgumentToComplete(final CommandParseResult<S> parseResult) {
+    private CommandArgument.Dynamic<S, ?> resolveArgumentToComplete(final CommandParseResult<S> parseResult) {
         final Optional<CommandArgument.Dynamic<S, ?>> lastArgument = parseResult.lastArgument();
         if (lastArgument.isPresent()) {
             return lastArgument.orElseThrow();

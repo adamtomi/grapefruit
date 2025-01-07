@@ -14,6 +14,8 @@ public interface DispatcherConfig<S> {
 
     CompletionFactory completionFactory();
 
+    boolean eagerFlagCompletions();
+
     static <S> Builder<S> builder() {
         return new DispatcherConfigImpl.Builder<>();
     }
@@ -29,6 +31,8 @@ public interface DispatcherConfig<S> {
         Builder<S> decorateContext(final ContextDecorator<S> handler);
 
         Builder<S> completionFactory(final CompletionFactory factory);
+
+        Builder<S> eagerFlagCompletions();
 
         DispatcherConfig<S> build();
     }

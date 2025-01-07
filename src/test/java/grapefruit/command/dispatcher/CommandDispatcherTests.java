@@ -385,6 +385,7 @@ public class CommandDispatcherTests {
     })
     public void complete_arguments(final String input, final String expected, final String lastInput) {
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
+                .eagerFlagCompletions()
                 .build();
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
