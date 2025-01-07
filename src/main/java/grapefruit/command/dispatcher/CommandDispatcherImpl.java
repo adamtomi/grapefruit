@@ -451,8 +451,8 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final CommandArgument.Dynamic<S, ?> argument,
             final CompletionBuilder builder
     ) {
-
-        return argument.mapper().complete(context, this.eagerFlagCompletions ? includeFlags(context, parseResult, builder) : builder);
+        final boolean includeFlags = this.eagerFlagCompletions || builder.input().startsWith(SHORT_FLAG_PREFIX);
+        return argument.mapper().complete(context, includeFlags ? includeFlags(context, parseResult, builder) : builder);
     }
 
     private CompletionBuilder includeFlags(

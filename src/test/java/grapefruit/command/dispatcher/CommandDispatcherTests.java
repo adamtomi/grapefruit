@@ -405,6 +405,32 @@ public class CommandDispatcherTests {
     }
 
     @ParameterizedTest
+    @CsvSource({
+            "'test hello ','',''",
+            "test hello -,--color|-c|--stringflag|-s|--boolflag|-b,-",
+            "test hello --,--color|--stringflag|--boolflag,--",
+    })
+    public void complete_nonEagerFlagCompletions(final String input, final String expected, final String lastInput) {
+        final DispatcherConfig<Object> config = DispatcherConfig.builder()
+                .build();
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
+        final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
+                .then(factory.literal("testcommand").aliases("testcmd", "test", "ts").build())
+                .then(factory.literal("hello").aliases("hl").build())
+                .arguments()
+                .then(factory.required("stringarg", String.class).mapWith(word()).build())
+                .flags()
+                .then(factory.valueFlag("color", String.class).assumeShorthand().mapWith(new ColorArgumentMapper()).build())
+                .then(factory.valueFlag("stringflag", String.class).assumeShorthand().mapWith(word()).build())
+                .then(factory.presenceFlag("boolflag").assumeShorthand().build())
+                .build());
+
+        dispatcher.register(command);
+        final List<CommandCompletion> completions = dispatcher.complete(new Object(), input);
+        assertContainsAll(completions(expected, lastInput), completions);
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {
             "a",
             "asd",
