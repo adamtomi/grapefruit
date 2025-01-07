@@ -435,7 +435,6 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final boolean completeNext,
             final CompletionBuilder builder
     ) {
-        // TODO review this
         final boolean includeFlagNames = argument.isPresence() || !completeNext || parseResult.lastArgument().isEmpty();
         if (includeFlagNames) includeFlags(context, parseResult, builder);
 
