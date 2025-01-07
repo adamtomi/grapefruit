@@ -7,7 +7,7 @@ import java.io.Serial;
 
 import static java.util.Objects.requireNonNull;
 
-public abstract class CommandArgumentException extends CommandException {
+public class CommandArgumentException extends CommandException {
     @Serial
     private static final long serialVersionUID = -8437065396865235634L;
     private final String consumed;

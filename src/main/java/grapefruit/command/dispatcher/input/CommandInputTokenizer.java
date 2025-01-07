@@ -1,28 +1,27 @@
 package grapefruit.command.dispatcher.input;
 
-import org.jetbrains.annotations.Nullable;
+import grapefruit.command.argument.CommandArgumentException;
+import grapefruit.command.util.function.Function3;
+
+import java.util.Optional;
 
 public interface CommandInputTokenizer {
-    /* Both of these fields are used by StringReader#readQuotable */
-    char SINGLE_QUOTE = '\'';
-    char DOUBLE_QUOTE = '"';
 
-    // Return the original user input
-    String unwrap();
+    String input();
 
     int cursor();
 
-    void moveTo(final int position);
+    int length();
 
-    boolean hasNext();
+    boolean canRead();
 
-    char next() throws MissingInputException;
+    boolean canReadNonWhitespace();
+
+    char read() throws MissingInputException;
 
     char peek();
 
-    void advance() throws MissingInputException;
-
-    @Nullable String peekWord();
+    String peekWord();
 
     String readWord() throws MissingInputException;
 
@@ -32,9 +31,18 @@ public interface CommandInputTokenizer {
 
     String consumed();
 
-    String remainingOrEmpty();
+    Optional<String> lastConsumed();
+
+    String remaining();
+
+    Internal internal();
 
     static CommandInputTokenizer wrap(final String input) {
         return new CommandInputTokenizerImpl(input);
+    }
+
+    interface Internal {
+
+        <X extends CommandArgumentException> X gen(final String argument, final Function3<String, String, String, X> provider);
     }
 }

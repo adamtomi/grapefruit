@@ -1,9 +1,9 @@
 package grapefruit.command.argument.mapper;
 
+import grapefruit.command.completion.CompletionAccumulator;
+import grapefruit.command.completion.CompletionBuilder;
 import grapefruit.command.dispatcher.CommandContext;
 import io.leangen.geantyref.TypeToken;
-
-import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
@@ -31,7 +31,17 @@ public abstract class AbstractArgumentMapper<S, T> implements ArgumentMapper<S, 
     }
 
     @Override
-    public List<String> complete(final CommandContext<S> context, final String input) {
-        return List.of();
+    public CompletionAccumulator complete(final CommandContext<S> context, final CompletionBuilder builder) {
+        return builder.build();
+    }
+
+    @Override
+    public <O> ArgumentMapper<S, O> mapping(final Modifier<S, T, O> modifier) {
+        return new ModifiedArgumentMapper<>(this, modifier);
+    }
+
+    @Override
+    public ArgumentMapper<S, T> filtering(final Filter<S, T> filter) {
+        return new ModifiedArgumentMapper<>(this, filter);
     }
 }

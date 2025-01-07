@@ -2,7 +2,6 @@ package grapefruit.command.dispatcher;
 
 import grapefruit.command.CommandException;
 import grapefruit.command.argument.CommandArgument;
-import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.util.ToStringer;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,47 +11,34 @@ import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 
 final class CommandParseResultImpl<S> implements CommandParseResult<S> {
-    private final @Nullable String input;
     private final @Nullable CommandArgument.Dynamic<S, ?> argument;
     private final @Nullable CommandException ex;
     private final List<CommandArgument.Required<S, ?>> arguments;
     private final List<CommandArgument.Flag<S, ?>> flags;
-    private final int cursor;
 
     private CommandParseResultImpl(
-            final @Nullable String input,
             final @Nullable CommandArgument.Dynamic<S, ?> argument,
             final @Nullable CommandException ex,
             final List<CommandArgument.Required<S, ?>> arguments,
-            final List<CommandArgument.Flag<S, ?>> flags,
-            final int cursor
+            final List<CommandArgument.Flag<S, ?>> flags
     ) {
-        this.input = input;
         this.argument = argument;
         this.ex = ex;
         this.arguments = requireNonNull(arguments, "arguments cannot be null");
         this.flags = requireNonNull(flags, "flags cannot be null");
-        this.cursor = cursor;
     }
 
     @Override
-    public Optional<CommandException> capturedException() {
-        return Optional.ofNullable(this.ex);
-    }
-
-    @Override
-    public void rethrowCaptured() throws CommandException {
+    public void throwCaptured() throws CommandException {
         if (this.ex != null) throw this.ex;
     }
 
     @Override
-    public Optional<String> lastInput() {
-        return Optional.ofNullable(this.input);
-    }
-
-    @Override
-    public CommandParseResult<S> withInput(final String input) {
-        return new CommandParseResultImpl<>(input, this.argument, this.ex, this.arguments, this.flags, this.cursor);
+    public <X extends CommandException> Optional<X> captured(final Class<X> clazz) {
+        requireNonNull(clazz, "clazz cannot be null");
+        return clazz.isInstance(this.ex)
+                ? Optional.of(clazz.cast(this.ex))
+                : Optional.empty();
     }
 
     @Override
@@ -76,55 +62,35 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
     }
 
     @Override
-    public int cursor() {
-        return this.cursor;
-    }
-
-    @Override
     public String toString() {
         return ToStringer.create(this)
-                .append("input", this.input)
-                .append("argument", this.argument)
-                .append("arguments", this.arguments)
-                .append("flags", this.flags)
+                .append("lastArgument", this.argument)
+                .append("remainingArguments", this.arguments)
+                .append("remainingFlags", this.flags)
                 .toString();
     }
 
     static final class Builder<S> implements CommandParseResult.Builder<S> {
         private final List<CommandArgument.Required<S, ?>> arguments;
         private final List<CommandArgument.Flag<S, ?>> flags;
-        private final CommandInputTokenizer inputTokenizer;
         private CommandArgument.Dynamic<S, ?> argument;
-        private String input;
         private CommandException capturedException;
-        private int cursor;
 
-        Builder(final List<CommandArgument.Required<S, ?>> arguments, final List<CommandArgument.Flag<S, ?>> flags, final CommandInputTokenizer inputTokenizer) {
+        Builder(final List<CommandArgument.Required<S, ?>> arguments, final List<CommandArgument.Flag<S, ?>> flags) {
             this.arguments = requireNonNull(arguments, "arguments cannot be null");
             this.flags = requireNonNull(flags, "flags cannot be null");
-            this.inputTokenizer = requireNonNull(inputTokenizer, "inputTokenizer cannot be null");
-            this.cursor = inputTokenizer.cursor();
         }
 
         @Override
-        public void begin(final CommandArgument.Dynamic<S, ?> argument, final String value) {
+        public void begin(final CommandArgument.Dynamic<S, ?> argument) {
             requireNonNull(argument, "argument cannot be null");
-            requireNonNull(value, "input cannot be null");
             this.argument = argument;
-            this.input = value;
-            this.cursor = this.inputTokenizer.cursor();
-        }
-
-        @Override
-        public void push(final String value) {
-            this.input = requireNonNull(value, "input cannot be null");
         }
 
         @Override
         public void end() {
             if (this.argument != null) (this.argument.isFlag() ? this.flags : this.arguments).remove(this.argument);
             this.argument = null;
-            this.input = null;
         }
 
         @Override
@@ -134,7 +100,7 @@ final class CommandParseResultImpl<S> implements CommandParseResult<S> {
 
         @Override
         public CommandParseResult<S> build() {
-            return new CommandParseResultImpl<>(this.input, this.argument, this.capturedException, this.arguments, this.flags, this.cursor);
+            return new CommandParseResultImpl<>(this.argument, this.capturedException, this.arguments, this.flags);
         }
     }
 }

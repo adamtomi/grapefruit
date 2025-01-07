@@ -3,7 +3,6 @@ package grapefruit.command.dispatcher;
 import grapefruit.command.CommandException;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.argument.CommandChain;
-import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,21 +10,9 @@ import java.util.Optional;
 
 public interface CommandParseResult<S> {
 
-    Optional<CommandException> capturedException();
+    void throwCaptured() throws CommandException;
 
-    void rethrowCaptured() throws CommandException;
-
-    /*
-     * The last input that was being parsed (whether the
-     * parsing was successful does not matter here).
-     */
-    Optional<String> lastInput();
-
-    /*
-     * Create a new parse result instance from the current one wrapping
-     * the provided input string.
-     */
-    CommandParseResult<S> withInput(final String input);
+    <X extends CommandException> Optional<X> captured(final Class<X> clazz);
 
     /*
      * The last argument that was being parsed.
@@ -44,18 +31,14 @@ public interface CommandParseResult<S> {
 
     boolean isComplete();
 
-    int cursor();
-
-    static <S> Builder<S> createBuilder(final CommandChain<S> chain, final CommandInputTokenizer input) {
+    static <S> Builder<S> createBuilder(final CommandChain<S> chain) {
         // Make mutable copies
-        return new CommandParseResultImpl.Builder<>(new ArrayList<>(chain.arguments()), new ArrayList<>(chain.flags()), input);
+        return new CommandParseResultImpl.Builder<>(new ArrayList<>(chain.arguments()), new ArrayList<>(chain.flags()));
     }
 
     interface Builder<S> {
 
-        void begin(final CommandArgument.Dynamic<S, ?> argument, final String value);
-
-        void push(final String value);
+        void begin(final CommandArgument.Dynamic<S, ?> argument);
 
         void end();
 

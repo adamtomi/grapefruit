@@ -1,14 +1,11 @@
 package grapefruit.command.mock;
 
-import grapefruit.command.CommandException;
 import grapefruit.command.argument.mapper.AbstractArgumentMapper;
 import grapefruit.command.argument.mapper.ArgumentMappingException;
-import grapefruit.command.argument.mapper.CommandInputAccess;
 import grapefruit.command.dispatcher.CommandContext;
+import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
 import io.leangen.geantyref.TypeToken;
-
-import java.io.Serial;
 
 public class TestArgumentMapper extends AbstractArgumentMapper<Object, String> {
     private final String expected;
@@ -19,17 +16,12 @@ public class TestArgumentMapper extends AbstractArgumentMapper<Object, String> {
     }
 
     @Override
-    public String tryMap(final CommandContext<Object> context, final CommandInputAccess access) throws ArgumentMappingException, MissingInputException {
-        final String arg = access.input().readWord();
+    public String tryMap(final CommandContext<Object> context, final CommandInputTokenizer input) throws ArgumentMappingException, MissingInputException {
+        final String arg = input.readWord();
         if (!arg.equals(this.expected)) {
-            throw access.wrapException(new DummyException());
+            throw new ArgumentMappingException();
         }
 
         return arg;
-    }
-
-    private static final class DummyException extends CommandException {
-        @Serial
-        private static final long serialVersionUID = -4882128968203661422L;
     }
 }

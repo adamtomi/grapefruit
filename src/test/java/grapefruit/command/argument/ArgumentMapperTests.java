@@ -16,7 +16,7 @@ import static grapefruit.command.argument.mapper.builtin.StringArgumentMapper.gr
 import static grapefruit.command.argument.mapper.builtin.StringArgumentMapper.quotable;
 import static grapefruit.command.argument.mapper.builtin.StringArgumentMapper.regex;
 import static grapefruit.command.argument.mapper.builtin.StringArgumentMapper.word;
-import static grapefruit.command.testutil.Helper.access;
+import static grapefruit.command.testutil.Helper.inputOf;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -26,34 +26,34 @@ public class ArgumentMapperTests {
     @Test
     public void stringArgumentMapper_word() {
         final String word = "hello";
-        assertDoesNotThrow(() -> assertEquals(word, word().tryMap(new NilCommandContext(), access(word))));
+        assertDoesNotThrow(() -> assertEquals(word, word().tryMap(new NilCommandContext(), inputOf(word))));
     }
 
     @Test
     public void stringArgumentMapper_quotable() {
         final String content = "hello ";
         final String command = "\"%s\" world".formatted(content);
-        assertDoesNotThrow(() -> assertEquals(content, quotable().tryMap(new NilCommandContext(), access(command))));
+        assertDoesNotThrow(() -> assertEquals(content, quotable().tryMap(new NilCommandContext(), inputOf(command))));
     }
 
     @Test
     public void stringArgumentMapper_greedy() {
         final String command = "hello world";
-        assertDoesNotThrow(() -> assertEquals(command, greedy().tryMap(new NilCommandContext(), access(command))));
+        assertDoesNotThrow(() -> assertEquals(command, greedy().tryMap(new NilCommandContext(), inputOf(command))));
     }
 
     @Test
     public void stringArgumentMapper_regex_doesNotMatch() {
         assertThrows(
                 ArgumentMappingException.class,
-                () -> word().with(regex(Pattern.compile("[a-z]+"))).tryMap(new NilCommandContext(), access("$hello$"))
+                () -> word().filtering(regex(Pattern.compile("[a-z]+"))).tryMap(new NilCommandContext(), inputOf("$hello$"))
         );
     }
 
     @Test
     public void stringArgumentMapper_regex_doesMatch() {
         assertDoesNotThrow(
-                () -> word().with(regex(Pattern.compile("[a-z]+"))).tryMap(new NilCommandContext(), access("hello"))
+                () -> word().filtering(regex(Pattern.compile("[a-z]+"))).tryMap(new NilCommandContext(), inputOf("hello"))
         );
     }
 
@@ -67,7 +67,7 @@ public class ArgumentMapperTests {
             "2147483648" // 2^32 (Integer#MAX_VALUE + 1)
     })
     public void numericArgumentMapper_int_invalidInput(final String arg) {
-        assertThrows(ArgumentMappingException.class, () -> intMapper().tryMap(new NilCommandContext(), access(arg)));
+        assertThrows(ArgumentMappingException.class, () -> intMapper().tryMap(new NilCommandContext(), inputOf(arg)));
     }
 
     @ParameterizedTest
@@ -78,20 +78,20 @@ public class ArgumentMapperTests {
             "-3.14"
     })
     public void numericArgumentMapper_float_validInput(final String arg) {
-        assertDoesNotThrow(() -> floatMapper().tryMap(new NilCommandContext(), access(arg)));
+        assertDoesNotThrow(() -> floatMapper().tryMap(new NilCommandContext(), inputOf(arg)));
     }
 
     @Test
     public void enumArgumentMapper_strict_tryMap() {
         final EnumArgumentMapper<Object, TimeUnit> mapper = EnumArgumentMapper.strict(TimeUnit.class);
-        assertThrows(ArgumentMappingException.class, () -> mapper.tryMap(new NilCommandContext(), access("seconds")));
-        assertDoesNotThrow(() -> assertEquals(TimeUnit.SECONDS, mapper.tryMap(new NilCommandContext(), access("SECONDS"))));
+        assertThrows(ArgumentMappingException.class, () -> mapper.tryMap(new NilCommandContext(), inputOf("seconds")));
+        assertDoesNotThrow(() -> assertEquals(TimeUnit.SECONDS, mapper.tryMap(new NilCommandContext(), inputOf("SECONDS"))));
     }
 
     @Test
     public void enumArgumentMapper_lenient_tryMap() {
         final EnumArgumentMapper<Object, TimeUnit> mapper = EnumArgumentMapper.lenient(TimeUnit.class);
-        assertDoesNotThrow(() -> assertEquals(TimeUnit.SECONDS, mapper.tryMap(new NilCommandContext(), access("seconds"))));
-        assertDoesNotThrow(() -> assertEquals(TimeUnit.SECONDS, mapper.tryMap(new NilCommandContext(), access("SECONDS"))));
+        assertDoesNotThrow(() -> assertEquals(TimeUnit.SECONDS, mapper.tryMap(new NilCommandContext(), inputOf("seconds"))));
+        assertDoesNotThrow(() -> assertEquals(TimeUnit.SECONDS, mapper.tryMap(new NilCommandContext(), inputOf("SECONDS"))));
     }
 }

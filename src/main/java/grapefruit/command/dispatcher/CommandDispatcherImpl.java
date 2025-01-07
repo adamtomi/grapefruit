@@ -10,12 +10,15 @@ import grapefruit.command.argument.DuplicateFlagException;
 import grapefruit.command.argument.UnrecognizedFlagException;
 import grapefruit.command.argument.condition.CommandCondition;
 import grapefruit.command.argument.condition.UnfulfilledConditionException;
-import grapefruit.command.argument.mapper.CommandInputAccess;
+import grapefruit.command.argument.mapper.ArgumentMappingException;
+import grapefruit.command.completion.CommandCompletion;
+import grapefruit.command.completion.CompletionAccumulator;
+import grapefruit.command.completion.CompletionBuilder;
+import grapefruit.command.completion.CompletionFactory;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
 import grapefruit.command.tree.CommandGraph;
-import grapefruit.command.tree.NoSuchCommandException;
 import grapefruit.command.util.Tuple2;
 
 import java.util.ArrayList;
@@ -24,10 +27,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static grapefruit.command.util.StringUtil.startsWithIgnoreCase;
 import static java.util.Objects.requireNonNull;
 
 final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
@@ -38,14 +42,20 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final CommandChainFactory<S> chainFactory = CommandChain.factory();
     // Store computed CommandChain instances mapped to their respective CommandModule.
     private final Map<CommandModule<S>, CommandChain<S>> computedChains = new HashMap<>();
+    private final Queue<ExecutionListener.Pre<S>> preExecutionListeners = new ConcurrentLinkedQueue<>();
+    private final Queue<ExecutionListener.Post<S>> postExecutionListeners = new ConcurrentLinkedQueue<>();
     /* Configurable properties */
     private final CommandRegistrationHandler<S> registrationHandler;
     private final ContextDecorator<S> contextDecorator;
+    private final CompletionFactory completionFactory;
+    private final boolean eagerFlagCompletions;
 
     CommandDispatcherImpl(final DispatcherConfig<S> config) {
         requireNonNull(config, "config cannot be null");
         this.registrationHandler = config.registrationHandler();
         this.contextDecorator = config.contextDecorator();
+        this.completionFactory = config.completionFactory();
+        this.eagerFlagCompletions = config.eagerFlagCompletions();
     }
 
     @Override
@@ -84,68 +94,65 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         requireNonNull(command, "command cannot be null");
 
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(command);
-        final CommandModule<S> cmd = this.commandGraph.search(input);
+        final CommandModule<S> cmd = this.commandGraph.query(input);
         final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.DISPATCH);
-        testRequiredConditions(context);
-
         final CommandParseResult<S> parseResult = processCommand(context, input);
-        parseResult.rethrowCaptured();
+        parseResult.throwCaptured();
 
-        try {
-            cmd.execute(context);
-        } catch (final Throwable ex) {
-            throw new CommandInvocationException(ex);
-        }
+        testRequiredConditions(context);
+        executeAndInvokeListeners(context, cmd);
     }
 
     @Override
-    public List<String> complete(final S source, final String command) {
+    public List<CommandCompletion> complete(final S source, final String command) {
         requireNonNull(source, "source cannot be null");
         requireNonNull(command, "command cannot be null");
 
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(command);
-        final CommandModule<S> cmd;
-        try {
-            cmd = this.commandGraph.search(input);
-        } catch (final NoSuchCommandException ex) {
-            return ex.alternatives().stream()
-                    .flatMap(x -> Stream.concat(Stream.of(x.name()), x.aliases().stream()))
-                    .filter(x -> startsWithIgnoreCase(x, ex.argument()))
-                    .toList();
-        } catch (final CommandException ex) {
-            return List.of();
+        final Tuple2<List<String>, CommandModule<S>> result = this.commandGraph.complete(input);
+        final Optional<List<String>> completions = result.left();
+
+        if (completions.isPresent()) {
+            final String lastConsumed = input.lastConsumed().filter(x -> !input.canRead()).orElse("");
+            final CompletionBuilder builder = CompletionBuilder.of(this.completionFactory, lastConsumed);
+            return builder.includeStrings(completions.orElseThrow())
+                    .build()
+                    .filterCompletions();
         }
 
-        if (!input.hasNext() && !input.unwrap().endsWith(" ")) {
-            return List.of();
-        }
-
+        final CommandModule<S> cmd = result.right().orElseThrow();
         final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.COMPLETE);
-        CommandParseResult<S> parseResult = processCommand(context, input);
-        final Optional<CommandException> capturedOpt = parseResult.capturedException();
+        final CommandParseResult<S> parseResult = processCommand(context, input);
 
-        if (parseResult.isComplete()) {
+        if (
+                parseResult.isComplete()
+                || parseResult.captured(DuplicateFlagException.class).isPresent()
+                || parseResult.captured(UnrecognizedFlagException.class).filter(x -> !x.argument().startsWith(SHORT_FLAG_PREFIX)).isPresent()
+        ) {
             return List.of();
         }
 
-        if (capturedOpt.isPresent()) {
-            final CommandException ex = capturedOpt.orElseThrow();
-            if (ex instanceof DuplicateFlagException) {
-                return List.of();
-            } else if (ex instanceof UnrecognizedFlagException ufe) {
-                final String arg = ufe.argument();
-                if (ufe.argument().startsWith(SHORT_FLAG_PREFIX)) {
-                    parseResult = parseResult.withInput(arg);
-                } else {
-                    return List.of();
-                }
-            } else if (ex instanceof CommandArgumentException) { // This means we couldn't map user input into some type.
-                // Move the cursor back for completions.
-                input.moveTo(parseResult.cursor());
-            }
-        }
+        return collectCompletions(context, input, parseResult).filterCompletions();
+    }
 
-        return collectCompletions(context, input, parseResult);
+    @Override
+    public void subscribe(final ExecutionListener.Pre<S> pre) {
+        this.preExecutionListeners.offer(pre);
+    }
+
+    @Override
+    public void unsubscribe(final ExecutionListener.Pre<S> pre) {
+        this.preExecutionListeners.remove(pre);
+    }
+
+    @Override
+    public void subscribe(final ExecutionListener.Post<S> post) {
+        this.postExecutionListeners.offer(post);
+    }
+
+    @Override
+    public void unsubscribe(final ExecutionListener.Post<S> post) {
+        this.postExecutionListeners.remove(post);
     }
 
     private CommandContext<S> createContext(final S source, final CommandChain<S> chain, final ContextDecorator.Mode mode) {
@@ -163,6 +170,38 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         return chain;
     }
 
+    private void executeAndInvokeListeners(final CommandContext<S> context, final CommandModule<S> command) throws CommandExecutionException {
+        // If a pre execution listener cancels this execution, return
+        if (!invokePreExecutionListeners(context)) return;
+
+        final ExecutionResult<S> result = execute(context, command);
+        // Invoke post execution listeners
+        this.postExecutionListeners.forEach(x -> x.invoke(result));
+
+        if (!result.successful()) {
+            throw new CommandExecutionException(result.asFailed().exception());
+        }
+    }
+
+    private boolean invokePreExecutionListeners(final CommandContext<S> context) {
+        for (final ExecutionListener.Pre<S> listener : this.preExecutionListeners) {
+            if (!listener.invoke(context)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static <S> ExecutionResult<S> execute(final CommandContext<S> context, final CommandModule<S> command) {
+        try {
+            command.execute(context);
+            return ExecutionResult.successful(context);
+        } catch (final Throwable ex) {
+            return ExecutionResult.failed(context, ex);
+        }
+    }
+
     // Test conditions of literal and required arguments
     private static <S> void testRequiredConditions(final CommandContext<S> context) throws UnfulfilledConditionException {
         final CommandChain<S> chain = context.chain();
@@ -176,11 +215,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     private static <S> CommandParseResult<S> processCommand(final CommandContext<S> context, final CommandInputTokenizer input) {
-        String arg;
         final CommandChain<S> chain = context.chain();
-        final CommandParseResult.Builder<S> builder = CommandParseResult.createBuilder(chain, input);
+        final CommandParseResult.Builder<S> builder = CommandParseResult.createBuilder(chain);
         try {
-            while ((arg = input.peekWord()) != null) {
+            while (input.canReadNonWhitespace()) {
+                final String arg = input.peekWord();
                 // Attempt to parse arg into a single flag or a group of flags
                 final Tuple2<List<CommandArgument.Flag<S, ?>>, Supplier<UnrecognizedFlagException>> flagResult = parseFlagGroup(arg, input, chain.flags());
                 if (flagResult.right().isPresent()) {
@@ -200,7 +239,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     // required argument.
                     final Optional<CommandArgument.Required<S, ?>> required = firstUnseen(chain.arguments(), context);
                     if (required.isPresent()) {
-                        consumeArgument(required.orElseThrow(), context, input, builder, arg);
+                        consumeArgument(required.orElseThrow(), context, input, builder);
                     } else {
                         /*
                          * At this point, we need to throw an exception to indicate to the
@@ -215,7 +254,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                          */
                         input.readWord(); // Consume the current argument to be inline with the rest of the code
                         throw firstUnseen(chain.flags(), context).isPresent()
-                                ? UnrecognizedFlagException.fromInput(input, arg, arg)
+                                ? input.internal().gen(arg, UnrecognizedFlagException::new)
                                 : new CommandSyntaxException(chain, CommandSyntaxException.Reason.TOO_MANY_ARGUMENTS);
                     }
 
@@ -261,7 +300,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final CommandParseResult.Builder<S> builder
     ) throws CommandException {
         if (context.has(flag.key())) {
-            throw DuplicateFlagException.fromInput(input, expression);
+            throw input.internal().gen(expression, DuplicateFlagException::new);
         }
 
         /*
@@ -274,29 +313,30 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             condition.orElseThrow().test(context);
         }
 
-        consumeArgument(flag, context, input, builder, expression);
+        consumeArgument(flag, context, input, builder);
     }
 
     private static <S, T> void consumeArgument(
             final CommandArgument.Dynamic<S, T> argument,
             final CommandContext<S> context,
             final CommandInputTokenizer input,
-            final CommandParseResult.Builder<S> builder,
-            final String value
+            final CommandParseResult.Builder<S> builder
     ) throws CommandException {
         try {
-            final CommandInputAccess access = CommandInputAccess.wrap(input);
             // 1) Mark beginning
-            builder.begin(argument, value);
+            builder.begin(argument);
             // 2) Map argument into the correct type. This will throw an exception if
             //    the conversion fails.
-            final T result = argument.mapper().tryMap(context, access);
-            builder.push(access.consumedInput());
+            final T result = argument.mapper().tryMap(context, input);
             // 3) Store the result in the current context
             context.store(argument.key(), result);
             // 4) Mark end
-            // if (input.unwrap().endsWith(" ")) builder.end();
-            if (input.peek() == ' ') builder.end();
+            if (input.canRead()) builder.end();
+        } catch (final ArgumentMappingException ex) {
+          throw input.internal().gen(
+                  input.lastConsumed().orElseThrow(),
+                  (consumed, arg, remaining) -> new CommandArgumentException(ex, consumed, arg, remaining)
+          );
         } catch (final MissingInputException ex) {
             throw new CommandSyntaxException(context.chain(), CommandSyntaxException.Reason.TOO_FEW_ARGUMENTS);
         }
@@ -331,7 +371,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
             return candidate.isPresent()
                     ? new Tuple2<>(List.of(candidate.orElseThrow()), null)
-                    : new Tuple2<>(null, () -> UnrecognizedFlagException.fromInput(input, expression, flagName));
+                    : new Tuple2<>(null, () -> input.internal().gen(expression,
+                            (consumed, arg, remaining) -> new UnrecognizedFlagException(consumed, arg, remaining, flagName)
+                    )
+            );
         } else {
             // We either have a single shorthand or a group of shorthands.
             final char[] shorthands = expression.substring(1).toCharArray();
@@ -356,7 +399,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                     flags.add(candidate.orElseThrow());
                 } else {
                     // Return an error if an incorrect shorthand was provided
-                    return new Tuple2<>(null, () -> UnrecognizedFlagException.fromInput(input, expression, String.valueOf(c)));
+                    final Supplier<UnrecognizedFlagException> ex = () -> input.internal().gen(
+                            expression,
+                            (consumed, arg, remaining) -> new UnrecognizedFlagException(consumed, arg, remaining, String.valueOf(c))
+                    );
+                    return new Tuple2<>(null, ex);
                 }
             }
 
@@ -364,69 +411,61 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
-    private static <S> List<String> collectCompletions(final CommandContext<S> context, final CommandInputTokenizer input, final CommandParseResult<S> parseResult) {
-        final String remaining = input.remainingOrEmpty();
-        final boolean completeNext = input.unwrap().endsWith(" ");
-
+    private CompletionAccumulator collectCompletions(
+            final CommandContext<S> context,
+            final CommandInputTokenizer input,
+            final CommandParseResult<S> parseResult
+    ) {
         final CommandArgument.Dynamic<S, ?> argument = resolveArgumentToComplete(parseResult);
-        final String argToComplete = !remaining.isEmpty()
-                ? remaining
-                : completeNext ? remaining : parseResult.lastInput().orElse(remaining);
+        final String lastConsumed = input.lastConsumed().orElseThrow();
+        final boolean completeNext = input.canRead() || lastConsumed.isBlank();
+        final String argToComplete = completeNext
+                ? ""
+                : lastConsumed;
 
-        final List<String> base = argument.isFlag()
-                ? collectFlagCompletions(context, parseResult, argument.asFlag(), argToComplete)
-                : collectArgumentCompletions(context, parseResult, argument, argToComplete);
+        final CompletionBuilder builder = CompletionBuilder.of(this.completionFactory, argToComplete);
 
-        return base.stream()
-                .filter(x -> startsWithIgnoreCase(x, argToComplete.trim()))
-                .toList();
+        return argument.isFlag()
+                ? collectFlagCompletions(context, parseResult, argument.asFlag(), completeNext, builder)
+                : collectArgumentCompletions(context, parseResult, argument, builder);
     }
 
-    private static <S> List<String> collectFlagCompletions(
+    private CompletionAccumulator collectFlagCompletions(
             final CommandContext<S> context,
             final CommandParseResult<S> parseResult,
             final CommandArgument.Flag<S, ?> argument,
-            final String argToComplete
+            final boolean completeNext,
+            final CompletionBuilder builder
     ) {
-        if (argument.asFlag().isPresence()) {
-            return Stream.of(completeFlags(parseResult.remainingFlags()), completeFlagGroup(argToComplete, parseResult.remainingFlags()))
-                    .flatMap(Collection::stream)
-                    .toList();
-        } else {
-            /*
-             * Decide whether to complete flag names or a flag value. Last input will hold the flag name (or
-             * flag group) that was passed by the user. So if the remaining string is the same, we can't complete
-             * values yet.
-             */
-            final boolean completeFlagValue = parseResult.lastInput().map(x -> !x.equals(argToComplete)).orElse(false);
-            final List<String> base = new ArrayList<>();
+        final boolean includeFlagNames = argument.isPresence() || !completeNext || parseResult.lastArgument().isEmpty();
+        if (includeFlagNames) includeFlags(context, parseResult, builder);
 
-            if (completeFlagValue) {
-                base.addAll(argument.mapper().complete(context, argToComplete));
-            } else {
-                if (parseResult.lastInput().map(String::isEmpty).orElse(true)) {
-                    base.addAll(completeFlags(parseResult.remainingFlags()));
-                }
-
-                base.addAll(completeFlagGroup(argToComplete, parseResult.remainingFlags()));
-            }
-
-            return base;
-        }
+        return argument.isPresence()
+                ? builder.build()
+                : argument.mapper().complete(context, builder);
     }
 
-    private static <S> List<String> collectArgumentCompletions(
+    private CompletionAccumulator collectArgumentCompletions(
             final CommandContext<S> context,
             final CommandParseResult<S> parseResult,
             final CommandArgument.Dynamic<S, ?> argument,
-            final String argToComplete
+            final CompletionBuilder builder
     ) {
-        return Stream.of(argument.mapper().complete(context, argToComplete), completeFlags(parseResult.remainingFlags()))
-                .flatMap(Collection::stream)
-                .toList();
+        final boolean includeFlags = this.eagerFlagCompletions || builder.input().startsWith(SHORT_FLAG_PREFIX);
+        return argument.mapper().complete(context, includeFlags ? includeFlags(context, parseResult, builder) : builder);
     }
 
-    private static <S> CommandArgument.Dynamic<S, ?> resolveArgumentToComplete(final CommandParseResult<S> parseResult) {
+    private CompletionBuilder includeFlags(
+            final CommandContext<S> context,
+            final CommandParseResult<S> parseResult,
+            final CompletionBuilder builder
+    ) {
+        final List<CommandArgument.Flag<S, ?>> remainingFlags = parseResult.remainingFlags();
+        return builder.includeStrings(completeFlags(remainingFlags))
+                .includeStrings(completeFlagGroup(context, builder.input(), remainingFlags));
+    }
+
+    private CommandArgument.Dynamic<S, ?> resolveArgumentToComplete(final CommandParseResult<S> parseResult) {
         final Optional<CommandArgument.Dynamic<S, ?>> lastArgument = parseResult.lastArgument();
         if (lastArgument.isPresent()) {
             return lastArgument.orElseThrow();
@@ -458,11 +497,22 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 .toList();
     }
 
-    private static <S> List<String> completeFlagGroup(final String argument, final List<CommandArgument.Flag<S, ?>> flags) {
+    private static <S> List<String> completeFlagGroup(
+            final CommandContext<S> context,
+            final String argument,
+            final List<CommandArgument.Flag<S, ?>> flags
+    ) {
         final List<String> result = new ArrayList<>();
+        final List<CommandArgument.Flag<S, ?>> allFlags = context.chain().flags();
         // If charAt(1) is not alphabetic, this is not a flag group. This is to prevent
         // interpreting flag names (--flag-name) as flag groups.
         if (argument.length() > 1 && argument.charAt(0) == SHORT_FLAG_PREFIX_CH && Character.isAlphabetic(argument.charAt(1))) {
+            for (int i = 1; i < argument.length(); i++) {
+                if (isInvalidShorthand(argument.charAt(i), allFlags)) {
+                    return List.of();
+                }
+            }
+
             for (final CommandArgument.Flag<S, ?> flag : flags) {
                 // If we don't have a valid shorthand, or it is already in 'argument', ignore this flag
                 if (flag.shorthand() == 0 || argument.indexOf(flag.shorthand()) != -1) continue;
@@ -472,5 +522,13 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
 
         return result;
+    }
+
+    private static <S> boolean isInvalidShorthand(final char shorthand, final List<CommandArgument.Flag<S, ?>> flags) {
+        for (final CommandArgument.Flag<S, ?> flag : flags) {
+            if (flag.shorthand() == shorthand) return false;
+        }
+
+        return true;
     }
 }

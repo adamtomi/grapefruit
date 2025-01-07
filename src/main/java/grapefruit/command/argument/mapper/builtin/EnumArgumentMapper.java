@@ -1,15 +1,14 @@
 package grapefruit.command.argument.mapper.builtin;
 
-import grapefruit.command.CommandException;
 import grapefruit.command.argument.mapper.AbstractArgumentMapper;
 import grapefruit.command.argument.mapper.ArgumentMappingException;
-import grapefruit.command.argument.mapper.CommandInputAccess;
+import grapefruit.command.completion.CompletionAccumulator;
+import grapefruit.command.completion.CompletionBuilder;
 import grapefruit.command.dispatcher.CommandContext;
+import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
 
 import java.io.Serial;
-import java.util.Arrays;
-import java.util.List;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -19,16 +18,16 @@ import static java.util.Objects.requireNonNull;
 public final class EnumArgumentMapper<S, E extends Enum<E>> extends AbstractArgumentMapper<S, E> {
     private final Class<E> type;
     private final EnumResolver<E> resolver;
-    private final Supplier<CommandException> exceptionSupplier;
+    private final Supplier<ArgumentMappingException> exceptionSupplier;
 
-    private EnumArgumentMapper(final Class<E> type, final EnumResolver<E> resolver, final Supplier<CommandException> exceptionSupplier) {
+    private EnumArgumentMapper(final Class<E> type, final EnumResolver<E> resolver, final Supplier<ArgumentMappingException> exceptionSupplier) {
         super(type, false);
         this.type = requireNonNull(type, "type cannot be null");
         this.resolver = requireNonNull(resolver, "resolver cannot be null");
         this.exceptionSupplier = requireNonNull(exceptionSupplier, "exceptionSupplier cannot be null");
     }
 
-    public static <S, E extends Enum<E>> EnumArgumentMapper<S, E> strict(final Class<E> type, final Supplier<CommandException> exceptionSupplier) {
+    public static <S, E extends Enum<E>> EnumArgumentMapper<S, E> strict(final Class<E> type, final Supplier<ArgumentMappingException> exceptionSupplier) {
         return new EnumArgumentMapper<>(type, EnumResolver.strict(), exceptionSupplier);
     }
 
@@ -36,7 +35,7 @@ public final class EnumArgumentMapper<S, E extends Enum<E>> extends AbstractArgu
         return strict(type, () -> new EnumMappingException(type));
     }
 
-    public static <S, E extends Enum<E>> EnumArgumentMapper<S, E> lenient(final Class<E> type, final Supplier<CommandException> exceptionSupplier) {
+    public static <S, E extends Enum<E>> EnumArgumentMapper<S, E> lenient(final Class<E> type, final Supplier<ArgumentMappingException> exceptionSupplier) {
         return new EnumArgumentMapper<>(type, EnumResolver.lenient(), exceptionSupplier);
     }
 
@@ -45,20 +44,18 @@ public final class EnumArgumentMapper<S, E extends Enum<E>> extends AbstractArgu
     }
 
     @Override
-    public E tryMap(final CommandContext<S> context, final CommandInputAccess access) throws ArgumentMappingException, MissingInputException {
-        final String value = access.input().readWord();
+    public E tryMap(final CommandContext<S> context, final CommandInputTokenizer input) throws ArgumentMappingException, MissingInputException {
+        final String value = input.readWord();
         for (final E e : this.type.getEnumConstants()) {
             if (this.resolver.matches(e, value)) return e;
         }
 
-        throw access.wrapException(this.exceptionSupplier.get());
+        throw this.exceptionSupplier.get();
     }
 
     @Override
-    public List<String> complete(final CommandContext<S> context, final String input) {
-        return Arrays.stream(this.type.getEnumConstants())
-                .map(this.resolver::complete)
-                .toList();
+    public CompletionAccumulator complete(final CommandContext<S> context, final CompletionBuilder builder) {
+        return builder.includeStrings(this.type.getEnumConstants(), this.resolver::complete).build();
     }
 
     private interface EnumResolver<E extends Enum<E>> {
@@ -96,7 +93,7 @@ public final class EnumArgumentMapper<S, E extends Enum<E>> extends AbstractArgu
         }
     }
 
-    public static final class EnumMappingException extends CommandException {
+    public static final class EnumMappingException extends ArgumentMappingException {
         @Serial
         private static final long serialVersionUID = -5281645874422380564L;
         private final Class<? extends Enum<?>> type;

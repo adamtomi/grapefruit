@@ -1,73 +1,38 @@
 package grapefruit.command.argument.mapper;
 
-import grapefruit.command.CommandException;
+import grapefruit.command.completion.CompletionProvider;
 import grapefruit.command.dispatcher.CommandContext;
+import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
 import io.leangen.geantyref.TypeToken;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.function.Supplier;
-
-public interface ArgumentMapper<S, T> {
+public interface ArgumentMapper<S, T> extends CompletionProvider<S> {
 
     TypeToken<T> type();
 
     boolean isTerminal();
 
-    T tryMap(final CommandContext<S> context, final CommandInputAccess access) throws ArgumentMappingException, MissingInputException;
+    T tryMap(final CommandContext<S> context, final CommandInputTokenizer input) throws ArgumentMappingException, MissingInputException;
 
-    List<String> complete(final CommandContext<S> context, final String input);
+    @FunctionalInterface
+    interface Modifier<S, I, O> {
 
-    default ArgumentMapper<S, T> with(final Collection<Filter<S, T>> filters) {
-        return new ArgumentMapper<>() {
-            @Override
-            public TypeToken<T> type() {
-                return ArgumentMapper.this.type();
-            }
-
-            @Override
-            public boolean isTerminal() {
-                return ArgumentMapper.this.isTerminal();
-            }
-
-            @Override
-            public T tryMap(final CommandContext<S> context, final CommandInputAccess access) throws ArgumentMappingException, MissingInputException {
-                final T value = ArgumentMapper.this.tryMap(context, access);
-                for (final Filter<S, T> filter : filters) {
-                    if (!filter.test(context, value)) {
-                        throw access.wrapException(filter.generateException(context, value));
-                    }
-                }
-
-                return value;
-            }
-
-            @Override
-            public List<String> complete(final CommandContext<S> context, final String input) {
-                return ArgumentMapper.this.complete(context, input);
-            }
-        };
+        O modify(final CommandContext<S> context, final I input) throws ArgumentMappingException;
     }
 
-    default ArgumentMapper<S, T> with(final Filter<S, T> filter) {
-        return with(List.of(filter));
-    }
+    @FunctionalInterface
+    interface Filter<S, T> extends Modifier<S, T, T> {
 
-    interface Filter<S, T> {
+        void test(final CommandContext<S> context, final T input) throws ArgumentMappingException;
 
-        boolean test(final CommandContext<S> context, final T value);
-
-        CommandException generateException(final CommandContext<S> context, final T value);
-
-        @FunctionalInterface
-        interface ExceptionFactory<S, T> {
-
-            CommandException create(final CommandContext<S> context, final T value);
-
-            static <S, T> ExceptionFactory<S, T> contextFree(final Supplier<CommandException> supplier) {
-                return (context, value) -> supplier.get();
-            }
+        @Override
+        default T modify(final CommandContext<S> context, final T input) throws ArgumentMappingException {
+            test(context, input);
+            return input;
         }
     }
+
+    <O> ArgumentMapper<S, O> mapping(final Modifier<S, T, O> modifier);
+
+    ArgumentMapper<S, T> filtering(final Filter<S, T> filter);
 }
