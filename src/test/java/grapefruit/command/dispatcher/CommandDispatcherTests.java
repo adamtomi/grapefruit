@@ -381,7 +381,9 @@ public class CommandDispatcherTests {
             "'test hello --color #ffffff -b argname -s asd ','',''",
             "test hello --color #ffffff -s,'-sb|-s',-s",
             "'test hello --color #ffffff -s ','',''",
-            "test hello --color #fff,#fff0|#fff1|#fff2|#fff3|#fff4|#fff5|#fff6|#fff7|#fff8|#fff9|#fffa|#fffb|#fffc|#fffd|#fffe|#ffff,#fff"
+            "test hello --color #fff,#fff0|#fff1|#fff2|#fff3|#fff4|#fff5|#fff6|#fff7|#fff8|#fff9|#fffa|#fffb|#fffc|#fffd|#fffe|#ffff,#fff",
+            "test hello argname -bc #fff,#fff0|#fff1|#fff2|#fff3|#fff4|#fff5|#fff6|#fff7|#fff8|#fff9|#fffa|#fffb|#fffc|#fffd|#fffe|#ffff,#fff",
+            // "test hello argname -cb #fff,#fff0|#fff1|#fff2|#fff3|#fff4|#fff5|#fff6|#fff7|#fff8|#fff9|#fffa|#fffb|#fffc|#fffd|#fffe|#ffff,#fff" // TODO fix this
     })
     public void complete_arguments(final String input, final String expected, final String lastInput) {
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
