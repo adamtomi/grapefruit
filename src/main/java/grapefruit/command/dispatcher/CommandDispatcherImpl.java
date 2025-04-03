@@ -7,6 +7,7 @@ import grapefruit.command.argument.CommandArgumentException;
 import grapefruit.command.argument.CommandChain;
 import grapefruit.command.argument.CommandChainFactory;
 import grapefruit.command.argument.DuplicateFlagException;
+import grapefruit.command.argument.FlagGroupException;
 import grapefruit.command.argument.UnrecognizedFlagException;
 import grapefruit.command.argument.condition.CommandCondition;
 import grapefruit.command.argument.condition.UnfulfilledConditionException;
@@ -127,6 +128,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         if (
                 parseResult.isComplete()
                 || parseResult.captured(DuplicateFlagException.class).isPresent()
+                || parseResult.captured(FlagGroupException.class).isPresent()
                 || parseResult.captured(UnrecognizedFlagException.class).filter(x -> !x.argument().startsWith(SHORT_FLAG_PREFIX)).isPresent()
         ) {
             return List.of();
@@ -221,7 +223,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             while (input.canReadNonWhitespace()) {
                 final String arg = input.peekWord();
                 // Attempt to parse arg into a single flag or a group of flags
-                final Tuple2<List<CommandArgument.Flag<S, ?>>, Supplier<UnrecognizedFlagException>> flagResult = parseFlagGroup(arg, input, chain.flags());
+                final Tuple2<List<CommandArgument.Flag<S, ?>>, Supplier<CommandArgumentException>> flagResult = parseFlagGroup(arg, input, chain);
                 if (flagResult.right().isPresent()) {
                     /*
                      * We do this to stay consistent with the rest of the library. If an
@@ -342,11 +344,14 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
-    private static <S> Tuple2<List<CommandArgument.Flag<S, ?>>, Supplier<UnrecognizedFlagException>> parseFlagGroup(
+    private static <S> Tuple2<List<CommandArgument.Flag<S, ?>>, Supplier<CommandArgumentException>> parseFlagGroup(
             final String expression,
             final CommandInputTokenizer input,
-            final List<CommandArgument.Flag<S, ?>> candidates
+            final CommandChain<S> chain
     ) {
+        final List<CommandArgument.Flag<S, ?>> candidates = chain.flags()
+                .stream()
+                .toList();
         /*
          * If the expression isn't even 2 characters long or doesn't start with
          * '-', it's not a flag group.
@@ -378,6 +383,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         } else {
             // We either have a single shorthand or a group of shorthands.
             final char[] shorthands = expression.substring(1).toCharArray();
+            final boolean isGroup = shorthands.length > 1;
             final List<CommandArgument.Flag<S, ?>> flags = new ArrayList<>();
 
             // Find flags by their shorthands
@@ -396,10 +402,21 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                         .findFirst();
 
                 if (candidate.isPresent()) {
-                    flags.add(candidate.orElseThrow());
+                    final CommandArgument.Flag<S, ?> flag = candidate.orElseThrow();
+                    // Value flags aren't supported in flag groups
+                    if (isGroup && !flag.isPresence()) {
+                        final Supplier<CommandArgumentException> ex = () -> input.internal().gen(
+                                expression,
+                                (consumed, arg, remaining) -> new FlagGroupException(consumed, arg, remaining, c)
+                        );
+
+                        return new Tuple2<>(null, ex);
+                    }
+
+                    flags.add(flag);
                 } else {
                     // Return an error if an incorrect shorthand was provided
-                    final Supplier<UnrecognizedFlagException> ex = () -> input.internal().gen(
+                    final Supplier<CommandArgumentException> ex = () -> input.internal().gen(
                             expression,
                             (consumed, arg, remaining) -> new UnrecognizedFlagException(consumed, arg, remaining, String.valueOf(c))
                     );
@@ -514,8 +531,13 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             }
 
             for (final CommandArgument.Flag<S, ?> flag : flags) {
-                // If we don't have a valid shorthand, or it is already in 'argument', ignore this flag
-                if (flag.shorthand() == 0 || argument.indexOf(flag.shorthand()) != -1) continue;
+                /*
+                 * Ignore flag, if:
+                 * - it doesn't have a valid shorthand
+                 * - it has already been completed
+                 * - it is a value flag
+                 */
+                if (flag.shorthand() == 0 || argument.indexOf(flag.shorthand()) != -1 || flag.isPresence()) continue;
 
                 result.add(argument + flag.shorthand());
             }
