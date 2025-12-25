@@ -36,13 +36,13 @@ final class CommandChainFactoryImpl<S> implements CommandChainFactory<S> {
     }
 
     @Override
-    public CommandArgument.Flag.PresenceBuilder<S> presenceFlag(final Key<Boolean> key) {
-        return new CommandArgumentImpl.PresenceFlagBuilder<>(key);
+    public CommandArgument.Flag.BoolBuilder<S> boolFlag(final Key<Boolean> key) {
+        return new CommandArgumentImpl.BoolFlagBuilder<>(key);
     }
 
     @Override
-    public CommandArgument.Flag.PresenceBuilder<S> presenceFlag(final String name) {
-        return presenceFlag(Key.named(Boolean.class, name));
+    public CommandArgument.Flag.BoolBuilder<S> boolFlag(final String name) {
+        return boolFlag(Key.named(Boolean.class, name));
     }
 
     @Override

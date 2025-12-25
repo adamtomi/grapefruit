@@ -404,7 +404,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 if (candidate.isPresent()) {
                     final CommandArgument.Flag<S, ?> flag = candidate.orElseThrow();
                     // Value flags aren't supported in flag groups
-                    if (isGroup && !flag.isPresence()) {
+                    if (isGroup && !flag.isBool()) {
                         final Supplier<CommandArgumentException> ex = () -> input.internal().gen(
                                 expression,
                                 (consumed, arg, remaining) -> new FlagGroupException(consumed, arg, remaining, c)
@@ -454,10 +454,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final boolean completeNext,
             final CompletionBuilder builder
     ) {
-        final boolean includeFlagNames = argument.isPresence() || !completeNext || parseResult.lastArgument().isEmpty();
+        final boolean includeFlagNames = argument.isBool() || !completeNext || parseResult.lastArgument().isEmpty();
         if (includeFlagNames) includeFlags(context, parseResult, builder);
 
-        return argument.isPresence()
+        return argument.isBool()
                 ? builder.build()
                 : argument.mapper().complete(context, builder);
     }
@@ -537,7 +537,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                  * - it has already been completed
                  * - it is a value flag
                  */
-                if (flag.shorthand() == 0 || argument.indexOf(flag.shorthand()) != -1 || flag.isPresence()) continue;
+                if (flag.shorthand() == 0 || argument.indexOf(flag.shorthand()) != -1 || flag.isBool()) continue;
 
                 result.add(argument + flag.shorthand());
             }

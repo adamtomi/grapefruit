@@ -17,9 +17,9 @@ public interface CommandChainFactory<S> {
 
     <T> CommandArgument.Required.Builder<S, T> required(final String name, final Class<T> type);
 
-    CommandArgument.Flag.PresenceBuilder<S> presenceFlag(final Key<Boolean> key);
+    CommandArgument.Flag.BoolBuilder<S> boolFlag(final Key<Boolean> key);
 
-    CommandArgument.Flag.PresenceBuilder<S> presenceFlag(final String name);
+    CommandArgument.Flag.BoolBuilder<S> boolFlag(final String name);
 
     <T> CommandArgument.Flag.ValueBuilder<S, T> valueFlag(final Key<T> key);
 

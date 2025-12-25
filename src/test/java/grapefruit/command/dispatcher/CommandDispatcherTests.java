@@ -191,7 +191,7 @@ public class CommandDispatcherTests {
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build())
                 .flags()
-                .then(factory.presenceFlag("hello").build())
+                .then(factory.boolFlag("hello").build())
                 .build());
 
         dispatcher.register(command);
@@ -208,7 +208,7 @@ public class CommandDispatcherTests {
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build())
                 .flags()
-                .then(factory.presenceFlag("hello").build())
+                .then(factory.boolFlag("hello").build())
                 .build());
 
         dispatcher.register(command);
@@ -224,7 +224,7 @@ public class CommandDispatcherTests {
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build())
                 .flags()
-                .then(factory.presenceFlag("hello").build())
+                .then(factory.boolFlag("hello").build())
                 .build());
 
         dispatcher.register(command);
@@ -240,7 +240,7 @@ public class CommandDispatcherTests {
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build())
                 .flags()
-                .then(factory.presenceFlag("hello").expect(fail()).build())
+                .then(factory.boolFlag("hello").expect(fail()).build())
                 .build());
 
         dispatcher.register(command);
@@ -257,7 +257,7 @@ public class CommandDispatcherTests {
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build())
                 .flags()
-                .then(factory.presenceFlag("hello").assumeShorthand().build())
+                .then(factory.boolFlag("hello").assumeShorthand().build())
                 .build());
 
         dispatcher.register(command);
@@ -275,7 +275,7 @@ public class CommandDispatcherTests {
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build())
                 .flags()
-                .then(factory.presenceFlag("hello").build())
+                .then(factory.boolFlag("hello").build())
                 .build());
 
         dispatcher.register(command);
@@ -293,7 +293,7 @@ public class CommandDispatcherTests {
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build())
                 .flags()
-                .then(factory.presenceFlag("hello").assumeShorthand().build())
+                .then(factory.boolFlag("hello").assumeShorthand().build())
                 .then(factory.valueFlag("color", String.class).assumeShorthand().mapWith(new ColorArgumentMapper()).build())
                 .build());
 
@@ -311,7 +311,7 @@ public class CommandDispatcherTests {
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build())
                 .flags()
-                .then(factory.presenceFlag("hello").assumeShorthand().build())
+                .then(factory.boolFlag("hello").assumeShorthand().build())
                 .build());
 
         dispatcher.register(command);
@@ -326,7 +326,7 @@ public class CommandDispatcherTests {
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build())
                 .flags()
-                .then(factory.presenceFlag("hello").assumeShorthand().build())
+                .then(factory.boolFlag("hello").assumeShorthand().build())
                 .build());
 
         dispatcher.register(command);
@@ -398,7 +398,7 @@ public class CommandDispatcherTests {
                 .flags()
                 .then(factory.valueFlag("color", String.class).assumeShorthand().mapWith(new ColorArgumentMapper()).build())
                 .then(factory.valueFlag("stringflag", String.class).assumeShorthand().mapWith(word()).build())
-                .then(factory.presenceFlag("boolflag").assumeShorthand().build())
+                .then(factory.boolFlag("boolflag").assumeShorthand().build())
                 .build());
 
         dispatcher.register(command);
@@ -424,7 +424,7 @@ public class CommandDispatcherTests {
                 .flags()
                 .then(factory.valueFlag("color", String.class).assumeShorthand().mapWith(new ColorArgumentMapper()).build())
                 .then(factory.valueFlag("stringflag", String.class).assumeShorthand().mapWith(word()).build())
-                .then(factory.presenceFlag("boolflag").assumeShorthand().build())
+                .then(factory.boolFlag("boolflag").assumeShorthand().build())
                 .build());
 
         dispatcher.register(command);
@@ -461,7 +461,7 @@ public class CommandDispatcherTests {
                 .flags()
                 .then(factory.valueFlag("color", String.class).assumeShorthand().mapWith(new ColorArgumentMapper()).build())
                 .then(factory.valueFlag("stringflag", String.class).assumeShorthand().mapWith(word()).build())
-                .then(factory.presenceFlag("boolflag").assumeShorthand().build())
+                .then(factory.boolFlag("boolflag").assumeShorthand().build())
                 .build());
 
         dispatcher.register(command);
