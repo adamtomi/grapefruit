@@ -57,7 +57,7 @@ public abstract class CommandArgumentImpl<S, T> implements CommandArgument<S, T>
         public String toString() {
             return ToStringer.create(this)
                     .append("key", key())
-                    .append("permission", condition())
+                    .append("condition", condition())
                     .append("aliases", this.aliases)
                     .toString();
         }
@@ -97,7 +97,7 @@ public abstract class CommandArgumentImpl<S, T> implements CommandArgument<S, T>
         public String toString() {
             return ToStringer.create(this)
                     .append("key", key())
-                    .append("permission", condition())
+                    .append("condition", condition())
                     .append("mapper", mapper())
                     .toString();
         }
@@ -137,7 +137,7 @@ public abstract class CommandArgumentImpl<S, T> implements CommandArgument<S, T>
         public String toString() {
             return ToStringer.create(this)
                     .append("key", key())
-                    .append("permission", condition())
+                    .append("condition", condition())
                     .append("mapper", mapper())
                     .append("shorthand", this.shorthand)
                     .append("bool", this.bool)
