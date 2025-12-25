@@ -235,9 +235,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 }
 
                 final List<CommandArgument.Flag<S, ?>> flags = flagResult.left().orElseThrow();
-                // If the list is not empty, we managed to parse into at least one flag
+                // If the list is not empty, we managed to parse at least one flag
                 if (flags.isEmpty()) {
-                    // No flags were, matched, we retrieve the first unseen
+                    // No flags were matched, we retrieve the first unseen
                     // required argument.
                     final Optional<CommandArgument.Required<S, ?>> required = firstUnseen(chain.arguments(), context);
                     if (required.isPresent()) {

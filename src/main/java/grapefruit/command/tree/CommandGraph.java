@@ -150,7 +150,7 @@ public class CommandGraph<S> {
 
             if (command.isPresent() && input.canRead()) {
                 /*
-                 * We have found a command. If we there are more arguments in the queue, we
+                 * We have found a command. If there are more arguments in the queue, we
                  * want to return this command (thus passing all subsequent arguments for
                  * completion to it rather than handling them here).
                  */
