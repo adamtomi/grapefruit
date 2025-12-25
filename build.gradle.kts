@@ -18,7 +18,7 @@ dependencies {
     testImplementation(libs.jupiter.params)
 }
 
-tasks.withType<Test>() {
+tasks.withType<Test> {
     useJUnitPlatform()
     finalizedBy(tasks.jacocoTestReport)
 }
