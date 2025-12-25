@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly(libs.annotations)
+    compileOnly(libs.jspecify)
     implementation(libs.geantyref)
 
     testImplementation(libs.jupiter.api)

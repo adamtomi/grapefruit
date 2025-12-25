@@ -4,7 +4,7 @@ import grapefruit.command.argument.CommandArgumentException;
 import grapefruit.command.util.Range;
 import grapefruit.command.util.function.CharPredicate;
 import grapefruit.command.util.function.Function3;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.Deque;

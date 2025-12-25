@@ -2,7 +2,7 @@ package grapefruit.command.dispatcher;
 
 import grapefruit.command.argument.CommandChain;
 import grapefruit.command.util.function.ToBooleanFunction;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import static java.util.Objects.requireNonNull;
 
