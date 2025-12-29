@@ -112,6 +112,38 @@ public class CommandDispatcherTests {
     }
 
     @Test
+    public void unregister_multipleChildren() {
+        final DispatcherConfig<Object> config = DispatcherConfig.builder()
+                .build();
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
+        final CommandModule<Object> command1 = TestCommandModule.of(factory -> factory.newChain()
+                .then(factory.literal("test").build())
+                .then(factory.literal("foo").build())
+                .build());
+
+        final CommandModule<Object> command2 = TestCommandModule.of(factory -> factory.newChain()
+                .then(factory.literal("test").build())
+                .then(factory.literal("bar").build())
+                .build());
+
+        dispatcher.register(command1);
+        dispatcher.register(command2);
+
+        assertDoesNotThrow(() -> dispatcher.dispatch(new Object(), "test foo"));
+        assertDoesNotThrow(() -> dispatcher.dispatch(new Object(), "test bar"));
+
+        assertDoesNotThrow(() -> dispatcher.unregister(command1));
+
+        assertThrows(NoSuchCommandException.class, () -> dispatcher.dispatch(new Object(), "test foo"));
+
+        assertDoesNotThrow(() -> dispatcher.dispatch(new Object(), "test bar"));
+
+        assertDoesNotThrow(() -> dispatcher.unregister(command2));
+
+        assertThrows(NoSuchCommandException.class, () -> dispatcher.dispatch(new Object(), "test bar"));
+    }
+
+    @Test
     public void dispatch_contextDecoratorCalled() {
         final AtomicBoolean state = new AtomicBoolean(false);
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
