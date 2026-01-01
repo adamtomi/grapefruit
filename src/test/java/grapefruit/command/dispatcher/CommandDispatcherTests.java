@@ -144,10 +144,10 @@ public class CommandDispatcherTests {
     }
 
     @Test
-    public void dispatch_contextDecoratorCalled() {
+    public void dispatch_contextInjectorCalled() {
         final AtomicBoolean state = new AtomicBoolean(false);
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
-                .decorateContext((context, mode) -> state.set(true))
+                .contextInjector((context, mode) -> state.set(true))
                 .build();
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()

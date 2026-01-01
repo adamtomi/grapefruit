@@ -47,14 +47,14 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final Queue<ExecutionListener.Post<S>> postExecutionListeners = new ConcurrentLinkedQueue<>();
     /* Configurable properties */
     private final CommandRegistrationHandler<S> registrationHandler;
-    private final ContextDecorator<S> contextDecorator;
+    private final ContextInjector<S> contextInjector;
     private final CompletionFactory completionFactory;
     private final boolean eagerFlagCompletions;
 
     CommandDispatcherImpl(final DispatcherConfig<S> config) {
         requireNonNull(config, "config cannot be null");
         this.registrationHandler = config.registrationHandler();
-        this.contextDecorator = config.contextDecorator();
+        this.contextInjector = config.contextInjector();
         this.completionFactory = config.completionFactory();
         this.eagerFlagCompletions = config.eagerFlagCompletions();
     }
@@ -96,7 +96,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(command);
         final CommandModule<S> cmd = this.commandGraph.query(input);
-        final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.DISPATCH);
+        final CommandContext<S> context = createContext(source, requireChain(cmd), ContextInjector.Mode.DISPATCH);
         final CommandParseResult<S> parseResult = processCommand(context, input);
         parseResult.throwCaptured();
 
@@ -122,7 +122,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
 
         final CommandModule<S> cmd = result.right().orElseThrow();
-        final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.COMPLETE);
+        final CommandContext<S> context = createContext(source, requireChain(cmd), ContextInjector.Mode.COMPLETE);
         final CommandParseResult<S> parseResult = processCommand(context, input);
 
         if (
@@ -157,9 +157,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         this.postExecutionListeners.remove(post);
     }
 
-    private CommandContext<S> createContext(final S source, final CommandChain<S> chain, final ContextDecorator.Mode mode) {
+    private CommandContext<S> createContext(final S source, final CommandChain<S> chain, final ContextInjector.Mode mode) {
         final CommandContext<S> context = new CommandContextImpl<>(source, chain);
-        this.contextDecorator.apply(context, mode);
+        this.contextInjector.injectValues(context, mode);
         return context;
     }
 
