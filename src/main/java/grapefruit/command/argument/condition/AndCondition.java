@@ -18,6 +18,6 @@ final class AndCondition<S> implements CommandCondition<S> {
 
     @Override
     public void testLate(final CommandContext<S> context) throws UnfulfilledConditionException {
-        for (final CommandCondition<S> condition : this.conditions) condition.testEarly(context);
+        for (final CommandCondition<S> condition : this.conditions) condition.testLate(context);
     }
 }
