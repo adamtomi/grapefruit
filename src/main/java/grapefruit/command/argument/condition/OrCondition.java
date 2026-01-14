@@ -1,6 +1,7 @@
 package grapefruit.command.argument.condition;
 
 import grapefruit.command.dispatcher.CommandContext;
+import grapefruit.command.util.function.CheckedConsumer;
 
 import java.util.List;
 
@@ -14,12 +15,21 @@ final class OrCondition<S> implements CommandCondition<S> {
     }
 
     @Override
-    public void test(final CommandContext<S> context) throws UnfulfilledConditionException {
+    public void testEarly(final CommandContext<S> context) throws UnfulfilledConditionException {
+        doTest(x -> x.testEarly(context));
+    }
+
+    @Override
+    public void testLate(final CommandContext<S> context) throws UnfulfilledConditionException {
+        doTest(x -> x.testLate(context));
+    }
+
+    private void doTest(final CheckedConsumer<CommandCondition<S>, UnfulfilledConditionException> action) throws UnfulfilledConditionException {
         UnfulfilledConditionException captured = null;
         boolean success = false;
         for (final CommandCondition<S> condition : this.conditions) {
             try {
-                condition.test(context);
+                action.accept(condition);
                 success = true;
             } catch (final UnfulfilledConditionException ex) {
                 captured = ex;
