@@ -19,8 +19,17 @@ public class AlwaysCondition implements CommandCondition<Object> {
         return new AlwaysCondition(true);
     }
 
-    @Override
-    public void test(final CommandContext<Object> context) throws UnfulfilledConditionException {
+    private void doTest() throws UnfulfilledConditionException {
         if (!this.shouldPass) throw new UnfulfilledConditionException(this);
+    }
+
+    @Override
+    public void testEarly(final CommandContext<Object> context) throws UnfulfilledConditionException {
+        doTest();
+    }
+
+    @Override
+    public void testLate(final CommandContext<Object> context) throws UnfulfilledConditionException {
+        doTest();
     }
 }

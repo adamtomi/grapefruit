@@ -21,6 +21,7 @@ import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
 import grapefruit.command.tree.CommandGraph;
 import grapefruit.command.util.Tuple2;
+import grapefruit.command.util.function.CheckedConsumer;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -96,11 +97,15 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(command);
         final CommandModule<S> cmd = this.commandGraph.query(input);
-        final CommandContext<S> context = createContext(source, requireChain(cmd), ContextInjector.Mode.DISPATCH);
+        final CommandChain<S> chain = requireChain(cmd);
+        final CommandContext<S> context = createContext(source, chain, ContextInjector.Mode.DISPATCH);
+        // Invoke early (before argument parse) conditions
+        testRequiredConditions(chain, x -> x.testEarly(context));
         final CommandParseResult<S> parseResult = processCommand(context, input);
         parseResult.throwCaptured();
 
-        testRequiredConditions(context);
+        // Invoke late (after argument parse) conditions
+        testRequiredConditions(chain, x -> x.testLate(context));
         executeAndInvokeListeners(context, cmd);
     }
 
@@ -205,15 +210,17 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     // Test conditions of literal and required arguments
-    private static <S> void testRequiredConditions(final CommandContext<S> context) throws UnfulfilledConditionException {
-        final CommandChain<S> chain = context.chain();
+    private static <S> void testRequiredConditions(
+            final CommandChain<S> chain,
+            final CheckedConsumer<CommandCondition<S>, UnfulfilledConditionException> action
+    ) throws UnfulfilledConditionException {
         final List<CommandCondition<S>> conditions = Stream.concat(chain.route().stream(), chain.arguments().stream())
                 .map(CommandArgument::condition)
                 .filter(Optional::isPresent)
                 .map(Optional::orElseThrow)
                 .toList();
 
-        for (final CommandCondition<S> condition : conditions) condition.test(context);
+        for (final CommandCondition<S> condition : conditions) action.accept(condition);
     }
 
     private static <S> CommandParseResult<S> processCommand(final CommandContext<S> context, final CommandInputTokenizer input) {
@@ -312,7 +319,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
          */
         final Optional<CommandCondition<S>> condition = flag.condition();
         if (condition.isPresent()) {
-            condition.orElseThrow().test(context);
+            condition.orElseThrow().testLate(context);
         }
 
         consumeArgument(flag, context, input, builder);

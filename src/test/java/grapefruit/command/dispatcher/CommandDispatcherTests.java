@@ -5,6 +5,7 @@ import grapefruit.command.argument.CommandArgumentException;
 import grapefruit.command.argument.DuplicateFlagException;
 import grapefruit.command.argument.FlagGroupException;
 import grapefruit.command.argument.UnrecognizedFlagException;
+import grapefruit.command.argument.condition.CommandCondition;
 import grapefruit.command.argument.condition.UnfulfilledConditionException;
 import grapefruit.command.completion.CommandCompletion;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
@@ -27,6 +28,7 @@ import static grapefruit.command.mock.AlwaysCondition.fail;
 import static grapefruit.command.testutil.ExtraAssertions.assertContainsAll;
 import static grapefruit.command.testutil.Helper.completions;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -168,6 +170,58 @@ public class CommandDispatcherTests {
 
         dispatcher.register(command);
         assertThrows(UnfulfilledConditionException.class, () -> dispatcher.dispatch(new Object(), "test"));
+    }
+
+    @Test
+    public void dispatch_earlyConditionFailed() {
+        final DispatcherConfig<Object> config = DispatcherConfig.builder()
+                .build();
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
+        final AtomicBoolean state = new AtomicBoolean(false);
+        final CommandCondition<Object> earlyCondition = new CommandCondition.Early<>() {
+            @Override
+            public void testEarly(CommandContext<Object> context) throws UnfulfilledConditionException {
+                throw new UnfulfilledConditionException(this);
+            }
+        };
+
+        final CommandCondition.Late<Object> lateCondition = ctx -> state.set(true);
+
+        final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
+                .then(factory.literal("test").expect(earlyCondition).build())
+                .then(factory.literal("foo").expect(lateCondition).build())
+                .build());
+
+        dispatcher.register(command);
+        assertThrows(UnfulfilledConditionException.class, () -> dispatcher.dispatch(new Object(), "test foo"));
+        // Early condition throws error, late condition never updates the state
+        assertFalse(state.get());
+    }
+
+    @Test
+    public void dispatch_lateConditionFailed() {
+        final DispatcherConfig<Object> config = DispatcherConfig.builder()
+                .build();
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
+        final AtomicBoolean state = new AtomicBoolean(false);
+        final CommandCondition.Early<Object> earlyCondition = ctx -> state.set(true);
+
+        final CommandCondition.Late<Object> lateCondition = new CommandCondition.Late<Object>() {
+            @Override
+            public void testLate(final CommandContext<Object> context) throws UnfulfilledConditionException {
+                throw new UnfulfilledConditionException(this);
+            }
+        };
+
+        final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
+                .then(factory.literal("test").expect(earlyCondition).build())
+                .then(factory.literal("foo").expect(lateCondition).build())
+                .build());
+
+        dispatcher.register(command);
+        assertThrows(UnfulfilledConditionException.class, () -> dispatcher.dispatch(new Object(), "test foo"));
+        // Late condition throws error, early condition updated the state
+        assertTrue(state.get());
     }
 
     @Test
