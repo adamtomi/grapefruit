@@ -1,11 +1,11 @@
 package grapefruit.command.dispatcher;
 
 @FunctionalInterface
-public interface ContextDecorator<S> {
+public interface ContextInjector<S> {
 
-    void apply(final CommandContext<S> context, final Mode mode);
+    void injectValues(final CommandContext<S> context, final Mode mode);
 
-    static <S> ContextDecorator<S> nil() {
+    static <S> ContextInjector<S> noop() {
         return (context, mode) -> {};
     }
 

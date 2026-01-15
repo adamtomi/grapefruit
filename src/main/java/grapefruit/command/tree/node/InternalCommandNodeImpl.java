@@ -2,7 +2,7 @@ package grapefruit.command.tree.node;
 
 import grapefruit.command.CommandModule;
 import grapefruit.command.util.ToStringer;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.HashSet;

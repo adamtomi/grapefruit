@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly(libs.annotations)
+    compileOnly(libs.jspecify)
     implementation(libs.geantyref)
 
     testImplementation(libs.jupiter.api)
@@ -18,7 +18,7 @@ dependencies {
     testImplementation(libs.jupiter.params)
 }
 
-tasks.withType<Test>() {
+tasks.withType<Test> {
     useJUnitPlatform()
     finalizedBy(tasks.jacocoTestReport)
 }

@@ -5,6 +5,7 @@ import grapefruit.command.argument.CommandArgumentException;
 import grapefruit.command.argument.DuplicateFlagException;
 import grapefruit.command.argument.FlagGroupException;
 import grapefruit.command.argument.UnrecognizedFlagException;
+import grapefruit.command.argument.condition.CommandCondition;
 import grapefruit.command.argument.condition.UnfulfilledConditionException;
 import grapefruit.command.completion.CommandCompletion;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
@@ -27,6 +28,7 @@ import static grapefruit.command.mock.AlwaysCondition.fail;
 import static grapefruit.command.testutil.ExtraAssertions.assertContainsAll;
 import static grapefruit.command.testutil.Helper.completions;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -112,10 +114,42 @@ public class CommandDispatcherTests {
     }
 
     @Test
-    public void dispatch_contextDecoratorCalled() {
+    public void unregister_multipleChildren() {
+        final DispatcherConfig<Object> config = DispatcherConfig.builder()
+                .build();
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
+        final CommandModule<Object> command1 = TestCommandModule.of(factory -> factory.newChain()
+                .then(factory.literal("test").build())
+                .then(factory.literal("foo").build())
+                .build());
+
+        final CommandModule<Object> command2 = TestCommandModule.of(factory -> factory.newChain()
+                .then(factory.literal("test").build())
+                .then(factory.literal("bar").build())
+                .build());
+
+        dispatcher.register(command1);
+        dispatcher.register(command2);
+
+        assertDoesNotThrow(() -> dispatcher.dispatch(new Object(), "test foo"));
+        assertDoesNotThrow(() -> dispatcher.dispatch(new Object(), "test bar"));
+
+        assertDoesNotThrow(() -> dispatcher.unregister(command1));
+
+        assertThrows(NoSuchCommandException.class, () -> dispatcher.dispatch(new Object(), "test foo"));
+
+        assertDoesNotThrow(() -> dispatcher.dispatch(new Object(), "test bar"));
+
+        assertDoesNotThrow(() -> dispatcher.unregister(command2));
+
+        assertThrows(NoSuchCommandException.class, () -> dispatcher.dispatch(new Object(), "test bar"));
+    }
+
+    @Test
+    public void dispatch_contextInjectorCalled() {
         final AtomicBoolean state = new AtomicBoolean(false);
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
-                .decorateContext((context, mode) -> state.set(true))
+                .contextInjector((context, mode) -> state.set(true))
                 .build();
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
@@ -136,6 +170,58 @@ public class CommandDispatcherTests {
 
         dispatcher.register(command);
         assertThrows(UnfulfilledConditionException.class, () -> dispatcher.dispatch(new Object(), "test"));
+    }
+
+    @Test
+    public void dispatch_earlyConditionFailed() {
+        final DispatcherConfig<Object> config = DispatcherConfig.builder()
+                .build();
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
+        final AtomicBoolean state = new AtomicBoolean(false);
+        final CommandCondition<Object> earlyCondition = new CommandCondition.Early<>() {
+            @Override
+            public void testEarly(CommandContext<Object> context) throws UnfulfilledConditionException {
+                throw new UnfulfilledConditionException(this);
+            }
+        };
+
+        final CommandCondition.Late<Object> lateCondition = ctx -> state.set(true);
+
+        final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
+                .then(factory.literal("test").expect(earlyCondition).build())
+                .then(factory.literal("foo").expect(lateCondition).build())
+                .build());
+
+        dispatcher.register(command);
+        assertThrows(UnfulfilledConditionException.class, () -> dispatcher.dispatch(new Object(), "test foo"));
+        // Early condition throws error, late condition never updates the state
+        assertFalse(state.get());
+    }
+
+    @Test
+    public void dispatch_lateConditionFailed() {
+        final DispatcherConfig<Object> config = DispatcherConfig.builder()
+                .build();
+        final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
+        final AtomicBoolean state = new AtomicBoolean(false);
+        final CommandCondition.Early<Object> earlyCondition = ctx -> state.set(true);
+
+        final CommandCondition.Late<Object> lateCondition = new CommandCondition.Late<Object>() {
+            @Override
+            public void testLate(final CommandContext<Object> context) throws UnfulfilledConditionException {
+                throw new UnfulfilledConditionException(this);
+            }
+        };
+
+        final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
+                .then(factory.literal("test").expect(earlyCondition).build())
+                .then(factory.literal("foo").expect(lateCondition).build())
+                .build());
+
+        dispatcher.register(command);
+        assertThrows(UnfulfilledConditionException.class, () -> dispatcher.dispatch(new Object(), "test foo"));
+        // Late condition throws error, early condition updated the state
+        assertTrue(state.get());
     }
 
     @Test
@@ -191,7 +277,7 @@ public class CommandDispatcherTests {
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build())
                 .flags()
-                .then(factory.presenceFlag("hello").build())
+                .then(factory.boolFlag("hello").build())
                 .build());
 
         dispatcher.register(command);
@@ -208,7 +294,7 @@ public class CommandDispatcherTests {
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build())
                 .flags()
-                .then(factory.presenceFlag("hello").build())
+                .then(factory.boolFlag("hello").build())
                 .build());
 
         dispatcher.register(command);
@@ -224,7 +310,7 @@ public class CommandDispatcherTests {
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build())
                 .flags()
-                .then(factory.presenceFlag("hello").build())
+                .then(factory.boolFlag("hello").build())
                 .build());
 
         dispatcher.register(command);
@@ -240,7 +326,7 @@ public class CommandDispatcherTests {
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build())
                 .flags()
-                .then(factory.presenceFlag("hello").expect(fail()).build())
+                .then(factory.boolFlag("hello").expect(fail()).build())
                 .build());
 
         dispatcher.register(command);
@@ -257,7 +343,7 @@ public class CommandDispatcherTests {
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build())
                 .flags()
-                .then(factory.presenceFlag("hello").assumeShorthand().build())
+                .then(factory.boolFlag("hello").assumeShorthand().build())
                 .build());
 
         dispatcher.register(command);
@@ -275,7 +361,7 @@ public class CommandDispatcherTests {
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build())
                 .flags()
-                .then(factory.presenceFlag("hello").build())
+                .then(factory.boolFlag("hello").build())
                 .build());
 
         dispatcher.register(command);
@@ -293,7 +379,7 @@ public class CommandDispatcherTests {
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build())
                 .flags()
-                .then(factory.presenceFlag("hello").assumeShorthand().build())
+                .then(factory.boolFlag("hello").assumeShorthand().build())
                 .then(factory.valueFlag("color", String.class).assumeShorthand().mapWith(new ColorArgumentMapper()).build())
                 .build());
 
@@ -311,7 +397,7 @@ public class CommandDispatcherTests {
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build())
                 .flags()
-                .then(factory.presenceFlag("hello").assumeShorthand().build())
+                .then(factory.boolFlag("hello").assumeShorthand().build())
                 .build());
 
         dispatcher.register(command);
@@ -326,7 +412,7 @@ public class CommandDispatcherTests {
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
                 .then(factory.literal("test").build())
                 .flags()
-                .then(factory.presenceFlag("hello").assumeShorthand().build())
+                .then(factory.boolFlag("hello").assumeShorthand().build())
                 .build());
 
         dispatcher.register(command);
@@ -398,7 +484,7 @@ public class CommandDispatcherTests {
                 .flags()
                 .then(factory.valueFlag("color", String.class).assumeShorthand().mapWith(new ColorArgumentMapper()).build())
                 .then(factory.valueFlag("stringflag", String.class).assumeShorthand().mapWith(word()).build())
-                .then(factory.presenceFlag("boolflag").assumeShorthand().build())
+                .then(factory.boolFlag("boolflag").assumeShorthand().build())
                 .build());
 
         dispatcher.register(command);
@@ -424,7 +510,7 @@ public class CommandDispatcherTests {
                 .flags()
                 .then(factory.valueFlag("color", String.class).assumeShorthand().mapWith(new ColorArgumentMapper()).build())
                 .then(factory.valueFlag("stringflag", String.class).assumeShorthand().mapWith(word()).build())
-                .then(factory.presenceFlag("boolflag").assumeShorthand().build())
+                .then(factory.boolFlag("boolflag").assumeShorthand().build())
                 .build());
 
         dispatcher.register(command);
@@ -461,7 +547,7 @@ public class CommandDispatcherTests {
                 .flags()
                 .then(factory.valueFlag("color", String.class).assumeShorthand().mapWith(new ColorArgumentMapper()).build())
                 .then(factory.valueFlag("stringflag", String.class).assumeShorthand().mapWith(word()).build())
-                .then(factory.presenceFlag("boolflag").assumeShorthand().build())
+                .then(factory.boolFlag("boolflag").assumeShorthand().build())
                 .build());
 
         dispatcher.register(command);

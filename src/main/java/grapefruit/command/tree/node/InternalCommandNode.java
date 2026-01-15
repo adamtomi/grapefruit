@@ -1,7 +1,7 @@
 package grapefruit.command.tree.node;
 
 import grapefruit.command.CommandModule;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.Set;

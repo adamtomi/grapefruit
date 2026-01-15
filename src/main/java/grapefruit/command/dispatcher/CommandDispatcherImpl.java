@@ -21,6 +21,7 @@ import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
 import grapefruit.command.tree.CommandGraph;
 import grapefruit.command.util.Tuple2;
+import grapefruit.command.util.function.CheckedConsumer;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,14 +48,14 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     private final Queue<ExecutionListener.Post<S>> postExecutionListeners = new ConcurrentLinkedQueue<>();
     /* Configurable properties */
     private final CommandRegistrationHandler<S> registrationHandler;
-    private final ContextDecorator<S> contextDecorator;
+    private final ContextInjector<S> contextInjector;
     private final CompletionFactory completionFactory;
     private final boolean eagerFlagCompletions;
 
     CommandDispatcherImpl(final DispatcherConfig<S> config) {
         requireNonNull(config, "config cannot be null");
         this.registrationHandler = config.registrationHandler();
-        this.contextDecorator = config.contextDecorator();
+        this.contextInjector = config.contextInjector();
         this.completionFactory = config.completionFactory();
         this.eagerFlagCompletions = config.eagerFlagCompletions();
     }
@@ -96,11 +97,15 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
 
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(command);
         final CommandModule<S> cmd = this.commandGraph.query(input);
-        final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.DISPATCH);
+        final CommandChain<S> chain = requireChain(cmd);
+        final CommandContext<S> context = createContext(source, chain, ContextInjector.Mode.DISPATCH);
+        // Invoke early (before argument parse) conditions
+        testRequiredConditions(chain, x -> x.testEarly(context));
         final CommandParseResult<S> parseResult = processCommand(context, input);
         parseResult.throwCaptured();
 
-        testRequiredConditions(context);
+        // Invoke late (after argument parse) conditions
+        testRequiredConditions(chain, x -> x.testLate(context));
         executeAndInvokeListeners(context, cmd);
     }
 
@@ -122,7 +127,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
 
         final CommandModule<S> cmd = result.right().orElseThrow();
-        final CommandContext<S> context = createContext(source, requireChain(cmd), ContextDecorator.Mode.COMPLETE);
+        final CommandContext<S> context = createContext(source, requireChain(cmd), ContextInjector.Mode.COMPLETE);
         final CommandParseResult<S> parseResult = processCommand(context, input);
 
         if (
@@ -157,9 +162,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         this.postExecutionListeners.remove(post);
     }
 
-    private CommandContext<S> createContext(final S source, final CommandChain<S> chain, final ContextDecorator.Mode mode) {
+    private CommandContext<S> createContext(final S source, final CommandChain<S> chain, final ContextInjector.Mode mode) {
         final CommandContext<S> context = new CommandContextImpl<>(source, chain);
-        this.contextDecorator.apply(context, mode);
+        this.contextInjector.injectValues(context, mode);
         return context;
     }
 
@@ -205,15 +210,17 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     // Test conditions of literal and required arguments
-    private static <S> void testRequiredConditions(final CommandContext<S> context) throws UnfulfilledConditionException {
-        final CommandChain<S> chain = context.chain();
+    private static <S> void testRequiredConditions(
+            final CommandChain<S> chain,
+            final CheckedConsumer<CommandCondition<S>, UnfulfilledConditionException> action
+    ) throws UnfulfilledConditionException {
         final List<CommandCondition<S>> conditions = Stream.concat(chain.route().stream(), chain.arguments().stream())
                 .map(CommandArgument::condition)
                 .filter(Optional::isPresent)
                 .map(Optional::orElseThrow)
                 .toList();
 
-        for (final CommandCondition<S> condition : conditions) condition.test(context);
+        for (final CommandCondition<S> condition : conditions) action.accept(condition);
     }
 
     private static <S> CommandParseResult<S> processCommand(final CommandContext<S> context, final CommandInputTokenizer input) {
@@ -235,9 +242,9 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 }
 
                 final List<CommandArgument.Flag<S, ?>> flags = flagResult.left().orElseThrow();
-                // If the list is not empty, we managed to parse into at least one flag
+                // If the list is not empty, we managed to parse at least one flag
                 if (flags.isEmpty()) {
-                    // No flags were, matched, we retrieve the first unseen
+                    // No flags were matched, we retrieve the first unseen
                     // required argument.
                     final Optional<CommandArgument.Required<S, ?>> required = firstUnseen(chain.arguments(), context);
                     if (required.isPresent()) {
@@ -312,7 +319,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
          */
         final Optional<CommandCondition<S>> condition = flag.condition();
         if (condition.isPresent()) {
-            condition.orElseThrow().test(context);
+            condition.orElseThrow().testLate(context);
         }
 
         consumeArgument(flag, context, input, builder);
@@ -404,7 +411,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 if (candidate.isPresent()) {
                     final CommandArgument.Flag<S, ?> flag = candidate.orElseThrow();
                     // Value flags aren't supported in flag groups
-                    if (isGroup && !flag.isPresence()) {
+                    if (isGroup && !flag.isBool()) {
                         final Supplier<CommandArgumentException> ex = () -> input.internal().gen(
                                 expression,
                                 (consumed, arg, remaining) -> new FlagGroupException(consumed, arg, remaining, c)
@@ -454,10 +461,10 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             final boolean completeNext,
             final CompletionBuilder builder
     ) {
-        final boolean includeFlagNames = argument.isPresence() || !completeNext || parseResult.lastArgument().isEmpty();
+        final boolean includeFlagNames = argument.isBool() || !completeNext || parseResult.lastArgument().isEmpty();
         if (includeFlagNames) includeFlags(context, parseResult, builder);
 
-        return argument.isPresence()
+        return argument.isBool()
                 ? builder.build()
                 : argument.mapper().complete(context, builder);
     }
@@ -537,7 +544,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                  * - it has already been completed
                  * - it is a value flag
                  */
-                if (flag.shorthand() == 0 || argument.indexOf(flag.shorthand()) != -1 || flag.isPresence()) continue;
+                if (flag.shorthand() == 0 || argument.indexOf(flag.shorthand()) != -1 || flag.isBool()) continue;
 
                 result.add(argument + flag.shorthand());
             }

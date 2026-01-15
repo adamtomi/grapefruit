@@ -63,7 +63,7 @@ public class CommandChainTests {
                 .arguments()
                 .then(factory.required("test", String.class).mapWith(greedy()).build())
                 .flags()
-                .then(factory.presenceFlag("test").build())
+                .then(factory.boolFlag("test").build())
                 .build());
     }
 
@@ -97,7 +97,7 @@ public class CommandChainTests {
                 .arguments()
                 .then(factory.required("arg", String.class).mapWith(word()).build())
                 .flags()
-                .then(factory.presenceFlag("arg").build())
+                .then(factory.boolFlag("arg").build())
                 .build());
     }
 
@@ -109,7 +109,7 @@ public class CommandChainTests {
                 .arguments()
                 .flags()
                 .then(factory.valueFlag("arg", String.class).mapWith(word()).build())
-                .then(factory.presenceFlag("arg").build())
+                .then(factory.boolFlag("arg").build())
                 .build());
     }
 
@@ -120,7 +120,7 @@ public class CommandChainTests {
                 .then(factory.literal("test").build())
                 .arguments()
                 .flags()
-                .then(factory.presenceFlag("arg").shorthand('$').build())
+                .then(factory.boolFlag("arg").shorthand('$').build())
                 .build());
     }
 
@@ -132,7 +132,7 @@ public class CommandChainTests {
                 .arguments()
                 .flags()
                 .then(factory.valueFlag("arg", String.class).assumeShorthand().mapWith(word()).build())
-                .then(factory.presenceFlag("hello").shorthand('a').build())
+                .then(factory.boolFlag("hello").shorthand('a').build())
                 .build());
     }
 }

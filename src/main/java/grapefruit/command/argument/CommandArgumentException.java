@@ -1,7 +1,7 @@
 package grapefruit.command.argument;
 
 import grapefruit.command.CommandException;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serial;
 

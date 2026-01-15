@@ -53,7 +53,7 @@ public interface CommandArgument<S, T> extends Keyed<T> {
 
         ArgumentMapper<S, T> mapper();
 
-        boolean isPresence();
+        boolean isBool();
 
         interface Builder<S, T, B extends Builder<S, T, B>> extends CommandArgument.Builder<S, T, Flag<S, T>, Builder<S, T, B>> {
 
@@ -62,7 +62,7 @@ public interface CommandArgument<S, T> extends Keyed<T> {
             B assumeShorthand();
         }
 
-        interface PresenceBuilder<S> extends Builder<S, Boolean, PresenceBuilder<S>> {}
+        interface BoolBuilder<S> extends Builder<S, Boolean, BoolBuilder<S>> {}
 
         interface ValueBuilder<S, T> extends Builder<S, T, ValueBuilder<S, T>> {
 

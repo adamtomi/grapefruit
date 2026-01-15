@@ -3,7 +3,7 @@ package grapefruit.command.dispatcher;
 import grapefruit.command.CommandException;
 import grapefruit.command.argument.CommandArgument;
 import grapefruit.command.util.ToStringer;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,13 +11,13 @@ import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 
 final class CommandParseResultImpl<S> implements CommandParseResult<S> {
-    private final @Nullable CommandArgument.Dynamic<S, ?> argument;
+    private final CommandArgument.@Nullable Dynamic<S, ?> argument;
     private final @Nullable CommandException ex;
     private final List<CommandArgument.Required<S, ?>> arguments;
     private final List<CommandArgument.Flag<S, ?>> flags;
 
     private CommandParseResultImpl(
-            final @Nullable CommandArgument.Dynamic<S, ?> argument,
+            final CommandArgument.@Nullable Dynamic<S, ?> argument,
             final @Nullable CommandException ex,
             final List<CommandArgument.Required<S, ?>> arguments,
             final List<CommandArgument.Flag<S, ?>> flags
