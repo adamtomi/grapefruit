@@ -1,9 +1,8 @@
 plugins {
     id("java")
     id("jacoco")
+    id("com.vanniktech.maven.publish") version "0.36.0"
 }
-
-group = "grapefruit"
 
 repositories {
     mavenCentral()
@@ -25,4 +24,9 @@ tasks.withType<Test> {
 
 tasks.jacocoTestReport {
     dependsOn(tasks.test)
+}
+
+mavenPublishing {
+    publishToMavenCentral()
+    signAllPublications()
 }
