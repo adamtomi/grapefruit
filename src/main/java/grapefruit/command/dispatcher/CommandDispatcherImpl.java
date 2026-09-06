@@ -19,6 +19,7 @@ import grapefruit.command.completion.CompletionFactory;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
+import grapefruit.command.suggestion.Suggestion;
 import grapefruit.command.tree.CommandGraph;
 import grapefruit.command.util.Tuple2;
 import grapefruit.command.util.function.CheckedConsumer;
@@ -57,7 +58,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         this.registrationHandler = config.registrationHandler();
         this.contextInjector = config.contextInjector();
         this.completionFactory = config.completionFactory();
-        this.eagerFlagCompletions = config.eagerFlagCompletions();
+        this.eagerFlagCompletions = config.eagerFlagSuggestions();
     }
 
     @Override
@@ -140,6 +141,11 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
 
         return collectCompletions(context, input, parseResult).filterCompletions();
+    }
+
+    @Override
+    public Stream<Suggestion> suggest(S source, String command) {
+        return Stream.empty();
     }
 
     @Override

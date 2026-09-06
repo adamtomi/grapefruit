@@ -1,12 +1,12 @@
 package grapefruit.command.argument.mapper;
 
-import grapefruit.command.completion.CompletionProvider;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
+import grapefruit.command.suggestion.SuggestionProvider;
 import io.leangen.geantyref.TypeToken;
 
-public interface ArgumentMapper<S, T> extends CompletionProvider<S> {
+public interface ArgumentMapper<S, T> extends SuggestionProvider<S> {
 
     TypeToken<T> type();
 

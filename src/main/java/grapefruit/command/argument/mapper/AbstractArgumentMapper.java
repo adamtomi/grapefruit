@@ -31,11 +31,6 @@ public abstract class AbstractArgumentMapper<S, T> implements ArgumentMapper<S, 
     }
 
     @Override
-    public CompletionAccumulator complete(final CommandContext<S> context, final CompletionBuilder builder) {
-        return builder.build();
-    }
-
-    @Override
     public <O> ArgumentMapper<S, O> mapping(final Modifier<S, T, O> modifier) {
         return new ModifiedArgumentMapper<>(this, modifier);
     }
