@@ -7,11 +7,11 @@ import grapefruit.command.argument.FlagGroupException;
 import grapefruit.command.argument.UnrecognizedFlagException;
 import grapefruit.command.argument.condition.CommandCondition;
 import grapefruit.command.argument.condition.UnfulfilledConditionException;
-import grapefruit.command.completion.CommandCompletion;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
 import grapefruit.command.mock.ColorArgumentMapper;
 import grapefruit.command.mock.TestArgumentMapper;
 import grapefruit.command.mock.TestCommandModule;
+import grapefruit.command.suggestion.Suggestion;
 import grapefruit.command.tree.NoSuchCommandException;
 import grapefruit.command.util.key.Key;
 import org.junit.jupiter.api.Test;
@@ -22,11 +22,12 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 import static grapefruit.command.argument.mapper.builtin.StringArgumentMapper.word;
 import static grapefruit.command.mock.AlwaysCondition.fail;
 import static grapefruit.command.testutil.ExtraAssertions.assertContainsAll;
-import static grapefruit.command.testutil.Helper.completions;
+import static grapefruit.command.testutil.Helper.suggestions;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
@@ -431,7 +432,7 @@ public class CommandDispatcherTests {
             "test asd he,'',he",
             "'cmd su ','',' '"
     })
-    public void complete_commandNames(final String input, final String expected, final String lastInput) {
+    public void suggest_commandNames(final String input, final String expected, final String lastInput) {
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
                 .build();
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
@@ -446,8 +447,8 @@ public class CommandDispatcherTests {
                 .build());
 
         dispatcher.register(Set.of(command0, command1));
-        final List<CommandCompletion> completions = dispatcher.complete(new Object(), input);
-        assertContainsAll(completions(expected, lastInput), completions);
+        final Stream<Suggestion> suggestions = dispatcher.suggest(new Object(), input);
+        assertContainsAll(suggestions(expected, lastInput), suggestions.toList());
     }
 
     @ParameterizedTest
@@ -471,9 +472,9 @@ public class CommandDispatcherTests {
             "test hello --color #fff,#fff0|#fff1|#fff2|#fff3|#fff4|#fff5|#fff6|#fff7|#fff8|#fff9|#fffa|#fffb|#fffc|#fffd|#fffe|#ffff,#fff",
             "test hello argname -b -c #fff,#fff0|#fff1|#fff2|#fff3|#fff4|#fff5|#fff6|#fff7|#fff8|#fff9|#fffa|#fffb|#fffc|#fffd|#fffe|#ffff,#fff",
     })
-    public void complete_arguments(final String input, final String expected, final String lastInput) {
+    public void suggest_arguments(final String input, final String expected, final String lastInput) {
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
-                .eagerFlagCompletions()
+                .eagerFlagSuggestions()
                 .build();
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
         final CommandModule<Object> command = TestCommandModule.of(factory -> factory.newChain()
@@ -488,8 +489,8 @@ public class CommandDispatcherTests {
                 .build());
 
         dispatcher.register(command);
-        final List<CommandCompletion> completions = dispatcher.complete(new Object(), input);
-        assertContainsAll(completions(expected, lastInput), completions);
+        final Stream<Suggestion> suggestions = dispatcher.suggest(new Object(), input);
+        assertContainsAll(suggestions(expected, lastInput), suggestions.toList());
     }
 
     @ParameterizedTest
@@ -498,7 +499,7 @@ public class CommandDispatcherTests {
             "test hello -,--color|-c|--stringflag|-s|--boolflag|-b,-",
             "test hello --,--color|--stringflag|--boolflag,--",
     })
-    public void complete_nonEagerFlagCompletions(final String input, final String expected, final String lastInput) {
+    public void suggest_nonEagerFlagCompletions(final String input, final String expected, final String lastInput) {
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
                 .build();
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
@@ -514,8 +515,8 @@ public class CommandDispatcherTests {
                 .build());
 
         dispatcher.register(command);
-        final List<CommandCompletion> completions = dispatcher.complete(new Object(), input);
-        assertContainsAll(completions(expected, lastInput), completions);
+        final Stream<Suggestion> suggestions = dispatcher.suggest(new Object(), input);
+        assertContainsAll(suggestions(expected, lastInput), suggestions.toList());
     }
 
     @ParameterizedTest
@@ -535,7 +536,7 @@ public class CommandDispatcherTests {
             "test hello abc -sb --color #",
             "test hello abc --color #ffffff --color #,''"
     })
-    public void complete_invalidArgument(final String input) {
+    public void suggest_invalidArgument(final String input) {
         final DispatcherConfig<Object> config = DispatcherConfig.builder()
                 .build();
         final CommandDispatcher<Object> dispatcher = CommandDispatcher.using(config);
@@ -551,7 +552,7 @@ public class CommandDispatcherTests {
                 .build());
 
         dispatcher.register(command);
-        final List<CommandCompletion> completions = dispatcher.complete(new Object(), input);
-        assertIterableEquals(List.of(), completions);
+        final Stream<Suggestion> suggestions = dispatcher.suggest(new Object(), input);
+        assertIterableEquals(List.of(), suggestions.toList());
     }
 }

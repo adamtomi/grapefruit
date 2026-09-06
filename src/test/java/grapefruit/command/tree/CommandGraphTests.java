@@ -3,8 +3,6 @@ package grapefruit.command.tree;
 import grapefruit.command.CommandModule;
 import grapefruit.command.argument.CommandChain;
 import grapefruit.command.argument.CommandChainFactory;
-import grapefruit.command.completion.CommandCompletion;
-import grapefruit.command.completion.CompletionFactory;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.mock.EmptyCommandChain;
 import grapefruit.command.mock.TestCommandModule;

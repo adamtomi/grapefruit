@@ -11,7 +11,6 @@ import grapefruit.command.tree.node.InternalCommandNode;
 import grapefruit.command.util.Tuple2;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -135,13 +134,13 @@ public class CommandGraph<S> {
         return node;
     }
 
-    public Tuple2<List<String>, CommandModule<S>> complete(final CommandInputTokenizer input) {
+    public Tuple2<Stream<String>, CommandModule<S>> suggest(final CommandInputTokenizer input) {
         requireNonNull(input, "input cannot be null");
 
         try {
             if (!input.canReadNonWhitespace()) {
-                // The input is empty, complete the direct children of the root node
-                return new Tuple2<>(completeChildren(this.rootNode), null);
+                // The input is empty, suggest the direct children of the root node
+                return new Tuple2<>(suggestChildren(this.rootNode), null);
 
             }
 
@@ -152,54 +151,48 @@ public class CommandGraph<S> {
                 /*
                  * We have found a command. If there are more arguments in the queue, we
                  * want to return this command (thus passing all subsequent arguments for
-                 * completion to it rather than handling them here).
+                 * suggestion to it rather than handling them here).
                  */
                 return new Tuple2<>(null, command.orElseThrow());
             }
             /*
              * If `canRead()` returns true at this stage, it means that all
              * command names have been valid so far and the input ends with
-             * a whitespace. In this case, we want to complete child nodes
-             * with an empty input string. Otherwise, complete the current
+             * a whitespace. In this case, we want to suggest child nodes
+             * with an empty input string. Otherwise, suggest the current
              * node with the current input.
              */
-            final List<String> completions = input.canRead()
-                    ? completeChildren(node)
-                    : completeNode(node);
+            final Stream<String> suggestions = input.canRead()
+                    ? suggestChildren(node)
+                    : suggestNode(node);
 
-            return new Tuple2<>(completions, null);
+            return new Tuple2<>(suggestions, null);
         } catch (final NoSuchCommandException ex) {
-            final List<String> completions;
+            final Stream<String> suggestions;
             if (input.canRead()) {
                 /*
                  * If we have more input to read, that means that the invalid
                  * node name is not the last argument. Return an empty list in
                  * such cases.
                  */
-                completions = List.of();
+                suggestions = Stream.of();
             } else {
-                // Otherwise, we collect completions for the current node
-                completions = ex.alternatives().stream()
-                        .flatMap(CommandGraph::collectAliases)
-                        .toList();
+                // Otherwise, we collect suggestions for the current node
+                suggestions = ex.alternatives().stream()
+                        .flatMap(CommandGraph::suggestNode);
             }
 
-            return new Tuple2<>(completions, null);
+            return new Tuple2<>(suggestions, null);
         }
     }
 
-    private static Stream<String> collectAliases(final CommandNode node) {
+    private static Stream<String> suggestNode(final CommandNode node) {
         return Stream.concat(Stream.of(node.name()), node.aliases().stream());
     }
 
-    private static List<String> completeNode(final CommandNode node) {
-        return collectAliases(node).toList();
-    }
-
-    private static <S> List<String> completeChildren(final InternalCommandNode<S> node) {
+    private static <S> Stream<String> suggestChildren(final InternalCommandNode<S> node) {
         return node.children().stream()
-                .flatMap(CommandGraph::collectAliases)
-                .toList();
+                .flatMap(CommandGraph::suggestNode);
     }
 
     private static <S> Optional<InternalCommandNode<S>> queryChildOf(final InternalCommandNode<S> parent, final CommandArgument.Literal<S> literal) {

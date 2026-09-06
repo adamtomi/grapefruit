@@ -12,14 +12,14 @@ import grapefruit.command.argument.UnrecognizedFlagException;
 import grapefruit.command.argument.condition.CommandCondition;
 import grapefruit.command.argument.condition.UnfulfilledConditionException;
 import grapefruit.command.argument.mapper.ArgumentMappingException;
-import grapefruit.command.completion.CommandCompletion;
-import grapefruit.command.completion.CompletionAccumulator;
-import grapefruit.command.completion.CompletionBuilder;
-import grapefruit.command.completion.CompletionFactory;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
+import grapefruit.command.suggestion.Suggestion;
+import grapefruit.command.suggestion.SuggestionContext;
+import grapefruit.command.suggestion.SuggestionFactory;
 import grapefruit.command.tree.CommandGraph;
+import grapefruit.command.util.StringUtil;
 import grapefruit.command.util.Tuple2;
 import grapefruit.command.util.function.CheckedConsumer;
 
@@ -49,15 +49,15 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     /* Configurable properties */
     private final CommandRegistrationHandler<S> registrationHandler;
     private final ContextInjector<S> contextInjector;
-    private final CompletionFactory completionFactory;
+    private final SuggestionFactory suggestionFactory;
     private final boolean eagerFlagCompletions;
 
     CommandDispatcherImpl(final DispatcherConfig<S> config) {
         requireNonNull(config, "config cannot be null");
         this.registrationHandler = config.registrationHandler();
         this.contextInjector = config.contextInjector();
-        this.completionFactory = config.completionFactory();
-        this.eagerFlagCompletions = config.eagerFlagCompletions();
+        this.suggestionFactory = config.suggestionFactory();
+        this.eagerFlagCompletions = config.eagerFlagSuggestions();
     }
 
     @Override
@@ -110,20 +110,19 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
     }
 
     @Override
-    public List<CommandCompletion> complete(final S source, final String command) {
+    public Stream<Suggestion> suggest(final S source, final String command) {
         requireNonNull(source, "source cannot be null");
         requireNonNull(command, "command cannot be null");
 
         final CommandInputTokenizer input = CommandInputTokenizer.wrap(command);
-        final Tuple2<List<String>, CommandModule<S>> result = this.commandGraph.complete(input);
-        final Optional<List<String>> completions = result.left();
+        final Tuple2<Stream<String>, CommandModule<S>> result = this.commandGraph.suggest(input);
+        final Optional<Stream<String>> suggestions = result.left();
 
-        if (completions.isPresent()) {
+        if (suggestions.isPresent()) {
             final String lastConsumed = input.lastConsumed().filter(x -> !input.canRead()).orElse("");
-            final CompletionBuilder builder = CompletionBuilder.of(this.completionFactory, lastConsumed);
-            return builder.includeStrings(completions.orElseThrow())
-                    .build()
-                    .filterCompletions();
+            return suggestions.orElseThrow()
+                    .filter(x -> StringUtil.startsWithIgnoreCase(x, lastConsumed))
+                    .map(this.suggestionFactory::create);
         }
 
         final CommandModule<S> cmd = result.right().orElseThrow();
@@ -136,10 +135,12 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
                 || parseResult.captured(FlagGroupException.class).isPresent()
                 || parseResult.captured(UnrecognizedFlagException.class).filter(x -> !x.argument().startsWith(SHORT_FLAG_PREFIX)).isPresent()
         ) {
-            return List.of();
+            return Stream.of();
         }
 
-        return collectCompletions(context, input, parseResult).filterCompletions();
+        final SuggestionContext<S> suggestionContext = SuggestionContext.create(context, this.suggestionFactory);
+        // `listSuggestions` handles suggestion filtering already, no need to do it here as well
+        return listSuggestions(suggestionContext, input, parseResult);
     }
 
     @Override
@@ -435,61 +436,66 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         }
     }
 
-    private CompletionAccumulator collectCompletions(
-            final CommandContext<S> context,
+    private Stream<Suggestion> listSuggestions(
+            final SuggestionContext<S> context,
             final CommandInputTokenizer input,
             final CommandParseResult<S> parseResult
     ) {
-        final CommandArgument.Dynamic<S, ?> argument = resolveArgumentToComplete(parseResult);
+        final CommandArgument.Dynamic<S, ?> argument = resolveArgumentToSuggest(parseResult);
         final String lastConsumed = input.lastConsumed().orElseThrow();
         final boolean completeNext = input.canRead() || lastConsumed.isBlank();
         final String argToComplete = completeNext
                 ? ""
                 : lastConsumed;
 
-        final CompletionBuilder builder = CompletionBuilder.of(this.completionFactory, argToComplete);
+        final Stream<Suggestion> suggestions = argument.isFlag()
+                ? listFlagSuggestions(context, parseResult, argument.asFlag(), completeNext, argToComplete)
+                : listArgumentSuggestions(context, parseResult, argument, argToComplete);
 
-        return argument.isFlag()
-                ? collectFlagCompletions(context, parseResult, argument.asFlag(), completeNext, builder)
-                : collectArgumentCompletions(context, parseResult, argument, builder);
+        return suggestions.filter(x -> StringUtil.startsWithIgnoreCase(x.stringValue(), argToComplete));
     }
 
-    private CompletionAccumulator collectFlagCompletions(
-            final CommandContext<S> context,
+    private Stream<Suggestion> listFlagSuggestions(
+            final SuggestionContext<S> context,
             final CommandParseResult<S> parseResult,
             final CommandArgument.Flag<S, ?> argument,
             final boolean completeNext,
-            final CompletionBuilder builder
+            final String input
     ) {
-        final boolean includeFlagNames = argument.isBool() || !completeNext || parseResult.lastArgument().isEmpty();
-        if (includeFlagNames) includeFlags(context, parseResult, builder);
+        final Stream<Suggestion> baseSuggestions = argument.isBool()
+                ? Stream.of()
+                : argument.mapper().suggest(context, input);
 
-        return argument.isBool()
-                ? builder.build()
-                : argument.mapper().complete(context, builder);
+        final boolean includeFlagNames = argument.isBool() || !completeNext || parseResult.lastArgument().isEmpty();
+        return includeFlagNames
+                ? Stream.concat(baseSuggestions, includeFlags(context.commandContext(), parseResult, input))
+                : baseSuggestions;
     }
 
-    private CompletionAccumulator collectArgumentCompletions(
-            final CommandContext<S> context,
+    private Stream<Suggestion> listArgumentSuggestions(
+            final SuggestionContext<S> context,
             final CommandParseResult<S> parseResult,
             final CommandArgument.Dynamic<S, ?> argument,
-            final CompletionBuilder builder
+            final String input
     ) {
-        final boolean includeFlags = this.eagerFlagCompletions || builder.input().startsWith(SHORT_FLAG_PREFIX);
-        return argument.mapper().complete(context, includeFlags ? includeFlags(context, parseResult, builder) : builder);
+        final boolean includeFlags = this.eagerFlagCompletions || input.startsWith(SHORT_FLAG_PREFIX);
+        final Stream<Suggestion> baseSuggestions = argument.mapper().suggest(context, input);
+        return includeFlags
+                ? Stream.concat(baseSuggestions, includeFlags(context.commandContext(), parseResult, input))
+                : baseSuggestions;
     }
 
-    private CompletionBuilder includeFlags(
+    private Stream<Suggestion> includeFlags(
             final CommandContext<S> context,
             final CommandParseResult<S> parseResult,
-            final CompletionBuilder builder
+            final String input
     ) {
         final List<CommandArgument.Flag<S, ?>> remainingFlags = parseResult.remainingFlags();
-        return builder.includeStrings(completeFlags(remainingFlags))
-                .includeStrings(completeFlagGroup(context, builder.input(), remainingFlags));
+        return Stream.concat(suggestFlags(remainingFlags), suggestFlagGroup(context, input, remainingFlags))
+                .map(this.suggestionFactory::create);
     }
 
-    private CommandArgument.Dynamic<S, ?> resolveArgumentToComplete(final CommandParseResult<S> parseResult) {
+    private CommandArgument.Dynamic<S, ?> resolveArgumentToSuggest(final CommandParseResult<S> parseResult) {
         final Optional<CommandArgument.Dynamic<S, ?>> lastArgument = parseResult.lastArgument();
         if (lastArgument.isPresent()) {
             return lastArgument.orElseThrow();
@@ -505,23 +511,20 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         return (remainingArgs.isEmpty() ? remainingFlags : remainingArgs).getFirst();
     }
 
-    private static <S> List<String> completeFlag(final CommandArgument.Flag<S, ?> flag) {
+    private static <S> Stream<String> suggestFlag(final CommandArgument.Flag<S, ?> flag) {
         final List<String> result = new ArrayList<>();
         result.add(LONG_FLAG_PREFIX + flag.name());
 
         if (flag.shorthand() != 0) result.add(SHORT_FLAG_PREFIX + flag.shorthand());
 
-        return result;
+        return result.stream();
     }
 
-    private static <S> List<String> completeFlags(final Collection<CommandArgument.Flag<S, ?>> flags) {
-        return flags.stream()
-                .map(CommandDispatcherImpl::completeFlag)
-                .flatMap(Collection::stream)
-                .toList();
+    private static <S> Stream<String> suggestFlags(final Collection<CommandArgument.Flag<S, ?>> flags) {
+        return flags.stream().flatMap(CommandDispatcherImpl::suggestFlag);
     }
 
-    private static <S> List<String> completeFlagGroup(
+    private static <S> Stream<String> suggestFlagGroup(
             final CommandContext<S> context,
             final String argument,
             final List<CommandArgument.Flag<S, ?>> flags
@@ -533,7 +536,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
         if (argument.length() > 1 && argument.charAt(0) == SHORT_FLAG_PREFIX_CH && Character.isAlphabetic(argument.charAt(1))) {
             for (int i = 1; i < argument.length(); i++) {
                 if (isInvalidShorthand(argument.charAt(i), allFlags)) {
-                    return List.of();
+                    return Stream.of();
                 }
             }
 
@@ -550,7 +553,7 @@ final class CommandDispatcherImpl<S> implements CommandDispatcher<S> {
             }
         }
 
-        return result;
+        return result.stream();
     }
 
     private static <S> boolean isInvalidShorthand(final char shorthand, final List<CommandArgument.Flag<S, ?>> flags) {

@@ -2,11 +2,11 @@ package grapefruit.command.dispatcher;
 
 import grapefruit.command.CommandException;
 import grapefruit.command.CommandModule;
-import grapefruit.command.completion.CommandCompletion;
 import grapefruit.command.dispatcher.config.DispatcherConfig;
+import grapefruit.command.suggestion.Suggestion;
 
 import java.util.Collection;
-import java.util.List;
+import java.util.stream.Stream;
 
 public interface CommandDispatcher<S> {
 
@@ -24,7 +24,7 @@ public interface CommandDispatcher<S> {
 
     void dispatch(final S source, final String command) throws CommandException;
 
-    List<CommandCompletion> complete(final S source, final String command);
+    Stream<Suggestion> suggest(final S source, final String command);
 
     void subscribe(final ExecutionListener.Pre<S> pre);
 

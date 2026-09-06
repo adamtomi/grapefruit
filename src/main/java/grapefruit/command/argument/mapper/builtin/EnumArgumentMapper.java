@@ -2,16 +2,17 @@ package grapefruit.command.argument.mapper.builtin;
 
 import grapefruit.command.argument.mapper.AbstractArgumentMapper;
 import grapefruit.command.argument.mapper.ArgumentMappingException;
-import grapefruit.command.completion.CompletionAccumulator;
-import grapefruit.command.completion.CompletionBuilder;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
+import grapefruit.command.suggestion.SuggestionContext;
 
 import java.io.Serial;
+import java.util.Arrays;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 
@@ -54,15 +55,15 @@ public final class EnumArgumentMapper<S, E extends Enum<E>> extends AbstractArgu
     }
 
     @Override
-    public CompletionAccumulator complete(final CommandContext<S> context, final CompletionBuilder builder) {
-        return builder.includeStrings(this.type.getEnumConstants(), this.resolver::complete).build();
+    public Stream<String> suggestStrings(final SuggestionContext<S> context, final String input) {
+        return Arrays.stream(this.type.getEnumConstants()).map(this.resolver::toString);
     }
 
     private interface EnumResolver<E extends Enum<E>> {
 
         boolean matches(final E candidate, final String input);
 
-        String complete(final E value);
+        String toString(final E value);
 
         static <E extends Enum<E>> EnumResolver<E> strict() {
             return new EnumResolverImpl<>((candidate, value) -> candidate.name().equals(value), Enum::name);
@@ -88,7 +89,7 @@ public final class EnumArgumentMapper<S, E extends Enum<E>> extends AbstractArgu
         }
 
         @Override
-        public String complete(final E value) {
+        public String toString(final E value) {
             return this.completer.apply(value);
         }
     }

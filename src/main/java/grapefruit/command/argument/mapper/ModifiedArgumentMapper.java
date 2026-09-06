@@ -1,11 +1,13 @@
 package grapefruit.command.argument.mapper;
 
-import grapefruit.command.completion.CompletionAccumulator;
-import grapefruit.command.completion.CompletionBuilder;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
+import grapefruit.command.suggestion.Suggestion;
+import grapefruit.command.suggestion.SuggestionContext;
 import io.leangen.geantyref.TypeToken;
+
+import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 
@@ -29,7 +31,7 @@ final class ModifiedArgumentMapper<S, I, O> extends AbstractArgumentMapper<S, O>
     }
 
     @Override
-    public CompletionAccumulator complete(final CommandContext<S> context, final CompletionBuilder builder) {
-        return this.delegate.complete(context, builder);
+    public Stream<Suggestion> suggest(final SuggestionContext<S> context, final String input) {
+        return this.delegate.suggest(context, input);
     }
 }

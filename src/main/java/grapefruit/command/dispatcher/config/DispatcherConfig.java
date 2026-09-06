@@ -1,9 +1,9 @@
 package grapefruit.command.dispatcher.config;
 
 import grapefruit.command.argument.CommandChain;
-import grapefruit.command.completion.CompletionFactory;
 import grapefruit.command.dispatcher.CommandRegistrationHandler;
 import grapefruit.command.dispatcher.ContextInjector;
+import grapefruit.command.suggestion.SuggestionFactory;
 import grapefruit.command.util.function.ToBooleanFunction;
 
 public interface DispatcherConfig<S> {
@@ -12,9 +12,9 @@ public interface DispatcherConfig<S> {
 
     ContextInjector<S> contextInjector();
 
-    CompletionFactory completionFactory();
+    SuggestionFactory suggestionFactory();
 
-    boolean eagerFlagCompletions();
+    boolean eagerFlagSuggestions();
 
     static <S> Builder<S> builder() {
         return new DispatcherConfigImpl.Builder<>();
@@ -30,9 +30,9 @@ public interface DispatcherConfig<S> {
 
         Builder<S> contextInjector(final ContextInjector<S> handler);
 
-        Builder<S> completionFactory(final CompletionFactory factory);
+        Builder<S> suggestionFactory(final SuggestionFactory factory);
 
-        Builder<S> eagerFlagCompletions();
+        Builder<S> eagerFlagSuggestions();
 
         DispatcherConfig<S> build();
     }
