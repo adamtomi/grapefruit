@@ -1,8 +1,6 @@
 package grapefruit.command.dispatcher.config;
 
 import grapefruit.command.argument.CommandChain;
-import grapefruit.command.completion.CommandCompletion;
-import grapefruit.command.completion.CompletionFactory;
 import grapefruit.command.dispatcher.CommandRegistrationHandler;
 import grapefruit.command.dispatcher.ContextInjector;
 import grapefruit.command.suggestion.SuggestionFactory;
@@ -13,22 +11,19 @@ import static java.util.Objects.requireNonNull;
 final class DispatcherConfigImpl<S> implements DispatcherConfig<S> {
     private final CommandRegistrationHandler<S> registrationHandler;
     private final ContextInjector<S> contextInjector;
-    private final CompletionFactory completionFactory;
     private final SuggestionFactory suggestionFactory;
-    private final boolean eagerFlagCompletions;
+    private final boolean eagerFlagSuggestions;
 
     private DispatcherConfigImpl(
             final CommandRegistrationHandler<S> registrationHandler,
             final ContextInjector<S> contextInjector,
-            final CompletionFactory completionFactory,
             final SuggestionFactory suggestionFactory,
-            final boolean eagerFlagCompletions
+            final boolean eagerFlagSuggestions
     ) {
         this.registrationHandler = requireNonNull(registrationHandler, "registrationHandler cannot be null");
         this.contextInjector = requireNonNull(contextInjector, "contextInjector cannot be null");
-        this.completionFactory = requireNonNull(completionFactory, "completionFactory cannot be null");
         this.suggestionFactory = requireNonNull(suggestionFactory, "suggestionFactory cannot be null");
-        this.eagerFlagCompletions = eagerFlagCompletions;
+        this.eagerFlagSuggestions = eagerFlagSuggestions;
     }
 
     @Override
@@ -42,18 +37,13 @@ final class DispatcherConfigImpl<S> implements DispatcherConfig<S> {
     }
 
     @Override
-    public CompletionFactory completionFactory() {
-        return this.completionFactory;
-    }
-
-    @Override
     public SuggestionFactory suggestionFactory() {
         return this.suggestionFactory;
     }
 
     @Override
     public boolean eagerFlagSuggestions() {
-        return this.eagerFlagCompletions;
+        return this.eagerFlagSuggestions;
     }
 
     static final class Builder<S> implements DispatcherConfig.Builder<S> {
@@ -61,9 +51,8 @@ final class DispatcherConfigImpl<S> implements DispatcherConfig<S> {
         private ToBooleanFunction<CommandChain<S>> registrationFn;
         private ToBooleanFunction<CommandChain<S>> unregistrationFn;
         private ContextInjector<S> contextInjector;
-        private CompletionFactory completionFactory;
         private SuggestionFactory suggestionFactory;
-        private boolean eagerFlagCompletions;
+        private boolean eagerFlagSuggestions;
 
         Builder() {}
 
@@ -92,20 +81,14 @@ final class DispatcherConfigImpl<S> implements DispatcherConfig<S> {
         }
 
         @Override
-        public DispatcherConfig.Builder<S> completionFactory(final CompletionFactory factory) {
-            this.completionFactory = requireNonNull(factory, "factory cannot be null");
-            return this;
-        }
-
-        @Override
         public DispatcherConfig.Builder<S> suggestionFactory(final SuggestionFactory factory) {
             this.suggestionFactory = requireNonNull(factory, "factory cannot be null");
             return this;
         }
 
         @Override
-        public DispatcherConfig.Builder<S> eagerFlagCompletions() {
-            this.eagerFlagCompletions = true;
+        public DispatcherConfig.Builder<S> eagerFlagSuggestions() {
+            this.eagerFlagSuggestions = true;
             return this;
         }
 
@@ -119,15 +102,11 @@ final class DispatcherConfigImpl<S> implements DispatcherConfig<S> {
                     ? this.contextInjector
                     : ContextInjector.noop();
 
-            final CompletionFactory completionFactory = this.completionFactory != null
-                    ? this.completionFactory
-                    : CommandCompletion.factory();
-
             final SuggestionFactory suggestionFactory = this.suggestionFactory != null
                     ? this.suggestionFactory
                     : SuggestionFactory.defaultFactory();
 
-            return new DispatcherConfigImpl<>(registrationHandler, contextInjector, completionFactory, suggestionFactory, this.eagerFlagCompletions);
+            return new DispatcherConfigImpl<>(registrationHandler, contextInjector, suggestionFactory, this.eagerFlagSuggestions);
         }
     }
 }

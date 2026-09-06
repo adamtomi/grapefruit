@@ -2,11 +2,13 @@ package grapefruit.command.mock;
 
 import grapefruit.command.argument.mapper.AbstractArgumentMapper;
 import grapefruit.command.argument.mapper.ArgumentMappingException;
-import grapefruit.command.completion.CompletionAccumulator;
-import grapefruit.command.completion.CompletionBuilder;
 import grapefruit.command.dispatcher.CommandContext;
 import grapefruit.command.dispatcher.input.CommandInputTokenizer;
 import grapefruit.command.dispatcher.input.MissingInputException;
+import grapefruit.command.suggestion.SuggestionContext;
+
+import java.util.Arrays;
+import java.util.stream.Stream;
 
 public class ColorArgumentMapper extends AbstractArgumentMapper<Object, String> {
     private static final char HASH = '#';
@@ -40,6 +42,7 @@ public class ColorArgumentMapper extends AbstractArgumentMapper<Object, String> 
         return false;
     }
 
+    /*
     @Override
     public CompletionAccumulator complete(final CommandContext<Object> context, final CompletionBuilder builder) {
         final String input = builder.input();
@@ -54,5 +57,20 @@ public class ColorArgumentMapper extends AbstractArgumentMapper<Object, String> 
         }
 
         return builder.includeStrings(HEX_CHARSET, x -> input + x).build();
+    }
+
+     */
+
+    @Override
+    public Stream<String> suggestStrings(final SuggestionContext<Object> context, final String input) {
+        if (input.isEmpty()) return Stream.of(String.valueOf(HASH));
+
+        if (input.length() > 7 || input.charAt(0) != HASH || containsInvalidCharacter(input)) {
+            return Stream.empty();
+        } else if (input.length() == 7) {
+            return Stream.of(input);
+        }
+
+        return Arrays.stream(HEX_CHARSET).map(x -> input + x);
     }
 }

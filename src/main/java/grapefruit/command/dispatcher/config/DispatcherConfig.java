@@ -1,7 +1,6 @@
 package grapefruit.command.dispatcher.config;
 
 import grapefruit.command.argument.CommandChain;
-import grapefruit.command.completion.CompletionFactory;
 import grapefruit.command.dispatcher.CommandRegistrationHandler;
 import grapefruit.command.dispatcher.ContextInjector;
 import grapefruit.command.suggestion.SuggestionFactory;
@@ -33,7 +32,7 @@ public interface DispatcherConfig<S> {
 
         Builder<S> suggestionFactory(final SuggestionFactory factory);
 
-        Builder<S> eagerFlagCompletions();
+        Builder<S> eagerFlagSuggestions();
 
         DispatcherConfig<S> build();
     }

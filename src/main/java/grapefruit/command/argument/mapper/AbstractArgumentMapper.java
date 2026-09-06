@@ -1,8 +1,5 @@
 package grapefruit.command.argument.mapper;
 
-import grapefruit.command.completion.CompletionAccumulator;
-import grapefruit.command.completion.CompletionBuilder;
-import grapefruit.command.dispatcher.CommandContext;
 import io.leangen.geantyref.TypeToken;
 
 import static java.util.Objects.requireNonNull;
