@@ -42,25 +42,6 @@ public class ColorArgumentMapper extends AbstractArgumentMapper<Object, String> 
         return false;
     }
 
-    /*
-    @Override
-    public CompletionAccumulator complete(final CommandContext<Object> context, final CompletionBuilder builder) {
-        final String input = builder.input();
-        if (input.isEmpty()) {
-            return builder.includeString(String.valueOf(HASH)).build();
-        }
-
-        if (input.length() > 7 || input.charAt(0) != HASH || containsInvalidCharacter(input)) {
-            return builder.build();
-        } else if (input.length() == 7) {
-            return builder.includeString(input).build();
-        }
-
-        return builder.includeStrings(HEX_CHARSET, x -> input + x).build();
-    }
-
-     */
-
     @Override
     public Stream<String> suggestStrings(final SuggestionContext<Object> context, final String input) {
         if (input.isEmpty()) return Stream.of(String.valueOf(HASH));
